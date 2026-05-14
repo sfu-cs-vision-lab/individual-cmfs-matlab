@@ -1,0 +1,82 @@
+name: Release
+
+# Builds the .mltbx and attaches it to a GitHub Release when a SemVer
+# tag is pushed (e.g., v0.1.0-beta.1, v0.1.0). The packageTask depends
+# on check + test, so the release goes through the full static-analysis
+# and unit-test gate on the latest supported MATLAB before producing
+# the artifact.
+
+on:
+  push:
+    tags:
+      - 'v*'   # any SemVer tag, e.g. v0.1.0 or v0.1.0-beta.1
+
+permissions:
+  contents: write   # required to create / edit releases
+
+jobs:
+  release:
+    name: Build .mltbx and attach to release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Verify tag matches VERSION file
+        # Source of truth is the VERSION file; the tag should be
+        # "v" + VERSION. Fail fast on drift so we don't ship a
+        # mismatched .mltbx.
+        run: |
+          file_version="$(tr -d '[:space:]' < VERSION)"
+          tag_version="${GITHUB_REF_NAME#v}"
+          if [ "$file_version" != "$tag_version" ]; then
+            echo "VERSION (\"$file_version\") does not match tag (\"$tag_version\")."
+            exit 1
+          fi
+          echo "VERSION and tag agree: $tag_version"
+
+      - name: Set up MATLAB (release pinned to MaximumMatlabRelease)
+        # Pin to the release the .mltbx declares as MaximumMatlabRelease so
+        # the package build runs in the same environment supported toolbox
+        # users will run. "latest" can drift onto an unsupported MATLAB
+        # (e.g. R2026.1 emits an exportgraphics axes-toolbar warning that
+        # R2025b doesn't).
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: R2025b
+
+      - name: Set up Python (for pycone parity test)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Clone pycone reference for parity test
+        run: |
+          git clone --depth 1 \
+            https://github.com/CVRL-IoO/Individual-CMFs.git \
+            tests/parity/pycone
+
+      - name: Install pycone Python dependencies
+        working-directory: tests/parity/pycone
+        run: |
+          uv pip install --system "numpy==2.0.2" "scipy==1.13.1"
+          if [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then
+            uv pip install --system -e .
+          fi
+
+      - name: Run package task (depends on check + test)
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: package
+
+      - name: Upload .mltbx to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.mltbx
+          name: ${{ github.ref_name }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,0 +1,1073 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project MetadataType="monolithic">
+    <Info Location="ProjectData">
+        <Info Name="individual-cmfs-matlab"/>
+    </Info>
+    <Files Location="Root">
+        <File Location=".gitattributes">
+            <Info/>
+        </File>
+        <File Location=".gitignore">
+            <Info/>
+        </File>
+        <File Location=".github">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="workflows">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="main.yml">
+                    <Info/>
+                </File>
+            </File>
+        </File>
+        <File Location="CITATION.cff">
+            <Info/>
+        </File>
+        <File Location="LICENSE">
+            <Info/>
+        </File>
+        <File Location="README.md">
+            <Info/>
+        </File>
+        <File Location="buildUtilities">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="writeBadgeJson.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="writeCodeIssuesBadge.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="writeCoverageBadge.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="writeTestedWithBadge.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+        </File>
+        <File Location="buildfile.m">
+            <Info>
+                <Category UUID="FileClassCategory">
+                    <Label UUID="design"/>
+                </Category>
+            </Info>
+        </File>
+        <File Location="examples">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="README.md">
+                <Info/>
+            </File>
+            <File Location="exampleDefaults.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example01_GettingStarted.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example02_StandardObservers.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example04_AgingEffects.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example05_GeneticVariants.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example06_PhotopigmentModels.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example08_OutputFormats.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example15_DataExport.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example09_RGBColorMatching.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example10_ChromaticityDiagrams.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example03_FieldSizeEffects.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example16_NormalizationMethods.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example07_ComputationalPipeline.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example12_ObserverComparison.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example14_AdvancedCustomization.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example17_PublicationFigures.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example13_Dichromacy.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example11_Luminance.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Example18_ObserverMetamerism.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="utils">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="wavelengthToRGB.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
+        </File>
+        <File Location="reports">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="badge">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="code_issues.json">
+                    <Info/>
+                </File>
+                <File Location="coverage.json">
+                    <Info/>
+                </File>
+                <File Location="tested_with.json">
+                    <Info/>
+                </File>
+            </File>
+        </File>
+        <File Location="tests">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="CMFPlotterTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GenotypeIntegrationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GenotypeRGBTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GenotypeTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMFIntegrationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMFLensModelTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMFParameterIntegrationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMFPropertyTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMFVisualizationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="LensDensityAlgorithmTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="LensTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="NomogramsTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ObserverParametersRoundTripTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ObserverParametersTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PhotopigmentParametersTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PhotopigmentTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Pokorny1987LensTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PreReceptoralFilterTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="TestUtilities.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="data">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="cmf_verification_data.csv">
+                    <Info/>
+                </File>
+                <File Location="genotype_rgb_verification.csv">
+                    <Info/>
+                </File>
+                <File Location="genotype_shifts.csv">
+                    <Info/>
+                </File>
+                <File Location="govardovskii_reference.csv">
+                    <Info/>
+                </File>
+                <File Location="individual_verification.csv">
+                    <Info/>
+                </File>
+                <File Location="pipeline_verification.csv">
+                    <Info/>
+                </File>
+                <File Location="rgb_matrix.csv">
+                    <Info/>
+                </File>
+                <File Location="rgb_verification.csv">
+                    <Info/>
+                </File>
+                <File Location="standard_10deg.csv">
+                    <Info/>
+                </File>
+                <File Location="standard_2deg.csv">
+                    <Info/>
+                </File>
+                <File Location="template_verification.csv">
+                    <Info/>
+                </File>
+                <File Location="cvrl">
+                    <Info/>
+                    <DIR_SIGNIFIER Location="1">
+                        <Info/>
+                    </DIR_SIGNIFIER>
+                    <File Location="NOTES.md">
+                        <Info/>
+                    </File>
+                    <File Location="cie_2006_10deg_energy_1nm.csv">
+                        <Info/>
+                    </File>
+                    <File Location="cie_2006_10deg_quantal_1nm.csv">
+                        <Info/>
+                    </File>
+                    <File Location="cie_2006_2deg_energy_1nm.csv">
+                        <Info/>
+                    </File>
+                    <File Location="cie_2006_2deg_quantal_1nm.csv">
+                        <Info/>
+                    </File>
+                </File>
+            </File>
+            <File Location="CIEReferenceTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PyconeParityTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="parity">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location=".gitignore">
+                    <Info/>
+                </File>
+                <File Location="README.md">
+                    <Info/>
+                </File>
+                <File Location="compare.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="configs.json">
+                    <Info/>
+                </File>
+                <File Location="run_pycone.py">
+                    <Info/>
+                </File>
+            </File>
+            <File Location="CIE170Test.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="OutputStageTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PhotopigmentStageTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PreReceptoralStageTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRider2023MacularTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="VanDeKraatsVanNorren2007LensTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ChromaticityTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GovardovskiiA2Test.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="LuminanceTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ClassBehaviorTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ConeTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ConstructorGenotypeTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="DensityAlgorithmTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="EdgeCaseTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="EvaluateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="InputValidationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IntegrationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="NormalizationTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="OutputFormatTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PerformanceTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ReferenceParityTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StandardObserverTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRiderPhotopigmentTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ApplyGenotypeTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="DichromatBehaviorTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="XYZTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="AcrossTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GetMacularDensitySpectrumTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+        </File>
+        <File Location="toolbox">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="CMFPlotter.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Genotype.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="IndividualCMF.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="LensTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Nomograms.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="NormalizationCache.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ObserverParameters.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PhotopigmentParameters.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PhotopigmentTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="Pokorny1987LensTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="PreReceptoralFilter.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRiderLensTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="+enums">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="LOpsinTemplate.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="LensDensityAlgorithm.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="LensModel.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="MOpsinTemplate.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="MacularDensityAlgorithm.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="OutputFormat.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="PhotopigmentDensityAlgorithm.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="PhotopigmentModel.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="MacularModel.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
+            <File Location="+validators">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="mustBe3x3OrEmpty.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="mustBePositiveOrNaN.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="mustBeWavelengthVector.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="mustBeNonnegativeFiniteOrNaN.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="mustBeValidPrimaries.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
+            <File Location="CIE170.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="GovardovskiiPhotopigmentTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRiderPhotopigmentTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="+pipeline">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="OutputStage.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="PhotopigmentStage.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="PreReceptoralStage.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
+            <File Location="MacularTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRider2023MacularTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="VanDeKraatsVanNorren2007LensTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+        </File>
+        <File Location="ARCHITECTURE.md">
+            <Info/>
+        </File>
+        <File Location="figures">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="heroFigure.png">
+                <Info/>
+            </File>
+        </File>
+    </Files>
+    <Categories Location="Root">
+        <Category Location="FileClassCategory">
+            <Info DataType="None" Name="Classification" ReadOnly="1" SingleValued="1"/>
+            <Label Location="design">
+                <Info Name="Design" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="derived">
+                <Info Name="Derived" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="artifact">
+                <Info Name="Artifact" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="convenience">
+                <Info Name="Convenience" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="other">
+                <Info Name="Other" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="test">
+                <Info Name="Test" ReadOnly="READ_ONLY"/>
+            </Label>
+            <Label Location="none">
+                <Info Name="None" ReadOnly="READ_ONLY"/>
+            </Label>
+        </Category>
+    </Categories>
+    <ProjectPath Location="Root">
+        <Reference Location="12f7d672-02a9-48ea-8d14-ac759e507186">
+            <Info Ref="tests/data/cvrl" Type="Relative"/>
+        </Reference>
+        <Reference Location="13fca0fe-5640-4e6e-a667-2be96e249886">
+            <Info Ref="tests/parity/pycone/.git/refs/remotes/origin" Type="Relative"/>
+        </Reference>
+        <Reference Location="231070b2-6e2a-4332-9112-c19a18d0dbd6">
+            <Info Ref="tests/parity/pycone/.git/objects" Type="Relative"/>
+        </Reference>
+        <Reference Location="2bba8ed1-200d-4b7a-b883-e6ddf1cf2d4e">
+            <Info Ref="tests/parity/pycone" Type="Relative"/>
+        </Reference>
+        <Reference Location="3fd760b0-1316-4fae-9935-e4a98b3ecccd">
+            <Info Ref="tests" Type="Relative"/>
+        </Reference>
+        <Reference Location="4533ec7c-3ff2-4939-89a6-23254f1e1e0e">
+            <Info Ref="examples/utils" Type="Relative"/>
+        </Reference>
+        <Reference Location="4a07a7a8-556d-41ee-8e8d-ee90bb05893c">
+            <Info Ref="tests/parity/pycone/.git/refs" Type="Relative"/>
+        </Reference>
+        <Reference Location="5775c795-cf2c-4fc0-989d-3e90f72fdf46">
+            <Info Ref="toolbox" Type="Relative"/>
+        </Reference>
+        <Reference Location="5d55033c-5261-44f4-a614-9a857f5acd3c">
+            <Info Ref="tests/parity/pycone/.git/logs/refs" Type="Relative"/>
+        </Reference>
+        <Reference Location="609fa96f-370c-4926-a6e0-d1a9ab470078">
+            <Info Ref="tests/parity/pycone/.git/logs" Type="Relative"/>
+        </Reference>
+        <Reference Location="6b4f1e88-522a-49db-821c-d767efb0f2a0">
+            <Info Ref="tests/parity/pycone/.git/logs/refs/remotes/origin" Type="Relative"/>
+        </Reference>
+        <Reference Location="76e9c573-eb54-44a9-912b-cbb23cb3a89d">
+            <Info Ref="tests/parity/pycone/.git/objects/pack" Type="Relative"/>
+        </Reference>
+        <Reference Location="7e164a48-087a-4951-ba3f-785c7ecbcae0">
+            <Info Ref="tests/parity/pycone/.git" Type="Relative"/>
+        </Reference>
+        <Reference Location="80b1e118-0868-4ac5-a901-deb566f5326f">
+            <Info Ref="examples" Type="Relative"/>
+        </Reference>
+        <Reference Location="889aafb9-0636-4331-9981-11d780426604">
+            <Info Ref="tests/parity/pycone/.git/refs/tags" Type="Relative"/>
+        </Reference>
+        <Reference Location="a876d954-09de-4b07-8e10-758a02b903f7">
+            <Info Ref="tests/parity/pycone/.git/refs/remotes" Type="Relative"/>
+        </Reference>
+        <Reference Location="b3583d12-a7b4-43af-bfa9-256a4edbd429">
+            <Info Ref="tests/parity/pycone/.git/logs/refs/remotes" Type="Relative"/>
+        </Reference>
+        <Reference Location="c1912dfe-a308-4a2a-8b66-61cf4f283ba3">
+            <Info Ref="tests/parity/pycone/.git/objects/info" Type="Relative"/>
+        </Reference>
+        <Reference Location="c1f36207-8b9b-4ef8-95e1-b984df397d7e">
+            <Info Ref="buildUtilities" Type="Relative"/>
+        </Reference>
+        <Reference Location="c6a80443-ab3f-4866-b3b7-94a6d9bd82e8">
+            <Info Ref="tests/parity/pycone/.git/info" Type="Relative"/>
+        </Reference>
+        <Reference Location="ce7ed92a-8780-4956-b2e0-717f56da4eb4">
+            <Info Ref="tests/parity/pycone/.git/logs/refs/heads" Type="Relative"/>
+        </Reference>
+        <Reference Location="e915fdce-ee1b-428e-9fe6-4d19c0edc46c">
+            <Info Ref="tests/parity" Type="Relative"/>
+        </Reference>
+        <Reference Location="ecb41fad-6549-42cb-b4a7-018f2435d275">
+            <Info Ref="tests/parity/pycone/.git/hooks" Type="Relative"/>
+        </Reference>
+        <Reference Location="ed5df713-dfbf-4e5f-a05b-311eebae7c21">
+            <Info Ref="tests/parity/pycone/.git/refs/heads" Type="Relative"/>
+        </Reference>
+        <Reference Location="f946ece5-cede-400b-a907-1db90fbf2e76">
+            <Info Ref="tests/data" Type="Relative"/>
+        </Reference>
+    </ProjectPath>
+</project>

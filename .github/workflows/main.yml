@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    name: Static Analysis (codeIssues)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up MATLAB (latest)
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: latest
+
+      - name: Run check task
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: check
+
+      - name: Upload code-issues badge
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-code-issues
+          path: reports/badge/code_issues.json
+
+  test:
+    name: Tests (R${{ matrix.release }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        release:
+          - R2023b
+          - R2024b
+          - R2025b
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up MATLAB (${{ matrix.release }})
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ matrix.release }}
+
+      - name: Set up Python (for pycone parity test)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Clone pycone reference for parity test
+        # PyconeParityTest treats a missing pycone clone as a fatal
+        # error in CI (CI=true is set automatically by GitHub Actions),
+        # so the clone here is a release-gate dependency, not optional.
+        run: |
+          git clone --depth 1 \
+            https://github.com/CVRL-IoO/Individual-CMFs.git \
+            tests/parity/pycone
+
+      - name: Install pycone Python dependencies
+        working-directory: tests/parity/pycone
+        run: |
+          # pycone is a bare collection of scripts (no requirements.txt /
+          # pyproject.toml), so install its transitive runtime deps directly.
+          # Versions are pinned: numpy 2.4 tweaks log10 output enough to
+          # break the 19_logoutput parity test, which compares MATLAB
+          # log values against pycone's at AbsTol=1e-10.
+          uv pip install --system "numpy==2.0.2" "scipy==1.13.1"
+          if [ -f requirements.txt ]; then uv pip install --system -r requirements.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then
+            uv pip install --system -e .
+          fi
+
+      - name: Run test task
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: test
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.release }}
+          path: |
+            reports/junit.xml
+            reports/coverage.xml
+
+      - name: Upload coverage badge (latest only)
+        if: matrix.release == 'R2025b'
+        uses: actions/upload-artifact@v4
+        with:
+          name: badge-coverage
+          path: reports/badge/coverage.json
+
+  update-badges:
+    name: Commit badges to main
+    needs: [check, test]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download code-issues badge
+        uses: actions/download-artifact@v4
+        with:
+          name: badge-code-issues
+          path: reports/badge
+
+      - name: Download coverage badge
+        uses: actions/download-artifact@v4
+        with:
+          name: badge-coverage
+          path: reports/badge
+
+      - name: Build consolidated tested-with badge
+        run: |
+          cat > reports/badge/tested_with.json <<'EOF'
+          {
+            "schemaVersion": 1,
+            "label": "tested with",
+            "message": "R2023b | R2024b | R2025b",
+            "color": "blue"
+          }
+          EOF
+
+      - name: Commit badge updates
+        run: |
+          if git diff --quiet -- reports/badge; then
+            echo "No badge changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/badge
+          git commit -m "ci: refresh shields.io badge endpoints"
+          git push

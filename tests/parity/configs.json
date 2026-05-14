@@ -1,0 +1,180 @@
+[
+  {
+    "name": "01_standard_2deg",
+    "description": "CIE 2006 2-deg standard observer",
+    "matlab": {"StandardObserver": 2},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "02_standard_10deg",
+    "description": "CIE 2006 10-deg standard observer",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "03_fieldsize_4",
+    "description": "FieldSize=4 deg (formula-based densities)",
+    "matlab": {"Age": 32, "FieldSize": 4},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "04_fieldsize_6",
+    "description": "FieldSize=6 deg (formula-based densities)",
+    "matlab": {"Age": 32, "FieldSize": 6},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "05_fieldsize_8",
+    "description": "FieldSize=8 deg (formula-based densities)",
+    "matlab": {"Age": 32, "FieldSize": 8},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "06_lserine_template",
+    "description": "L-cone Serine variant",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine"},
+    "pycone": {"L_template": "Lser"}
+  },
+  {
+    "name": "07_lalanine_template",
+    "description": "L-cone Alanine variant",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Alanine"},
+    "pycone": {"L_template": "Lala"}
+  },
+  {
+    "name": "08_lserine_shift_plus_2",
+    "description": "Serine + L_LambdaMaxShift=+2",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": 2},
+    "pycone": {"L_template": "Lser"}
+  },
+  {
+    "name": "09_lserine_shift_minus_3",
+    "description": "Serine + L_LambdaMaxShift=-3",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -3},
+    "pycone": {"L_template": "Lser"}
+  },
+  {
+    "name": "10_lalanine_shift_minus_1",
+    "description": "Alanine + L_LambdaMaxShift=-1",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Alanine", "L_LambdaMaxShift": -1},
+    "pycone": {"L_template": "Lala"}
+  },
+  {
+    "name": "11_mshift_minus_2",
+    "description": "M_LambdaMaxShift=-2",
+    "matlab": {"Age": 32, "FieldSize": 10, "M_LambdaMaxShift": -2},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "12_mshift_plus_3",
+    "description": "M_LambdaMaxShift=+3",
+    "matlab": {"Age": 32, "FieldSize": 10, "M_LambdaMaxShift": 3},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "13_sshift_plus_2",
+    "description": "S_LambdaMaxShift=+2",
+    "matlab": {"Age": 32, "FieldSize": 10, "S_LambdaMaxShift": 2},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "14_lensdensity_custom",
+    "description": "Custom LensDensity=2.0 (Stockman-Rider lens, age 32)",
+    "matlab": {"Age": 32, "FieldSize": 10, "LensDensity": 2.0},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "15_maculardensity_custom",
+    "description": "Custom MacularDensity=0.6",
+    "matlab": {"Age": 32, "FieldSize": 10, "MacularDensity": 0.6},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "16_lod_custom",
+    "description": "Custom Lod=0.5",
+    "matlab": {"Age": 32, "FieldSize": 10, "Lod": 0.5},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "17_mod_custom",
+    "description": "Custom Mod=0.45",
+    "matlab": {"Age": 32, "FieldSize": 10, "Mod": 0.45},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "18_sod_custom",
+    "description": "Custom Sod=0.35",
+    "matlab": {"Age": 32, "FieldSize": 10, "Sod": 0.35},
+    "pycone": {"L_template": "Lmean"}
+  },
+  {
+    "name": "19_logoutput",
+    "description": "Standard 10-deg with LogOutput=true",
+    "matlab": {"StandardObserver": 10, "LogOutput": true},
+    "pycone": {"L_template": "Lmean", "log_output": true}
+  },
+  {
+    "name": "20_combined_custom_densities_and_shifts",
+    "description": "Combined: Serine + shifts + custom Lod/Mod/Sod + macular/lens",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine",
+               "L_LambdaMaxShift": 1, "M_LambdaMaxShift": -1, "S_LambdaMaxShift": 0.5,
+               "Lod": 0.42, "Mod": 0.40, "Sod": 0.32,
+               "MacularDensity": 0.15, "LensDensity": 1.85},
+    "pycone": {"L_template": "Lser"}
+  },
+  {
+    "name": "21_subnm_05",
+    "description": "Standard 10-deg evaluated at 0.5 nm steps",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"},
+    "wavelength": {"min": 390, "max": 780, "step": 0.5}
+  },
+  {
+    "name": "22_subnm_01",
+    "description": "Standard 10-deg evaluated at 0.1 nm steps",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"},
+    "wavelength": {"min": 400, "max": 700, "step": 0.1}
+  },
+  {
+    "name": "23_edge_short",
+    "description": "Short-wavelength edge (360-780 nm)",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"},
+    "wavelength": {"min": 360, "max": 780, "step": 1}
+  },
+  {
+    "name": "24_edge_long",
+    "description": "Long-wavelength edge (390-830 nm)",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"},
+    "wavelength": {"min": 390, "max": 830, "step": 1}
+  },
+  {
+    "name": "25_edge_full",
+    "description": "Full pycone wavelength range (360-830 nm)",
+    "matlab": {"StandardObserver": 10},
+    "pycone": {"L_template": "Lmean"},
+    "wavelength": {"min": 360, "max": 830, "step": 1}
+  },
+  {
+    "name": "26_hybrid_M_in_L",
+    "description": "L-cone hybrid: M template positioned at L-cone slot",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "MinL"},
+    "pycone": {"L_template": "M-in-L"}
+  },
+  {
+    "name": "27_hybrid_L_in_M",
+    "description": "M-cone hybrid: L-Serine template positioned at M-cone slot",
+    "matlab": {"Age": 32, "FieldSize": 10, "M_OpsinTemplate": "LinM"},
+    "pycone": {"L_template": "Lmean", "M_template": "L-in-M"}
+  },
+  {
+    "name": "28_hybrid_both_with_shifts",
+    "description": "Both hybrids combined with non-zero shifts",
+    "matlab": {"Age": 32, "FieldSize": 10,
+               "L_OpsinTemplate": "MinL", "M_OpsinTemplate": "LinM",
+               "L_LambdaMaxShift": 1.5, "M_LambdaMaxShift": -1.5},
+    "pycone": {"L_template": "M-in-L", "M_template": "L-in-M"}
+  }
+]

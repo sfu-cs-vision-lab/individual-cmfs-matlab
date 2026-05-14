@@ -1,0 +1,72 @@
+# Autosave files
+*.asv
+*.m~
+*.autosave
+*.slx.r*
+*.mdl.r*
+
+# Derived content-obscured files
+*.p
+
+# Compiled MEX files
+*.mex*
+
+# Packaged app and toolbox files
+*.mlappinstall
+*.mltbx
+
+# buildtool package output (.mltbx beta artifacts; published via GitHub Releases)
+dist/
+
+# Deployable archives
+*.ctf
+
+# Generated helpsearch folders
+helpsearch*/
+
+# Code generation folders
+slprj/
+sccprj/
+codegen/
+
+# Cache files
+*.slxc
+
+# Cloud based storage dotfile
+.MATLABDriveTag
+
+# buildtool cache folder
+.buildtool/
+
+# SimBiology backup files
+*.sbproj.backup
+*.sbproj.bak
+
+# graphify outputs (regenerated locally, not source)
+graphify-out/
+.graphifyignore
+
+# Reference papers (large, not source)
+docs/
+
+# Generated build reports (keep badge JSONs but ignore raw reports)
+reports/*.xml
+reports/*.html
+coverage_report/
+
+# Local IDE / agent state
+.claude/
+
+# MATLAB test framework derived state
+derived/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
