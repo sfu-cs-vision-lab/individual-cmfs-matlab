@@ -181,7 +181,7 @@ function packageTask(context)
         "Source, examples, and issue tracker: " + ...
         "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab";
     opts.MinimumMatlabRelease = "R2023b";
-    opts.MaximumMatlabRelease = "R2025b";
+    opts.MaximumMatlabRelease = "R2026a";
     opts.OutputFile = outputFile;
 
     matlab.addons.toolbox.packageToolbox(opts);
