@@ -23,6 +23,9 @@
                 <File Location="main.yml">
                     <Info/>
                 </File>
+                <File Location="release.yml">
+                    <Info/>
+                </File>
             </File>
         </File>
         <File Location="CITATION.cff">
@@ -966,6 +969,24 @@
                 <Info/>
             </File>
         </File>
+        <File Location="VERSION">
+            <Info/>
+        </File>
+        <File Location="resources">
+            <Info/>
+            <DIR_SIGNIFIER Location="1">
+                <Info/>
+            </DIR_SIGNIFIER>
+            <File Location="toolbox">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="identifier.txt">
+                    <Info/>
+                </File>
+            </File>
+        </File>
     </Files>
     <Categories Location="Root">
         <Category Location="FileClassCategory">
@@ -990,6 +1011,48 @@
             </Label>
             <Label Location="none">
                 <Info Name="None" ReadOnly="READ_ONLY"/>
+            </Label>
+        </Category>
+        <Category Location="Deployment_Category_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+            <Info DataType="None" Name="Python Package - PythonPackage1" ReadOnly="0" SingleValued="0"/>
+            <Label Location="Deployment_AdditionalFiles_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Additional File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_ExportedFunctionFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Exported Function File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_SamplesFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Sample File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_DocumentationFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Documentation File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_AddRemoveProgramsIconFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Windows Apps &amp; Features Icon File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_InstallerAdditionalFiles_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Installer Additional Files" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_InstallerIconFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Installer Icon File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_InstallerSplashFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Installer Splash Image File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_InstalerLogoFile_b727ac9d-7625-4001-82fe-41ccb3f75eb0">
+                <Info Name="Installer Logo Image File" ReadOnly="WRITABLE"/>
+            </Label>
+        </Category>
+        <Category Location="Deployment_Category_11dc78f7-6867-423e-bbaa-44fae82172c3">
+            <Info DataType="None" Name="Toolbox - Toolbox1" ReadOnly="0" SingleValued="0"/>
+            <Label Location="Deployment_ToolboxImageFile_11dc78f7-6867-423e-bbaa-44fae82172c3">
+                <Info Name="Toolbox Image File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_ToolboxAppGalleryFiles_11dc78f7-6867-423e-bbaa-44fae82172c3">
+                <Info Name="App Gallery File" ReadOnly="WRITABLE"/>
+            </Label>
+            <Label Location="Deployment_GettingStartedGuideFile_11dc78f7-6867-423e-bbaa-44fae82172c3">
+                <Info Name="Getting Started Guide" ReadOnly="WRITABLE"/>
             </Label>
         </Category>
     </Categories>
@@ -1070,4 +1133,10 @@
             <Info Ref="tests/data" Type="Relative"/>
         </Reference>
     </ProjectPath>
+    <Files Location="MathWorksDeploymentConfigs">
+        <DIR_SIGNIFIER Location="1">
+            <Info/>
+        </DIR_SIGNIFIER>
+        <Info configMapData="{}"/>
+    </Files>
 </project>
