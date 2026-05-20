@@ -223,7 +223,7 @@ buildtool package         % Build a redistributable .mltbx into dist/ (depends o
                           % from resources/toolbox/identifier.txt.
 ```
 
-CI runs the same buildfile across MATLAB R2023b, R2024b, and R2025b on every push and pull request.
+CI runs the same buildfile across MATLAB R2023b, R2024b, R2025b, and R2026a on every push and pull request.
 
 ## Citation
 

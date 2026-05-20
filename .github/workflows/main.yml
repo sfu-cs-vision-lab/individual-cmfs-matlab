@@ -43,6 +43,7 @@ jobs:
           - R2023b
           - R2024b
           - R2025b
+          - R2026a
     steps:
       - uses: actions/checkout@v6
 
@@ -97,7 +98,7 @@ jobs:
             reports/coverage.xml
 
       - name: Upload coverage badge (latest only)
-        if: matrix.release == 'R2025b'
+        if: matrix.release == 'R2026a'
         uses: actions/upload-artifact@v4
         with:
           name: badge-coverage
@@ -131,7 +132,7 @@ jobs:
           {
             "schemaVersion": 1,
             "label": "tested with",
-            "message": "R2023b | R2024b | R2025b",
+            "message": "R2023b | R2024b | R2025b | R2026a",
             "color": "blue"
           }
           EOF
