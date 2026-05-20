@@ -82,6 +82,14 @@ cleanupWarn = onCleanup(@() reenableWarnings(expectedWarnings)); %#ok<NASGU>
 for k = 1:nConfigs
     cfg = configs{k};
 
+    % Per-config RelTol override (log_output configs need a looser
+    % RelTol to absorb cross-implementation log10 drift between
+    % MATLAB's libm and numpy's, which varies by Azure CI host CPU).
+    cfgRelTol = options.RelTol;
+    if isfield(cfg, 'tol') && isfield(cfg.tol, 'RelTol')
+        cfgRelTol = cfg.tol.RelTol;
+    end
+
     obs = buildObserver(cfg.matlab);
 
     % Per-config wavelength grid (defaults to 390:1:780).
@@ -139,7 +147,7 @@ for k = 1:nConfigs
         pyVals = [pyTable.("L_" + fmt), pyTable.("M_" + fmt), pyTable.("S_" + fmt)];
 
         [maxAbs, maxRel] = compareArrays(matVals, pyVals);
-        thisPass = (maxAbs < options.AbsTol) || (maxRel < options.RelTol);
+        thisPass = (maxAbs < options.AbsTol) || (maxRel < cfgRelTol);
         cfgPass = cfgPass && thisPass;
         cfgMaxAbs.(fmt) = maxAbs;
         cfgMaxRel.(fmt) = maxRel;
@@ -154,7 +162,7 @@ for k = 1:nConfigs
     matRGB = obs.RGB(wl);
     pyRGB = [pyTable.R_cmf, pyTable.G_cmf, pyTable.B_cmf];
     [RGBAbs, RGBRel] = compareArrays(matRGB, pyRGB);
-    RGBPass = (RGBAbs < options.AbsTol) || (RGBRel < options.RelTol);
+    RGBPass = (RGBAbs < options.AbsTol) || (RGBRel < cfgRelTol);
     cfgPass = cfgPass && RGBPass;
     cfgMaxAbs.RGB = RGBAbs;
     cfgMaxRel.RGB = RGBRel;

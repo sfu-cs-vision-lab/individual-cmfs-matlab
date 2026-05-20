@@ -111,7 +111,8 @@
     "name": "19_logoutput",
     "description": "Standard 10-deg with LogOutput=true",
     "matlab": {"StandardObserver": 10, "LogOutput": true},
-    "pycone": {"L_template": "Lmean", "log_output": true}
+    "pycone": {"L_template": "Lmean", "log_output": true},
+    "tol": {"RelTol": 3e-6}
   },
   {
     "name": "20_combined_custom_densities_and_shifts",
