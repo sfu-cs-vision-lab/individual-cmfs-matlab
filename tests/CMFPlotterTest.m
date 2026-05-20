@@ -641,6 +641,14 @@ classdef CMFPlotterTest < matlab.unittest.TestCase
             tempFile = char(fullfile(tempdir, "cmfplotter_export_test." + ExportFormat.fmt));
             cleanup = onCleanup(@() safeDelete(tempFile)); %#ok<NASGU>
 
+            % MATLAB:graphics:HardwareUnavailable fires on headless CI runners
+            % (no GPU) from R2026a's print path. It is environmental, not
+            % triggered by toolbox code, and absent for end users with
+            % graphics acceleration. Suppress it explicitly so the assertion
+            % still catches any other unexpected warning.
+            warnState = warning('off', 'MATLAB:graphics:HardwareUnavailable');
+            warnCleanup = onCleanup(@() warning(warnState)); %#ok<NASGU>
+
             testCase.verifyWarningFree( ...
                 @() testCase.Plotter.exportFigure(tempFile, Format=ExportFormat.fmt));
             testCase.verifyTrue(isfile(tempFile));
