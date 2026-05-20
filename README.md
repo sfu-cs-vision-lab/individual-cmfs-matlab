@@ -61,9 +61,10 @@ See [`tests/parity/README.md`](tests/parity/README.md) for pycone source-line re
 The toolbox is distributed as a `.mltbx` Add-On while in beta (not yet on MATLAB Central). Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
 
 - **Double-click** the `.mltbx` file -- MATLAB's Add-On Explorer will install it.
-- **Or from the MATLAB command window:**
+- **Or from the MATLAB command window** (downloads and installs the latest release):
   ```matlab
-  matlab.addons.install("individual-cmfs-matlab-0.1.0-beta.1.mltbx")
+  url = "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases/latest/download/individual-cmfs-matlab.mltbx";
+  matlab.addons.install(websave(tempname + ".mltbx", url));
   ```
 
 The Add-On adds `toolbox/` to your MATLAB path on every session and registers the toolbox with the Add-On Manager (uninstall there if needed). Examples and tests are not included in the `.mltbx`; clone the repo if you need them.
@@ -218,8 +219,8 @@ buildtool clean           % Remove generated reports
 buildtool check           % Static analysis on toolbox/ via codeIssues
 buildtool test            % Run tests, emit JUnit XML and Cobertura coverage to reports/
 buildtool package         % Build a redistributable .mltbx into dist/ (depends on check + test).
-                          % Version is read from VERSION (currently 0.1.0-beta.1) and the
-                          % toolbox UUID from resources/toolbox/identifier.txt.
+                          % Version is read from VERSION and the toolbox UUID
+                          % from resources/toolbox/identifier.txt.
 ```
 
 CI runs the same buildfile across MATLAB R2023b, R2024b, and R2025b on every push and pull request.

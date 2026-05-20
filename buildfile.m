@@ -140,8 +140,8 @@ end
 function packageTask(context)
 % Build a redistributable .mltbx into dist/.
 %
-%   Reads version from VERSION (one line, e.g. "0.1.0-beta.1") and
-%   the toolbox identifier UUID from resources/toolbox/identifier.txt
+%   Reads version from VERSION (one line, SemVer) and the toolbox
+%   identifier UUID from resources/toolbox/identifier.txt
 %   (generated once via uuidgen and committed; preserves Add-On
 %   identity across versions). Ships toolbox/ as the source.
     rootDir = context.Plan.RootFolder;

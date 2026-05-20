@@ -72,6 +72,14 @@ jobs:
         with:
           tasks: package
 
+      - name: Add stable-named copy for latest-redirect URL
+        # The versioned .mltbx (e.g. individual-cmfs-matlab-0.1.0-beta.2.mltbx)
+        # is preserved as the archival asset. This additional versionless copy
+        # is the target of the releases/latest/download/...mltbx redirect URL
+        # used in the README install snippet, so the snippet keeps working
+        # across releases without a README edit.
+        run: cp dist/individual-cmfs-matlab-*.mltbx dist/individual-cmfs-matlab.mltbx
+
       - name: Upload .mltbx to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
