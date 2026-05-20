@@ -35,14 +35,15 @@ jobs:
           echo "VERSION and tag agree: $tag_version"
 
       - name: Set up MATLAB (release pinned to MaximumMatlabRelease)
-        # Pin to the release the .mltbx declares as MaximumMatlabRelease so
-        # the package build runs in the same environment supported toolbox
-        # users will run. "latest" can drift onto an unsupported MATLAB
-        # (e.g. R2026.1 emits an exportgraphics axes-toolbar warning that
-        # R2025b doesn't).
+        # Must match buildfile.m's MaximumMatlabRelease: ToolboxOptions
+        # rejects a Maximum newer than the running MATLAB at package time.
+        # Bumping MaximumMatlabRelease therefore requires bumping this pin
+        # too. Stay on a specific release rather than "latest" so a future
+        # MATLAB release can't silently take over the package build before
+        # the toolbox has been verified on it.
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025b
+          release: R2026a
 
       - name: Set up Python (for pycone parity test)
         uses: actions/setup-python@v5
