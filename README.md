@@ -254,7 +254,7 @@ When you opt into a non-default lens, photopigment, or macular model, please als
 
 ## License
 
-This toolbox is released under the **GNU Affero General Public License v3.0** (see [`LICENSE`](LICENSE)). Academic, individual, and industry-internal research use are permitted; productization in closed-source products or SaaS is not permitted under AGPL. A commercial license is available on request -- see [`LICENSING.md`](LICENSING.md) for the policy and contact path.
+This toolbox is released under the **GNU Affero General Public License v3.0** (see [`LICENSE`](LICENSE)). Academic, individual, and industry-internal research use are permitted, including publication of research results by corporate authors. Productization in closed-source products or SaaS is not permitted under AGPL; a commercial license is available on request. See [`LICENSING.md`](LICENSING.md) for the full policy and contact path.
 
 ## Copyright
 
