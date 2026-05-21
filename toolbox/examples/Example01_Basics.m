@@ -1,5 +1,5 @@
-%[text] # Example 01: Getting Started
-%[text] Construct a default observer, evaluate cone sensitivities, and visualize the three fundamentals.
+%[text] # Example 01: The Basics
+%[text] Construct a default observer, evaluate cone sensitivities, and visualize the three fundamentals. (For a map of the whole example set, see the Getting Started guide.)
 %[text] **Time:** about 5 minutes.
 exampleDefaults();
 %%
