@@ -83,154 +83,11 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
-            <File Location="README.md">
-                <Info/>
-            </File>
-            <File Location="exampleDefaults.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example01_GettingStarted.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example02_StandardObservers.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example04_AgingEffects.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example05_GeneticVariants.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example06_PhotopigmentModels.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example08_OutputFormats.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example15_DataExport.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example09_RGBColorMatching.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example10_ChromaticityDiagrams.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example03_FieldSizeEffects.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example16_NormalizationMethods.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example07_ComputationalPipeline.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example12_ObserverComparison.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example14_AdvancedCustomization.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example17_PublicationFigures.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example13_Dichromacy.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example11_Luminance.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
-            <File Location="Example18_ObserverMetamerism.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
             <File Location="utils">
                 <Info/>
                 <DIR_SIGNIFIER Location="1">
                     <Info/>
                 </DIR_SIGNIFIER>
-                <File Location="wavelengthToRGB.m">
-                    <Info>
-                        <Category UUID="FileClassCategory">
-                            <Label UUID="design"/>
-                        </Category>
-                    </Info>
-                </File>
             </File>
         </File>
         <File Location="reports">
@@ -956,6 +813,174 @@
                     </Category>
                 </Info>
             </File>
+            <File Location="doc">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="GettingStarted.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
+            <File Location="examples">
+                <Info/>
+                <DIR_SIGNIFIER Location="1">
+                    <Info/>
+                </DIR_SIGNIFIER>
+                <File Location="README.md">
+                    <Info/>
+                </File>
+                <File Location="exampleDefaults.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="utils">
+                    <Info/>
+                    <DIR_SIGNIFIER Location="1">
+                        <Info/>
+                    </DIR_SIGNIFIER>
+                    <File Location="wavelengthToRGB.m">
+                        <Info>
+                            <Category UUID="FileClassCategory">
+                                <Label UUID="design"/>
+                            </Category>
+                        </Info>
+                    </File>
+                </File>
+                <File Location="Example01_Basics.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example02_StandardObservers.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example03_FieldSizeEffects.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example04_AgingEffects.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example05_GeneticVariants.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example06_PhotopigmentModels.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example07_ComputationalPipeline.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example08_OutputFormats.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example09_RGBColorMatching.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example10_ChromaticityDiagrams.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example11_Luminance.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example12_ObserverComparison.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example13_Dichromacy.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example14_AdvancedCustomization.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example15_DataExport.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example16_NormalizationMethods.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example17_PublicationFigures.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example18_ObserverMetamerism.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+            </File>
         </File>
         <File Location="ARCHITECTURE.md">
             <Info/>
@@ -986,6 +1011,21 @@
                     <Info/>
                 </File>
             </File>
+        </File>
+        <File Location="CHANGELOG.md">
+            <Info/>
+        </File>
+        <File Location="CODE_OF_CONDUCT.md">
+            <Info/>
+        </File>
+        <File Location="CONTRIBUTING.md">
+            <Info/>
+        </File>
+        <File Location="LICENSING.md">
+            <Info/>
+        </File>
+        <File Location="SECURITY.md">
+            <Info/>
         </File>
     </Files>
     <Categories Location="Root">
@@ -1073,7 +1113,7 @@
             <Info Ref="tests" Type="Relative"/>
         </Reference>
         <Reference Location="4533ec7c-3ff2-4939-89a6-23254f1e1e0e">
-            <Info Ref="examples/utils" Type="Relative"/>
+            <Info Ref="toolbox/examples/utils" Type="Relative"/>
         </Reference>
         <Reference Location="4a07a7a8-556d-41ee-8e8d-ee90bb05893c">
             <Info Ref="tests/parity/pycone/.git/refs" Type="Relative"/>
@@ -1097,7 +1137,7 @@
             <Info Ref="tests/parity/pycone/.git" Type="Relative"/>
         </Reference>
         <Reference Location="80b1e118-0868-4ac5-a901-deb566f5326f">
-            <Info Ref="examples" Type="Relative"/>
+            <Info Ref="toolbox/examples" Type="Relative"/>
         </Reference>
         <Reference Location="889aafb9-0636-4331-9981-11d780426604">
             <Info Ref="tests/parity/pycone/.git/refs/tags" Type="Relative"/>
@@ -1107,6 +1147,9 @@
         </Reference>
         <Reference Location="b3583d12-a7b4-43af-bfa9-256a4edbd429">
             <Info Ref="tests/parity/pycone/.git/logs/refs/remotes" Type="Relative"/>
+        </Reference>
+        <Reference Location="ba991dd8-d183-40c5-9418-b2ed9c90c713">
+            <Info Ref="toolbox/doc" Type="Relative"/>
         </Reference>
         <Reference Location="c1912dfe-a308-4a2a-8b66-61cf4f283ba3">
             <Info Ref="tests/parity/pycone/.git/objects/info" Type="Relative"/>

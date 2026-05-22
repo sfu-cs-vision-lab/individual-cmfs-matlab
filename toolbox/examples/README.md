@@ -2,6 +2,8 @@
 
 This folder contains 18 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
 
+For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`) -- it is also the guide registered with the Add-On Manager.
+
 ## Learning Path
 
 Roughly ordered from foundations to advanced usage:
@@ -9,7 +11,7 @@ Roughly ordered from foundations to advanced usage:
 ### Foundations
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex01** | Getting Started | ~5 min | Create your first observer and plot cone fundamentals |
+| **ex01** | The Basics | ~5 min | Create your first observer, evaluate cones, and plot the fundamentals |
 | **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ color matching functions |
 
 ### Physiological Variations
@@ -51,8 +53,8 @@ In the MATLAB Editor, open the file and click **Run**. The Editor renders `%[tex
 From the command line:
 
 ```matlab
-addpath('toolbox')                  % once per session
-run('examples/Example01_GettingStarted.m')
+addpath(genpath('toolbox'))         % once per session (adds examples + utils)
+run('Example01_Basics.m')
 ```
 
 ## Prerequisites

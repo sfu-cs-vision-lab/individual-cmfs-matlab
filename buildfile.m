@@ -24,7 +24,7 @@ function plan = buildfile
     rootDir = fileparts(mfilename('fullpath'));
     addpath(fullfile(rootDir, 'toolbox'));
     addpath(fullfile(rootDir, 'buildUtilities'));
-    addpath(fullfile(rootDir, 'examples'));
+    addpath(genpath(fullfile(rootDir, 'toolbox', 'examples')));
 
     plan = buildplan(localfunctions);
 
@@ -61,6 +61,15 @@ function checkTask(context)
     sourceDir = fullfile(rootDir, 'toolbox');
     issues = codeIssues(sourceDir);
 
+    % codeIssues recurses, so it also scans the bundled tutorial scripts
+    % under toolbox/examples and the getting-started guide under
+    % toolbox/doc. Those are Live Scripts (teaching patterns, intentional
+    % unused outputs) that ship with the toolbox but must not gate static
+    % analysis of the library code -- restrict to library source.
+    libraryIssues = issues.Issues( ...
+        ~contains(issues.Issues.FullFilename, fullfile("toolbox", "examples")) & ...
+        ~contains(issues.Issues.FullFilename, fullfile("toolbox", "doc")), :);
+
     reportsDir = fullfile(rootDir, 'reports');
     if ~isfolder(reportsDir)
         mkdir(reportsDir);
@@ -71,15 +80,15 @@ function checkTask(context)
         mkdir(badgeDir);
     end
 
-    blockingIssues = issues.Issues(issues.Issues.Severity ~= "info", :);
+    blockingIssues = libraryIssues(libraryIssues.Severity ~= "info", :);
     nBlocking = height(blockingIssues);
 
     if isCIEnvironment()
         writeCodeIssuesBadge(fullfile(badgeDir, 'code_issues.json'), nBlocking);
     end
 
-    if height(issues.Issues) > 0
-        disp(issues.Issues);
+    if height(libraryIssues) > 0
+        disp(libraryIssues);
     end
 
     if nBlocking > 0
@@ -182,6 +191,11 @@ function packageTask(context)
         "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab";
     opts.MinimumMatlabRelease = "R2023b";
     opts.MaximumMatlabRelease = "R2026a";
+    % Register the plain-text Getting Started Live Script so the Add-On
+    % Manager shows a "Getting Started" link after install. The file lives
+    % under the packaged toolbox folder (toolbox/doc), so it is already in
+    % opts.ToolboxFiles.
+    opts.ToolboxGettingStartedGuide = fullfile(toolboxDir, 'doc', 'GettingStarted.m');
     opts.OutputFile = outputFile;
 
     matlab.addons.toolbox.packageToolbox(opts);

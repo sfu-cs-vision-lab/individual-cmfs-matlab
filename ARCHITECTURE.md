@@ -2,7 +2,7 @@
 
 This document describes how the toolbox is organized, how the classes
 relate to each other, and where to add new code. For a usage tour see
-[`examples/README.md`](examples/README.md); for the public API see
+[`toolbox/examples/README.md`](toolbox/examples/README.md); for the public API see
 the class docstrings (`help IndividualCMF`, etc.).
 
 ## Repository layout
@@ -30,8 +30,9 @@ individual-cmfs-matlab/
 |   |-- CMFPlotter.m            Visualization layer used by IndividualCMF plot wrappers
 |   |-- +pipeline/              Pure-function compute stages (Photopigment, PreReceptoral, Output)
 |   |-- +enums/                 Strategy/algorithm enum types
-|   `-- +validators/            Reusable mustBe* validators
-|-- examples/                   18 plain-text Live Scripts (curated tutorial path)
+|   |-- +validators/            Reusable mustBe* validators
+|   |-- doc/                    GettingStarted.m (registered Getting Started guide)
+|   `-- examples/               18 plain-text Live Scripts (curated tutorial path) + utils/
 |-- tests/                      Unit tests, integration tests, parity tests
 |   |-- data/                   CSV reference data
 |   `-- parity/                 Pycone parity adapter and configs
@@ -503,7 +504,7 @@ stable API; internals may evolve faster than the top-level
 ## See also
 
 - [`README.md`](README.md) - install and quickstart
-- [`examples/README.md`](examples/README.md) - the curated learning
+- [`toolbox/examples/README.md`](toolbox/examples/README.md) - the curated learning
   path through the 18 example scripts
 - [`tests/parity/README.md`](tests/parity/README.md) - pycone parity
   protocol
