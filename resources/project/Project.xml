@@ -1012,6 +1012,21 @@
                 </File>
             </File>
         </File>
+        <File Location="CHANGELOG.md">
+            <Info/>
+        </File>
+        <File Location="CODE_OF_CONDUCT.md">
+            <Info/>
+        </File>
+        <File Location="CONTRIBUTING.md">
+            <Info/>
+        </File>
+        <File Location="LICENSING.md">
+            <Info/>
+        </File>
+        <File Location="SECURITY.md">
+            <Info/>
+        </File>
     </Files>
     <Categories Location="Root">
         <Category Location="FileClassCategory">

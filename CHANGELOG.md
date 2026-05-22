@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-beta.4]
+
+### Added
+- The worked examples and a new **Getting Started guide** now ship inside the `.mltbx` and install on the MATLAB path (adopts the [MathWorks toolbox layout](https://github.com/mathworks/toolboxdesign)). The guide (`toolbox/doc/GettingStarted.m`) is registered with the Add-On Manager and gives a one-minute orientation plus a linked index of the examples; reach it from the command window with `open GettingStarted`.
+- `LICENSING.md` documenting the AGPL-3.0 posture (academic, individual, and industry-internal research use are permitted, including corporate-authored publications; productization in closed-source products or SaaS requires a commercial license) and the contact path for commercial inquiries.
+
+### Changed
+- Repository restructured to the MathWorks toolbox layout: `examples/` moved to `toolbox/examples/` so it packages with the toolbox. `Example01_GettingStarted.m` renamed to `Example01_Basics.m`, since the getting-started role now belongs to the registered guide. Example numbering and content are otherwise unchanged.
+- `buildtool check` now scopes static analysis to library source, excluding the bundled tutorial scripts.
+
 ## [0.1.0-beta.3]
 
 ### Added
