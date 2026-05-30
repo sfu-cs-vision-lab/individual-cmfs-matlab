@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this MATLAB toolbox, please cite it using the 'preferred-citation' below. In addition, please cite the original scientific paper (Stockman & Rider, 2023) upon which this implementation is based."
-title: "Matlab Individual Cone Fundamentals Toolbox"
+title: "Individual Cone Fundamentals Toolbox (MATLAB)"
 abstract: |
-  A MATLAB implementation of the Stockman & Rider (2023) formulae for generating standard and individual human cone spectral sensitivities. This toolbox reproduces the functionality of the 'Pycone' Python software (CVRL-IoO) for calculating corneal cone fundamentals, including adjustments for lens and macular pigment densities and photopigment optical densities.
+  Individual-observer cone fundamentals vary with opsin genotype, age, retinal field size, and the optical densities of the lens, macular pigment, and photopigment. We present a MATLAB toolbox that implements the Stockman and Rider formulae for generating individual cone spectral sensitivities from biophysical inputs. The toolbox uses a modular object-oriented design in which photopigment, lens, and macular templates can be independently selected or replaced. It computes LMS cone fundamentals, color matching functions, CIE XYZ tristimulus values, chromaticity coordinates, and photopic luminous efficiency functions from a single consistent observer parameterization. The implementation is validated against the reference Python implementation, pycone, across 28 observer configurations and five output formats, with residuals near expected double-precision numerical limits. The toolbox supports applications including age-dependent observer modeling, observer metamerism analysis, dichromacy simulation, and L/M opsin polymorphism studies. It is distributed as a MATLAB Add-On and is intended to support reproducible individual-observer colorimetry research.
 authors:
   - family-names: Forsythe
     given-names: Alexander
@@ -10,7 +10,7 @@ authors:
   - family-names: Funt
     given-names: Brian
     affiliation: "Simon Fraser University"
-repository-code: "https://github.com/sfu-cs-vision-lab/Individual-CMFs"
+repository-code: "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab"
 license: AGPL-3.0-or-later
 keywords:
   - Color Science
@@ -25,9 +25,9 @@ preferred-citation:
       given-names: Alexander
     - family-names: Funt
       given-names: Brian
-  title: "Matlab Individual Cone Fundamentals Toolbox"
+  title: "Individual Cone Fundamentals Toolbox (MATLAB)"
   year: 2025
-  url: "https://github.com/sfu-cs-vision-lab/Individual-CMFs"
+  url: "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab"
 references:
   - type: article
     scope: "Original scientific basis and formulae"
@@ -37,12 +37,13 @@ references:
       - family-names: Rider
         given-names: Andrew T.
     title: "Formulae for generating standard and individual human cone spectral sensitivities"
-    journal: "Color Research and Application"
+    journal: "Color Research & Application"
     year: 2023
     volume: 48
     number: 6
     pages: 818-840
     doi: "10.1002/col.22879"
+
   - type: software
     scope: "Original Python implementation (Pycone)"
     authors:
@@ -51,8 +52,9 @@ references:
       - family-names: Rider
         given-names: Andrew T.
     title: "Individual-CMFs (Pycone)"
-    url: "http://github.com/CVRL-IoO/Individual-CMFs.git"
+    url: "https://github.com/CVRL-IoO/Individual-CMFs"
     year: 2023
+
   - type: article
     scope: "Age-dependent lens optical density model (LensModel=Pokorny1987)"
     authors:
@@ -68,8 +70,10 @@ references:
     volume: 26
     number: 8
     pages: 1437-1440
+    doi: "10.1364/AO.26.001437"
     publisher:
       name: "Optical Society of America"
+
   - type: article
     scope: "Total-ocular-media age-dependent lens model (LensModel=VanDeKraats2007)"
     authors:
@@ -84,6 +88,7 @@ references:
     number: 7
     pages: 1842-1857
     doi: "10.1364/JOSAA.24.001842"
+
   - type: article
     scope: "Field-size dependent photopigment optical density (PhotopigmentDensityAlgorithm=PokornySmith)"
     authors:
@@ -97,16 +102,18 @@ references:
     volume: 66
     number: 7
     pages: 705-708
+    doi: "10.1364/JOSA.66.000705"
     publisher:
       name: "Optical Society of America"
+
   - type: conference-paper
-    scope: "Field-size dependent macular pigment optical density (MacularDensityAlgorithm=MorelandAlexander, adopted in CIEPO06)"
+    scope: "Field-size dependent macular pigment optical density, after Moreland & Alexander, as adopted in CIE 170-1:2006"
     authors:
       - family-names: Moreland
         given-names: J. D.
       - family-names: Alexander
         given-names: E. C.
-    title: "Effect of Macular Pigment on Colour Matching with Field Sizes in the 1 to 10 deg Range"
+    title: "Effect of Macular Pigment on Colour Matching with Field Sizes in the 1° to 10° Range"
     collection-title: "Colour Vision Deficiencies XIII (Documenta Ophthalmologica Proceedings Series, Vol. 59)"
     editors:
       - family-names: Cavonius
@@ -117,6 +124,7 @@ references:
       name: "Springer"
       city: "Dordrecht"
     doi: "10.1007/978-94-011-5408-6_39"
+
   - type: article
     scope: "Alternative photopigment template (TemplateModel=Govardovskii2000)"
     authors:
@@ -137,6 +145,7 @@ references:
     number: 4
     pages: 509-528
     doi: "10.1017/S0952523800174036"
+
   - type: article
     scope: "Underlying tabulated cone fundamentals adopted by CIE 170-1:2006 (basis for the Stockman-Rider polynomial fits and the CVRL reference tables in tests/data/cvrl/)"
     authors:
@@ -150,26 +159,8 @@ references:
     volume: 40
     number: 13
     pages: 1711-1737
-  - type: article
-    scope: "L-cone Ser/Ala genotype convention used by Genotype"
-    authors:
-      - family-names: Stockman
-        given-names: Andrew
-      - family-names: Sharpe
-        given-names: Lindsay T.
-      - family-names: Jagle
-        given-names: Herbert
-      - family-names: Knau
-        given-names: Holger
-      - family-names: Kremers
-        given-names: Jan
-      - family-names: Wissinger
-        given-names: Bernd
-      - family-names: Nathans
-        given-names: Jeremy
-    title: "L and M cone pigment polymorphism: Spectral tuning and effects on color discrimination"
-    journal: "Investigative Ophthalmology & Visual Science"
-    year: 1998
+    doi: "10.1016/S0042-6989(00)00021-3"
+
   - type: article
     scope: "Photopic luminous efficiency V*(lambda) coefficients used by IndividualCMF.Luminance and adopted in CIE 170-2:2015"
     authors:
@@ -179,7 +170,7 @@ references:
         given-names: Andrew
       - family-names: Jagla
         given-names: Wolfgang
-      - family-names: Jagle
+      - family-names: Jägle
         given-names: Herbert
     title: "A luminous efficiency function, V*(lambda), for daylight adaptation"
     journal: "Journal of Vision"
@@ -188,8 +179,9 @@ references:
     number: 11
     pages: 948-968
     doi: "10.1167/5.11.3"
+
   - type: article
-    scope: "LMS->XYZ transformation matrices (CIE170.M_2DEG, CIE170.M_10DEG; Eqs. 4-5)"
+    scope: "LMS-to-XYZ transformation matrices (CIE170.M_2DEG, CIE170.M_10DEG; Eqs. 4-5)"
     authors:
       - family-names: Stockman
         given-names: Andrew
@@ -199,6 +191,7 @@ references:
     volume: 30
     pages: 87-93
     doi: "10.1016/j.cobeha.2019.06.005"
+
   - type: report
     scope: "Standard observer definition (Type=\"CIE 170-1:2006\")"
     authors:
@@ -209,11 +202,12 @@ references:
       name: "CIE Central Bureau"
       city: "Vienna"
     number: "CIE 170-1:2006"
+
   - type: report
     scope: "Companion document to CIE 170-1:2006"
     authors:
       - name: "International Commission on Illumination (CIE)"
-    title: "Fundamental Chromaticity Diagram with Physiological Axes - Part 2"
+    title: "Fundamental Chromaticity Diagram with Physiological Axes - Part 2: Spectral Luminous Efficiency Functions and Chromaticity Diagrams"
     year: 2015
     institution:
       name: "CIE Central Bureau"
