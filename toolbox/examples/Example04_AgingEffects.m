@@ -7,7 +7,7 @@ exampleDefaults();
 %[text] Three `LensModel` choices:
 %[text] - **`StockmanRider2023`** *(default)*. Flat across age. Returns the standard density (1.7649 at 400 nm) regardless of `Age`. Useful for matching CIE 2006 cone fundamentals exactly.
 %[text] - **`VanDeKraats2007`**. Five-component total-ocular-media model (van de Kraats & van Norren 2007) with quadratic-in-age density coefficients fitted across 74 donor lenses and 23 in vivo / psychophysics datasets, plus explicit Rayleigh-scatter and tryptophan components that extend the model into the near-UV.
-%[text] - **`Pokorny1987`**. Bi-linear age-dependent model from Pokorny, Smith & Lutze (1987). Yellowing accelerates after age 60. \
+%[text] - **`Pokorny1987`**. Bi-linear age-dependent model from Pokorny, Smith & Lutze (1987). Yellowing accelerates after age 60. Its tabulated data start at 400 nm and flat-extrapolate below that, so prefer `VanDeKraats2007` for sub-400 nm work (see the `Pokorny1987LensTemplate` class help). \
 %[text] This example focuses on `StockmanRider2023` vs `VanDeKraats2007`; `Pokorny1987` follows the same usage pattern. \\
 %[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`.
 ages = [20, 32, 45, 60, 75];
