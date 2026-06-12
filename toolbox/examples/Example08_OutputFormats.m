@@ -93,7 +93,7 @@ display_primaries = [615; 545; 465];
 LMS_primaries = obs_display.LMS(display_primaries);
 array2table([display_primaries, LMS_primaries], ...
     'VariableNames', {'Wavelength_nm', 'L', 'M', 'S'}, ...
-    'RowNames', {'Red', 'Green', 'Blue'})
+    'RowNames', {'Red primary', 'Green primary', 'Blue primary'})
 %%
 %[text] ## Key takeaways
 %[text] - Four output formats: `absorbance`, `absorptance`, `quantal`, `energy`
