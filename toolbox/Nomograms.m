@@ -121,15 +121,14 @@ classdef Nomograms
         SR_LOG_WL_CENTER = 2.556302500767287267
         SR_LOG_WL_SCALE = 0.1187666467581842301
 
-        % L-cone (Serine variant) Fourier coefficients.
-        % SR_L_LMAX = 553.1 nm is the value pycone uses for the
-        % log-wavelength shift normalization; it equals the L(Ser180)
-        % Fourier polynomial's actual numerical peak to printed precision.
-        % The L(Ala180) variant is derived as L(Ser180) shifted by
-        % SR_ALANINE_SHIFT = -2.7 nm. The Mean L variant is composed at
-        % evaluation time and peaks at ~ 551.9 nm.
-        % Source: Stockman & Rider (2023), Table 1; pycone CMFtemplates.py
-        % (Lserlmax_template = 553.1).
+        % L-cone L(ser180) polymorphic template Fourier coefficients.
+        % These are Stockman & Rider (2023) Table 4, column 2 ("Polymorphic L,
+        % L(ser180)") -- the single-variant Serine template, NOT the Table 1 Mean L.
+        % SR_L_LMAX = 553.1 nm is the L(ser180) anchor pycone uses for the
+        % log-wavelength shift (pycone CMFtemplates.py: Lserlmax_template = 553.1).
+        % The L(ala180) variant is this same template shifted -2.7 nm toward shorter
+        % wavelengths (pycone: Lalaconelog(nm) = Lserconelog(nm, -2.70)).
+        % Source: Stockman & Rider (2023), Table 4 column 2; pycone CMFtemplates.py.
         SR_L_LMAX = 553.1
         SR_L_COEFFS = [-42.417608560; -2.656791612; 75.011093607; 56.477062776; ...
                         7.509397607;  9.061442173; -38.068488495; -20.974610259; ...
@@ -173,13 +172,19 @@ classdef Nomograms
                         -0.1480357836;  0.0002347648]
 
         % Mean L-cone renormalization factor.
-        % The mean template is computed as:
-        %   log10(RENORM * (0.56*10^Serine + 0.44*10^Alanine))
-        % The exact literal value is copied verbatim from pycone
-        % (CMFtemplates.py, Lmeanconelog: literal 1.0009350552348480).
-        % It is an empirically derived correction so the composite Mean
-        % L absorbance peaks at the canonical level for the toolbox.
-        % Not derivable in closed form from S&R 2023 Eq. 2 alone.
+        % The toolbox reconstructs the mean L template at evaluation time as
+        %   log10(RENORM * (0.56*10^Ser + 0.44*10^Ala))
+        % with Ala = Ser shifted -2.7 nm. This is exactly pycone's default mean-L path
+        % (CMFtemplates.py Lmeanconelog, called by LMSconelognormal), and it
+        % reproduces the CIE-adopted mean L-cone fundamental (the directly-fitted
+        % Table 1 polynomial) via the 0.44:0.56 polymorphic combination the paper
+        % uses. That combination originates in Stockman & Sharpe (2000), who fitted
+        % L(ser180) and L(ala180) separately to single-gene dichromats; the rigid
+        % -2.7 nm shift is the approximation S&R 2023 (Section 4) adopted to derive the
+        % column-2 Ser template. RENORM = 1.0009350552348480 (verbatim from pycone
+        % CMFtemplates.py, Lmeanconelog) corrects the small residual from
+        % reconstructing rather than using the Table 1 mean directly. Matches pycone to
+        % machine precision.
         SR_LMEAN_RENORM = 1.0009350552348480
         SR_LMEAN_SERINE_WEIGHT = 0.56
         SR_LMEAN_ALANINE_WEIGHT = 0.44
