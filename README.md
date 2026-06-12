@@ -42,9 +42,12 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or
 - Wavelength sampling: the toolbox builds the grid with MATLAB's `(start:step:stop)'`; at fine step sizes this can differ from pycone's `np.arange` by a small floating-point amount.
 - Applying a lambda-max shift to the fixed Mean L template is ambiguous; the toolbox warns and uses the Serine variant.
 
+**Parameter precedence**
+
+Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. The formula-driven value is restored only by reassigning it or by switching the algorithm back to its formula (for example `LensDensityAlgorithm = "CIE170"`). This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
+
 **Ergonomics**
 
-- Custom-mode density protection: explicit `LensDensity` / `MacularDensity` / `Lod` / `Mod` / `Sod` assignments auto-engage `Custom` mode and survive subsequent `Age` / `FieldSize` / `LensModel` changes.
 - Round-trippable parameter snapshots via `getParameters` / `setParameters`.
 - Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`), backed by a richer `CMFPlotter` class for standalone figures.
 

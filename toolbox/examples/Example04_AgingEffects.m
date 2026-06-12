@@ -9,7 +9,7 @@ exampleDefaults();
 %[text] - **`VanDeKraats2007`**. Five-component total-ocular-media model (van de Kraats & van Norren 2007) with quadratic-in-age density coefficients fitted across 74 donor lenses and 23 in vivo / psychophysics datasets, plus explicit Rayleigh-scatter and tryptophan components that extend the model into the near-UV.
 %[text] - **`Pokorny1987`**. Bi-linear age-dependent model from Pokorny, Smith & Lutze (1987). Yellowing accelerates after age 60. \
 %[text] This example focuses on `StockmanRider2023` vs `VanDeKraats2007`; `Pokorny1987` follows the same usage pattern. \\
-%[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`.
+%[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`. Conversely, if you assign `LensDensity` directly (say a measured value), it pins to `Custom` mode and then tracks neither `Age` nor `LensModel` until you reassign it or reset `LensDensityAlgorithm`.
 ages = [20, 32, 45, 60, 75];
 obs_SR = IndividualCMF.across('Age', ages, LensModel="StockmanRider2023");
 observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", FieldSize=10);
