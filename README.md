@@ -26,9 +26,9 @@ The toolbox builds an L/M/S spectral sensitivity model from biophysical inputs (
 
 Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or Govardovskii 2000), lens model (Stockman & Rider 2023, Pokorny 1987, or van de Kraats & van Norren 2007), and macular template. `OutputFormat` selects which stage to return (`absorbance`, `absorptance`, `quantal`, `energy`). Defaults reproduce the CIE 170 physiological standard observers; any input can be overridden individually to model a specific observer or to study the effect of one biophysical parameter.
 
-## What this toolbox adds over pycone
+## Relationship to pycone
 
-[`pycone`](https://github.com/CVRL-IoO/Individual-CMFs) is the reference Python implementation of Stockman & Rider (2023). This toolbox matches it at machine precision on the configurations pycone supports (see [`tests/parity/README.md`](tests/parity/README.md)), and extends it as follows.
+[`pycone`](https://github.com/CVRL-IoO/Individual-CMFs) is the reference Python implementation of Stockman & Rider (2023). This toolbox is a MATLAB port of that model and matches pycone to machine precision on the configurations pycone supports (see [`tests/parity/README.md`](tests/parity/README.md)). It also provides some additional models for research use and a MATLAB-native interface, and a few points where the two implementations can differ in output are noted below for transparency.
 
 **Additional models**
 
@@ -36,12 +36,11 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or
 - Pokorny, Smith & Lutze (1987) two-component age-dependent lens model.
 - van de Kraats & van Norren (2007) five-component total-ocular-media lens model with field-size-aware Rayleigh-loss coefficient and UV coverage.
 
-**Correctness improvements vs pycone**
+**Where outputs can differ from pycone**
 
-- Continuous-peak normalization (default) finds the true sub-grid peak via `fminbnd`; pycone normalizes against the discrete sample maximum.
-- Sub-grid wavelength precision: MATLAB's `(start:step:stop)'` is exact; pycone's `np.arange` accumulates ~1e-5 IEEE-754 drift at 0.1 nm steps.
-- Correct `log10(absorptance)` output under `LogOutput=true`; pycone's `absorptancefromabsorbance` logs the wrong stage.
-- Mean-template shift guard: warns and switches to the Serine variant when a shift is applied to the fixed Mean L template; pycone produces undefined output.
+- Peak normalization: by default the toolbox locates the sub-grid peak with `fminbnd`; pycone normalizes to the discrete sample maximum. Set the normalization method to the discrete option for exact parity.
+- Wavelength sampling: the toolbox builds the grid with MATLAB's `(start:step:stop)'`; at fine step sizes this can differ from pycone's `np.arange` by a small floating-point amount.
+- Applying a lambda-max shift to the fixed Mean L template is ambiguous; the toolbox warns and uses the Serine variant.
 
 **Ergonomics**
 
@@ -49,7 +48,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or
 - Round-trippable parameter snapshots via `getParameters` / `setParameters`.
 - Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`), backed by a richer `CMFPlotter` class for standalone figures.
 
-See [`tests/parity/README.md`](tests/parity/README.md) for pycone source-line references on the correctness items.
+See [`tests/parity/README.md`](tests/parity/README.md) for the configurations covered and notes on where the two implementations differ.
 
 ## Requirements
 

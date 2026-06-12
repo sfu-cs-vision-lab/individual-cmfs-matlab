@@ -138,15 +138,17 @@ classdef Nomograms
                        -0.078857510; -0.004264105]
 
         % M-cone Fourier coefficients.
-        % SR_M_LMAX = 529.9 nm is the value pycone uses for the
+        % SR_M_LMAX = 529.8 nm is the value pycone uses for the
         % log-wavelength shift normalization (pycone CMFtemplates.py,
-        % Mlmax_template = 529.9). The Fourier polynomial's actual
-        % numerical peak is at 529.80 nm, and S&R 2023 Section 2.1
-        % reports 529.8 nm. The 0.1 nm constant is preserved verbatim
-        % for parity with pycone; output differs by ~ 6e-6 from the
-        % "true" 529.8 only when a non-zero M_LambdaMaxShift is applied.
-        % Source: Stockman & Rider (2023), Table 1; pycone parity.
-        SR_M_LMAX = 529.9
+        % Mlmax_template = 529.8). It equals the Fourier polynomial's
+        % actual numerical peak (529.80 nm) and the M-cone lambda_max
+        % S&R 2023 Section 2.1 reports. This matches pycone 1.0.3 (commit
+        % 344f779); earlier pycone snapshots used 529.9. The anchor is
+        % inert at zero shift and changes output only when a non-zero
+        % M_LambdaMaxShift is applied.
+        % Source: Stockman & Rider (2023), Table 1; pycone CMFtemplates.py
+        % (Mlmax_template = 529.8).
+        SR_M_LMAX = 529.8
         SR_M_COEFFS = [-210.6568853069; -0.1458073553; 386.7319763250; 305.4710584670; ...
                           5.0218382813;  6.8386224350; -208.2062335724; -118.4890200521; ...
                          -5.7625866330; -3.7973553168;   55.1803460639;   19.9728512548; ...
@@ -154,14 +156,21 @@ classdef Nomograms
                          -0.1419926703;  0.0005894876]
 
         % S-cone Fourier coefficients.
-        % Template lambda_max = 416.9 nm
-        % Source: Stockman & Rider (2023), Table 1.
-        SR_S_LMAX = 416.9
+        % SR_S_LMAX = 417.0 nm is the S-cone template lambda_max anchor
+        % (pycone CMFtemplates.py, Slmax_template = 417.0). This matches
+        % pycone 1.0.3 (commit 344f779); earlier pycone snapshots used
+        % 416.9. The anchor is inert at zero shift and changes output
+        % only when a non-zero S_LambdaMaxShift is applied. The final
+        % coefficient (the s renormalization constant) is 0.0002347648,
+        % also from pycone 1.0.3; earlier snapshots used 0.0002358232. It
+        % slightly rescales the zero-shift S template.
+        % Source: Stockman & Rider (2023), Table 1; pycone CMFtemplates.py.
+        SR_S_LMAX = 417.0
         SR_S_COEFFS = [207.3880950935; -6.3065623516; -393.7100478026; -315.6650602846; ...
                         19.2917535553; 19.6414743488;  214.2211570447;  121.8584683485; ...
                        -15.1820737886; -8.6774057156;  -56.7596380441;  -20.6318720369; ...
                          3.6934875040;  1.0483022480;    5.3656615075;    0.7898783086; ...
-                        -0.1480357836;  0.0002358232]
+                        -0.1480357836;  0.0002347648]
 
         % Mean L-cone renormalization factor.
         % The mean template is computed as:

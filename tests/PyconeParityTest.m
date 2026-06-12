@@ -20,7 +20,8 @@ classdef PyconeParityTest < matlab.unittest.TestCase
     %
     %   To enable locally:
     %       cd tests/parity
-    %       git clone --depth 1 https://github.com/CVRL-IoO/Individual-CMFs.git pycone
+    %       git clone https://github.com/CVRL-IoO/Individual-CMFs.git pycone
+    %       git -C pycone checkout 344f779   % pycone 1.0.3
     %
     %   See also: tests/parity/README.md, tests/parity/compare.m
 
@@ -57,8 +58,9 @@ classdef PyconeParityTest < matlab.unittest.TestCase
             isCI = ~isempty(getenv('CI')) || ~isempty(getenv('GITHUB_ACTIONS'));
             cloneInstructions = ['Required: pycone reference not ' ...
                 'cloned. Run:\n' ...
-                '    cd tests/parity && git clone --depth 1 ' ...
-                'https://github.com/CVRL-IoO/Individual-CMFs.git pycone'];
+                '    cd tests/parity && git clone ' ...
+                'https://github.com/CVRL-IoO/Individual-CMFs.git pycone && ' ...
+                'git -C pycone checkout 344f779'];
             pythonInstructions = ['Required: python3 not on PATH; ' ...
                 'pycone parity test cannot run.'];
 

@@ -416,8 +416,8 @@ classdef NomogramsTest < matlab.unittest.TestCase
         function testStockmanRiderConstants(testCase)
             % Verify Stockman-Rider constants match published values
             testCase.verifyEqual(Nomograms.SR_L_LMAX, 553.1, 'SR_L_LMAX should be 553.1');
-            testCase.verifyEqual(Nomograms.SR_M_LMAX, 529.9, 'SR_M_LMAX should be 529.9');
-            testCase.verifyEqual(Nomograms.SR_S_LMAX, 416.9, 'SR_S_LMAX should be 416.9');
+            testCase.verifyEqual(Nomograms.SR_M_LMAX, 529.8, 'SR_M_LMAX should be 529.8');
+            testCase.verifyEqual(Nomograms.SR_S_LMAX, 417.0, 'SR_S_LMAX should be 417.0');
             testCase.verifyEqual(Nomograms.SR_ALANINE_SHIFT, -2.70, 'SR_ALANINE_SHIFT should be -2.70');
         end
 
