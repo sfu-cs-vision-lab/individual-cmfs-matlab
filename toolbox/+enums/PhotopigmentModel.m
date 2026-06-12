@@ -14,6 +14,12 @@ classdef PhotopigmentModel
 %                        same opsin it produces a red-shifted lambda-max
 %                        relative to A1. Intended for comparative-vision
 %                        research.
+%   StockmanRider2023Common - Shape-invariant (common) photopigment
+%                        template from Stockman & Rider (2023), Table 4
+%                        col 3. A single 8th-order Fourier shape shifted
+%                        along log-wavelength to fit all three cones. A
+%                        cross-species / arbitrary lambda-max model; NOT
+%                        on the CIE parity path.
 %
 %   Members are valid MATLAB identifiers, so a string assignment such as
 %   `obs.PhotopigmentModel = "StockmanRider2023"` is auto-converted.
@@ -29,5 +35,6 @@ classdef PhotopigmentModel
         StockmanRider2023
         Govardovskii2000
         Govardovskii2000A2
+        StockmanRider2023Common
     end
 end

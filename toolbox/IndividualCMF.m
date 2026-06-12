@@ -37,7 +37,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       S_LambdaMaxShift             - S-cone peak shift in nm (scalar) Default: 0
     %       L_OpsinTemplate              - "Mean", "Serine", "Alanine", or "MinL" (string) Default: "Mean"
     %       M_OpsinTemplate              - "Mean", "Standard", or "LinM" (string) Default: "Mean"
-    %       PhotopigmentModel            - "StockmanRider2023", "Govardovskii2000", or "Govardovskii2000A2" (string) Default: "StockmanRider2023"
+    %       PhotopigmentModel            - "StockmanRider2023", "Govardovskii2000", "Govardovskii2000A2", or "StockmanRider2023Common" (string) Default: "StockmanRider2023"
     %       LensModel                    - "StockmanRider2023", "Pokorny1987", or "VanDeKraats2007" (string) Default: "StockmanRider2023"
     %       MacularModel                 - "StockmanRider2023" (string) Default: "StockmanRider2023"
     %       LensDensityAlgorithm         - "Auto" or "Custom" (string) Default: "Auto"
@@ -231,7 +231,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         MacularDensity
 
         % Photopigment template model ("StockmanRider2023",
-        % "Govardovskii2000", or "Govardovskii2000A2").
+        % "Govardovskii2000", "Govardovskii2000A2", or
+        % "StockmanRider2023Common").
         %   "StockmanRider2023"   - 8th-order Fourier polynomial templates
         %                           from Stockman & Rider (2023), Table 1
         %                           (CIE 2006 standard).
@@ -243,6 +244,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %                           (2000), Eqs. 6 and 8. For
         %                           comparative-vision research
         %                           (freshwater fish, larval amphibians).
+        %   "StockmanRider2023Common" - Shape-invariant (common) Fourier
+        %                           template from Stockman & Rider (2023),
+        %                           Table 4 col 3. One shape shifted along
+        %                           log-wavelength to fit all three cones;
+        %                           a cross-species lambda-max model, NOT
+        %                           on the CIE parity path.
         PhotopigmentModel
 
         % Lens template model ("StockmanRider2023" or "Pokorny1987").
@@ -885,9 +892,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 v (1,1) enums.LOpsinTemplate
             end
             if obj.PhotopigmentModel == "Govardovskii2000" || ...
-                    obj.PhotopigmentModel == "Govardovskii2000A2"
+                    obj.PhotopigmentModel == "Govardovskii2000A2" || ...
+                    obj.PhotopigmentModel == "StockmanRider2023Common"
                 warning('IndividualCMF:IgnoredProperty', ...
-                    'L_OpsinTemplate is ignored when using the Govardovskii model.');
+                    'L_OpsinTemplate is ignored when using the Govardovskii or Stockman-Rider common model.');
             end
             obj.p_L_Template = v;
             obj.invalidateNormalizationCache();
@@ -905,9 +913,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 v (1,1) enums.MOpsinTemplate
             end
             if obj.PhotopigmentModel == "Govardovskii2000" || ...
-                    obj.PhotopigmentModel == "Govardovskii2000A2"
+                    obj.PhotopigmentModel == "Govardovskii2000A2" || ...
+                    obj.PhotopigmentModel == "StockmanRider2023Common"
                 warning('IndividualCMF:IgnoredProperty', ...
-                    'M_OpsinTemplate is ignored when using the Govardovskii model.');
+                    'M_OpsinTemplate is ignored when using the Govardovskii or Stockman-Rider common model.');
             end
             obj.p_M_Template = v;
             obj.invalidateNormalizationCache();
@@ -939,6 +948,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 case enums.PhotopigmentModel.Govardovskii2000A2
                     obj.p_PhotopigmentTemplate = ...
                         GovardovskiiPhotopigmentTemplate(Pigment="A2");
+                case enums.PhotopigmentModel.StockmanRider2023Common
+                    obj.p_PhotopigmentTemplate = ...
+                        StockmanRiderCommonPhotopigmentTemplate();
             end
             obj.p_WavelengthWarningIssued = false;
             obj.invalidateNormalizationCache();
