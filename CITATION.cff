@@ -26,7 +26,7 @@ preferred-citation:
     - family-names: Funt
       given-names: Brian
   title: "Individual Cone Fundamentals Toolbox (MATLAB)"
-  year: 2025
+  year: 2026
   url: "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab"
 references:
   - type: article
