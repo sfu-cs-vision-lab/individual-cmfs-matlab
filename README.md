@@ -33,7 +33,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or
 **Additional models**
 
 - Govardovskii et al. (2000) photopigment template (A1 and A2) for sub-400 nm extrapolation and cross-species use.
-- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model.
+- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm; below that the template flat-extrapolates the 400-nm density, so prefer `VanDeKraats2007` when sub-400 nm precision matters (see the `Pokorny1987LensTemplate` class help).
 - van de Kraats & van Norren (2007) five-component total-ocular-media lens model with field-size-aware Rayleigh-loss coefficient and UV coverage.
 
 **Where outputs can differ from pycone**
