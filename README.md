@@ -24,7 +24,7 @@ The toolbox builds an L/M/S spectral sensitivity model from biophysical inputs (
 3. **Pre-receptoral filtering.** Lens and macular pigment density attenuate the retinal sensitivity to give the corneal cone fundamental.
 4. **Quantal-to-energy.** Multiplication by wavelength converts photon-counting sensitivity to energy units (S&R 2023 Eq. 8).
 
-Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or Govardovskii 2000), lens model (Stockman & Rider 2023, Pokorny 1987, or van de Kraats & van Norren 2007), and macular template. `OutputFormat` selects which stage to return (`absorbance`, `absorptance`, `quantal`, `energy`). Defaults reproduce the CIE 170 physiological standard observers; any input can be overridden individually to model a specific observer or to study the effect of one biophysical parameter.
+Each stage's model is swappable: photopigment template (Stockman & Rider 2023 per-cone, Stockman & Rider 2023 common, or Govardovskii 2000), lens model (Stockman & Rider 2023, Pokorny 1987, or van de Kraats & van Norren 2007), and macular template. `OutputFormat` selects which stage to return (`absorbance`, `absorptance`, `quantal`, `energy`). Defaults reproduce the CIE 170 physiological standard observers; any input can be overridden individually to model a specific observer or to study the effect of one biophysical parameter.
 
 ## Relationship to pycone
 
@@ -33,6 +33,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 or
 **Additional models**
 
 - Govardovskii et al. (2000) photopigment template (A1 and A2) for sub-400 nm extrapolation and cross-species use.
+- Stockman & Rider (2023) common (shape-invariant) photopigment template (Table 4 column 3): one Fourier shape translated along log-wavelength to fit any cone, for cross-species / arbitrary lambda-max use.
 - Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm; below that the template flat-extrapolates the 400-nm density, so prefer `VanDeKraats2007` when sub-400 nm precision matters (see the `Pokorny1987LensTemplate` class help).
 - van de Kraats & van Norren (2007) five-component total-ocular-media lens model with field-size-aware Rayleigh-loss coefficient and UV coverage.
 

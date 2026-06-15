@@ -204,6 +204,35 @@ classdef Nomograms
         % itself does not publish 23.67 as the L-M gap.
         SR_LSER_M_LMAX_DIFF = 23.67
 
+        % Stockman & Rider (2023) common (shape-invariant) photopigment template.
+        % Table 4 column 3 ("Common LMS, L(ser180)") == pycone LMSconelogcommon.
+        % One 8th-order Fourier shape fitting all three CIE cone absorbances when
+        % shifted along log-wavelength. Anchored at the L(ser) common lmax 557.5 nm.
+        % Cross-species / arbitrary lambda-max use only; NOT on the CIE parity path.
+        % Source: Stockman & Rider (2023) Table 4 col 3; pycone CMFtemplates.py.
+        SR_COMMON_COEFFS = [ -2.1256563197;  5.4677929400;  0.8960658918; ...
+                             -0.9530108239; -5.0377095815; -3.0039987529; ...
+                             -0.9508620342; -1.3670849620;  1.7702113766; ...
+                              0.5165048525;  1.1505501831;  0.6100416117; ...
+                              0.0518211044;  0.1009282570; -0.1773573074; ...
+                             -0.0278798136; -0.0427736834;  0.0007050030 ]
+
+        % Per-cone log-wavelength offsets for the common template, in the same
+        % 0..pi x-units as the SR base transform (pycone Soffset / Moffset /
+        % Lalaoffset). L(ser) is the unshifted anchor (offset 0).
+        SR_COMMON_OFFSET_LSER = 0.0
+        SR_COMMON_OFFSET_LALA = 0.01775262143
+        SR_COMMON_OFFSET_M    = 0.2036522967
+        SR_COMMON_OFFSET_S    = 1.048690123
+
+        % Per-cone common-template lambda-max values, used to map a user shift
+        % into the log-wavelength x-axis. Source: Stockman & Rider (2023)
+        % Table 4 col 3; pycone CMFtemplates.py (Lsercommonlmax etc.).
+        SR_COMMON_LMAX_LSER = 557.5
+        SR_COMMON_LMAX_LALA = 554.8
+        SR_COMMON_LMAX_M    = 527.3
+        SR_COMMON_LMAX_S    = 418.5
+
         % Valid wavelength ranges for each template type
         GOV_VALID_RANGE = [380, 780]
         SR_VALID_RANGE = [360, 830]
@@ -403,6 +432,62 @@ classdef Nomograms
                 case 'S'
                     logAbsorbance = Nomograms.computeScone(wavelengths, options.Shift);
             end
+        end
+
+        function logAbsorbance = stockmanRiderCommon(wavelengths, coneType, shift)
+            % STOCKMANRIDERCOMMON  Common (shape-invariant) S&R 2023 template.
+            %
+            %   logAbsorbance = Nomograms.stockmanRiderCommon(wavelengths, coneType)
+            %   logAbsorbance = Nomograms.stockmanRiderCommon(wavelengths, coneType, shift)
+            %
+            %   Evaluates the Stockman & Rider (2023) Table 4 column 3 common
+            %   photopigment template: a single 8th-order Fourier shape that
+            %   fits all three CIE cone absorbances when translated along the
+            %   log-wavelength axis. The cone is selected by a fixed per-cone
+            %   offset plus a shift term derived from its common lambda-max.
+            %
+            %   This ports pycone's LMSconelogcommon. It is a cross-species /
+            %   arbitrary lambda-max model and is NOT on the CIE parity path.
+            %
+            %   INPUTS:
+            %       wavelengths - Wavelengths in nm (column vector) (vector)
+            %       coneType - Cone type: 'L' (= L(ser)), 'M', or 'S' (char)
+            %       shift - Wavelength shift in nm. Default: 0 (double)
+            %
+            %   OUTPUTS:
+            %       logAbsorbance - Log10 absorbance spectrum (vector)
+            %
+            %   EXAMPLE:
+            %       wl = (360:1:830)';
+            %       logAbs = Nomograms.stockmanRiderCommon(wl, 'M', 0);
+            %
+            %   Source: Stockman, A. & Rider, A.T. (2023). Formulae for
+            %   generating standard and individual human cone spectral
+            %   sensitivities. Color Research and Application, 48(6), 818-840.
+            arguments
+                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
+                shift (1,1) double = 0
+            end
+
+            Nomograms.validateWavelengths(wavelengths, Nomograms.SR_VALID_RANGE);
+
+            % Select the per-cone offset and common lambda-max. The 'L' cone
+            % maps to the L(ser) anchor (offset 0).
+            switch coneType
+                case 'L'
+                    coneOffset = Nomograms.SR_COMMON_OFFSET_LSER;
+                    coneLmax = Nomograms.SR_COMMON_LMAX_LSER;
+                case 'M'
+                    coneOffset = Nomograms.SR_COMMON_OFFSET_M;
+                    coneLmax = Nomograms.SR_COMMON_LMAX_M;
+                case 'S'
+                    coneOffset = Nomograms.SR_COMMON_OFFSET_S;
+                    coneLmax = Nomograms.SR_COMMON_LMAX_S;
+            end
+
+            logAbsorbance = Nomograms.fourierTemplateCommon(wavelengths, ...
+                coneOffset, coneLmax, shift);
         end
 
         function validateWavelengths(wavelengths, validRange, options)
@@ -610,6 +695,52 @@ classdef Nomograms
             c_sin = coeffs(idx_sin);
 
             % Vectorized computation
+            terms = cos(x * k) .* c_cos' + sin(x * k) .* c_sin';
+            val = val + sum(terms, 2);
+
+            % Add renormalization constant (last coefficient)
+            logAbs = val + coeffs(end);
+        end
+
+        function logAbs = fourierTemplateCommon(wavelengths, coneOffset, coneLmax, shift)
+            % FOURIERTEMPLATECOMMON  Evaluate the S&R 2023 common template.
+            %
+            %   Uses the shared SR_COMMON_COEFFS shape. The cone is positioned
+            %   by a fixed per-cone offset plus a shift term in log-wavelength
+            %   space (ports pycone LMSconelogcommon):
+            %     x = (log10(wl) - center) / scale
+            %         + coneOffset
+            %         + log10(coneLmax / (coneLmax + shift)) / scale
+            %
+            %   The Fourier sum is identical to fourierTemplate but uses a
+            %   single shared coefficient set across all cones.
+            arguments
+                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                coneOffset (1,1) double
+                coneLmax (1,1) double
+                shift (1,1) double
+            end
+
+            coeffs = Nomograms.SR_COMMON_COEFFS;
+
+            % Transform wavelengths to normalized log-wavelength space, then
+            % apply the per-cone offset and shift term.
+            x = (log10(wavelengths) - Nomograms.SR_LOG_WL_CENTER) / Nomograms.SR_LOG_WL_SCALE;
+            xshift = log10(coneLmax / (coneLmax + shift)) / Nomograms.SR_LOG_WL_SCALE;
+            x = x + coneOffset + xshift;
+
+            % Evaluate 8th-order Fourier polynomial
+            order = 8;
+            val = coeffs(1);
+            k = 1:order;
+
+            % Coefficient indices: [a0, a1, b1, a2, b2, ..., a8, b8, s]
+            idx_cos = 2 + (k-1)*2;
+            idx_sin = 3 + (k-1)*2;
+
+            c_cos = coeffs(idx_cos);
+            c_sin = coeffs(idx_sin);
+
             terms = cos(x * k) .* c_cos' + sin(x * k) .* c_sin';
             val = val + sum(terms, 2);
 

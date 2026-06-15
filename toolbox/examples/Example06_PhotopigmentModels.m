@@ -86,6 +86,22 @@ title('Govardovskii (2000) A1 vs A2 at lambda_{max} = 560 nm')
 legend('A1 (11-cis retinal)', 'A2 (3,4-dehydroretinal)', 'Location', 'bestoutside')
 xlim([380 780])
 %%
+%[text] ## Shape-invariant common template for arbitrary lambda-max
+%[text] Stockman & Rider (2023) also published a **common** (shape-invariant) template (Table 4, column 3): a single 8th-order Fourier shape translated along log-wavelength to fit all three cones. Select it with `PhotopigmentModel="StockmanRider2023Common"`. Like Govardovskii, it ignores the genetic-variant opsin templates and is meant for cross-species or arbitrary lambda-max work rather than CIE-compliant human fundamentals.
+%[text] Because one shape serves every cone, you can drive it to a non-human lambda-max purely through the cone shifts. Below we anchor the common template at its base M lambda-max (527.3 nm) and apply a +20 nm shift to model a hypothetical longer-wavelength M-like pigment near 547 nm, alongside the Govardovskii template at the matching lambda-max for reference.
+%[text] - **Common template** -- absorbance comes straight from `Nomograms.stockmanRiderCommon`
+%[text] - **Govardovskii** -- `Nomograms.govardovskii2000` evaluated at the same lambda-max \
+%[text] The two species-general shapes are close through the central band and diverge mildly on the flanks, as expected for differently derived templates.
+wl_common = (360:1:780)';
+absCommon = 10.^Nomograms.stockmanRiderCommon(wl_common, 'M', 20);
+absGovRef = Nomograms.govardovskii2000(wl_common, 547.3);
+plot(wl_common, absCommon, 'm-'); hold on
+plot(wl_common, absGovRef, 'k--'); hold off
+xlabel('Wavelength (nm)'); ylabel('Absorbance')
+title('S-R common template (M+20 nm) vs Govardovskii at lambda_{max} = 547.3 nm')
+legend('S-R common (shifted)', 'Govardovskii (2000)', 'Location', 'bestoutside')
+xlim([360 780])
+%%
 %[text] ## Key takeaways
 %[text] - Stockman & Rider (2023) is the default -- CIE-compliant, supports human-specific variants
 %[text] - Govardovskii (2000) is a single-parameter pigment template; available in A1 (`Govardovskii2000`) and A2 (`Govardovskii2000A2`) chromophore variants
