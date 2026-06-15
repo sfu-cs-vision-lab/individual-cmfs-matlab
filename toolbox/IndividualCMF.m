@@ -106,7 +106,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %   Behavior:
     %     Setting LensDensity, MacularDensity, or any of Lod/Mod/Sod auto-
     %     engages the corresponding *DensityAlgorithm to "Custom" and pins
-    %     the value across subsequent Age/FieldSize/LensModel changes.
+    %     the value across subsequent Age/FieldSize/LensModel changes. The
+    %     formula-driven value is restored only by reassigning it or by
+    %     setting the corresponding *DensityAlgorithm back to its formula
+    %     (e.g. "CIE170"). A direct assignment thus overrides the age/
+    %     field-size formula rather than composing with it.
     %     Setting Lod/Mod/Sod to zero models a gene-deletion dichromat
     %     (the corresponding LMS column is zero, or -10 in LogOutput mode);
     %     XYZ and RGB error for dichromats. obs.StandardObserver reads as

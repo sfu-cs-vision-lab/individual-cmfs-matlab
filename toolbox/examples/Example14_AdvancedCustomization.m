@@ -27,7 +27,7 @@ obs_custom = IndividualCMF( ...
     OutputFormat="energy")
 %%
 %[text] ## Direct density overrides -- Custom mode in action
-%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived if you later change `Age`, `FieldSize`, or `LensModel`.
+%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived if you later change `Age`, `FieldSize`, or `LensModel`. Precedence here is override, not composition: the assigned value replaces the age / field-size formula result rather than adding to it (contrast Asano, Fairchild & Blonde 2016, where age and a separate density deviation compose).
 obs_override = IndividualCMF();
 obs_override.LensDensity    = 2.5;
 obs_override.MacularDensity = 0.6;
