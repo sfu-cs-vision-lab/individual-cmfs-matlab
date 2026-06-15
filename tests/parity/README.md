@@ -20,9 +20,10 @@ tests/parity/
 ## How to run
 
 ```bash
-# 1. Clone the pycone reference
+# 1. Clone the pycone reference, pinned to the pycone 1.0.3 commit
 cd tests/parity
-git clone --depth 1 https://github.com/CVRL-IoO/Individual-CMFs.git pycone
+git clone https://github.com/CVRL-IoO/Individual-CMFs.git pycone
+git -C pycone checkout 344f779   # pycone 1.0.3
 ```
 
 ```matlab
@@ -46,22 +47,17 @@ pipeline (templates -> absorptance -> corneal -> output format).
 
 ### Why Sampled normalization is needed for parity
 
-`IndividualCMF`'s default `NormalizationMethod = "Continuous"` is a
-deliberate improvement over pycone. It uses `fminbnd` to locate the
-true peak of the continuous spectral model, so the normalized
-`peak = 1` is independent of which wavelengths the user happens to
-evaluate at. Pycone, by contrast, normalizes to the maximum of the
-discretely sampled spectrum, which means its `peak = 1` shifts
-slightly with the sampling grid (the true peak between integer-nm
-samples is never exactly captured).
+`IndividualCMF`'s default `NormalizationMethod = "Continuous"` differs
+from pycone. It uses `fminbnd` to locate the peak of the continuous
+spectral model, so the normalized `peak = 1` is independent of which
+wavelengths the user evaluates at. pycone normalizes to the maximum of
+the sampled spectrum, so its `peak = 1` depends on the sampling grid.
 
-Both methods are mathematically valid - they're just answering subtly
-different questions. The toolbox exposes both via
-`NormalizationMethod = "Continuous"` (default, more accurate) or
-`"Sampled"` (matches pycone, useful for reproducing pycone results).
-For this parity test we use `"Sampled"` so the two implementations
-can agree on what "peak = 1" means; in normal use, `"Continuous"` is
-preferable.
+Both methods are mathematically valid; they answer slightly different
+questions. The toolbox exposes both, via `NormalizationMethod =
+"Continuous"` (default) and `"Sampled"` (matches pycone). For this
+parity test we use `"Sampled"` so the two implementations agree on what
+`peak = 1` means.
 
 ### Other notes
 
@@ -138,73 +134,30 @@ absorbance template is already normalized to 1.0 at the true (sub-grid)
 `quantal`, and `energy` are normalized in linear space, with `log10`
 applied last when `LogOutput=true`. `absorbance` passes through raw.
 
-## Where MATLAB is more correct than pycone
+## Differences not covered by the parity test
 
-The parity work surfaced several places where this MATLAB toolbox is
-genuinely better than the pycone reference. None of these were
-"corrected" toward pycone in the harness; the harness either follows
-MATLAB's correct behavior or sidesteps the issue.
+A few features and implementation details differ between the two
+implementations. The harness handles them by either excluding
+configurations that pycone has no equivalent for, or aligning the two
+sides so the comparison is apples-to-apples. They are noted here for
+transparency.
 
-1. **`absorptancefromabsorbance` log-mode bug in pycone.** Looking at
-   `pycone/CMFcalc.py`:
-   ```python
-   if loglin == 'log':
-       for n in range(1, 4):
-           LMSabtanceout[:,n] = np.log10(LMSabsf[:,n])  # log10 of INPUT
-   ```
-   It overwrites the just-computed absorptance with `log10(absorbance)`
-   - i.e., logs the wrong stage. MATLAB's `IndividualCMF` produces the
-   correct log-absorptance.
+The toolbox includes models and conveniences pycone does not (alternative
+photopigment and lens templates, continuous normalization, the
+Mean->Serine shift guard, and custom-mode density protection). The parity
+test excludes configurations that rely on these, since pycone has no
+equivalent path to compare against (see also Coverage, above).
 
-2. **Pycone normalizes inside every conversion function.**
-   `corneafromlinabsorptance`, `energyfromquantalin`,
-   `quantafromenergylin`, etc. all end with `LMSout /= np.max(LMSout)`.
-   This conflates pipeline computation with output presentation: there
-   is no way to obtain pycone's raw, un-normalized corneal output
-   without running it once and then "un-normalizing" by hand. MATLAB
-   keeps these separate (raw pipeline + explicit `NormalizationCache`
-   layer that respects `NormalizeOutput`).
+**Implementation details the harness aligns:**
 
-3. **Pycone's main wavelength grid uses `np.arange(360, 850+step, step)`.**
-   At sub-nm step sizes (0.1 nm, 0.05 nm) `np.arange` accumulates
-   floating-point drift of order `1e-11 * num_steps` because 0.1 isn't
-   exact in IEEE754. After `np.log10(nm)` inside the templates this
-   becomes visible (~1e-5 in normalized output at 0.1 nm step). MATLAB's
-   `(start:step:stop)'` does not exhibit this drift; pycone's GUI may.
-
-4. **No `Pokorny1987` lens template in pycone.** Pycone supports only
-   the Stockman-Rider 2023 age-invariant lens model. MATLAB additionally
-   provides the age-dependent two-component Pokorny et al. (1987) lens
-   template, which is essential for modeling observers older than 32.
-
-5. **No Govardovskii template in pycone.** MATLAB supports
-   `PhotopigmentModel="Govardovskii2000"` for the continuous A1 visual
-   pigment template; pycone's photopigment templates are
-   Stockman-Rider only.
-
-6. **No `NormalizationMethod="Continuous"` in pycone.** Pycone's
-   "peak = 1" is the maximum of a discrete sample grid, which shifts
-   slightly with the wavelength sampling. MATLAB's default
-   `Continuous` mode uses `fminbnd` to locate the true sub-grid peak,
-   giving sampling-independent normalization.
-
-7. **No Mean->Serine auto-switch guard.** When the user assigns a
-   non-zero `L_LambdaMaxShift` to a Mean L-cone template, MATLAB warns
-   and switches to the Serine template (the Mean template is a fixed
-   weighted average that cannot accept a shift parameter). Pycone has
-   no equivalent guard - applying a shift to the Lmean is undefined
-   there.
-
-8. **No Custom-mode protection.** MATLAB tracks a `*DensityAlgorithm`
-   state per density (lens, macular, photopigment) so an explicit
-   override survives subsequent `Age`, `FieldSize`, or `LensModel`
-   edits. Pycone has no notion of this; you must re-set densities by
-   hand whenever any other parameter changes.
-
-These are intentional MATLAB-side design improvements, not divergences
-from a reference. The parity test deliberately avoids configurations
-that exercise items 4-8 because pycone simply has no equivalent code
-path; for items 1-3 the harness implements MATLAB's correct behavior.
+- pycone applies normalization within its conversion functions, so the
+  harness applies the same normalization to the MATLAB output; the
+  corneal-stage outputs are then compared on equal terms.
+- MATLAB's `(start:step:stop)'` and pycone's `np.arange` can produce
+  wavelength samples that differ by a small floating-point amount at
+  fine step sizes (visible as ~1e-5 in normalized output at 0.1 nm
+  steps, through `log10(nm)` inside the templates). The harness uses a
+  consistent grid so grid construction does not affect the comparison.
 
 ## Updating after pycone changes
 
