@@ -177,5 +177,65 @@
                "L_OpsinTemplate": "MinL", "M_OpsinTemplate": "LinM",
                "L_LambdaMaxShift": 1.5, "M_LambdaMaxShift": -1.5},
     "pycone": {"L_template": "M-in-L", "M_template": "L-in-M"}
+  },
+  {
+    "name": "29_mshift_18p0_no_swap",
+    "description": "Direct M shift 18.0 nm, below 18.41 threshold: no swap",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "M_LambdaMaxShift": 18.0},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "30_mshift_18p25_gap_no_swap",
+    "description": "Direct M shift 18.25 nm, in the 18.13 to 18.41 gap: no swap (would swap under a 23.31 threshold; proves 23.67)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "M_LambdaMaxShift": 18.25},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "31_mshift_18p3_no_swap",
+    "description": "Direct M shift 18.3 nm, just below 18.41: no swap",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "M_LambdaMaxShift": 18.3},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "32_mshift_18p5_swap",
+    "description": "Direct M shift 18.5 nm, just above 18.41: M uses L template (MisL)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "M_LambdaMaxShift": 18.5},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "33_mshift_22p0_swap",
+    "description": "Direct M shift 22.0 nm, well above 18.41: M uses L template (MisL)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "M_LambdaMaxShift": 22.0},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "34_lshift_minus_15p8_no_swap",
+    "description": "Direct L shift -15.8 nm, above -16.0345 threshold: no swap",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -15.8},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "35_lshift_minus_15p9_gap_no_swap",
+    "description": "Direct L shift -15.9 nm, in the -15.79 to -16.0345 gap: no swap (would swap under a 23.31 threshold; proves 23.67)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -15.9},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "36_lshift_minus_16p2_swap",
+    "description": "Direct L shift -16.2 nm, just below -16.0345: L uses M template (LisM)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -16.2},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "37_lshift_minus_20p0_swap",
+    "description": "Direct L shift -20.0 nm, well below -16.0345: L uses M template (LisM)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -20.0},
+    "pycone": {"auto_lm_switch": true}
+  },
+  {
+    "name": "38_both_M22_Lminus20_swap",
+    "description": "Past both thresholds (M +22.0, L -20.0): both cones swap (MLSconelog)",
+    "matlab": {"Age": 32, "FieldSize": 10, "L_OpsinTemplate": "Serine", "L_LambdaMaxShift": -20.0, "M_LambdaMaxShift": 22.0},
+    "pycone": {"auto_lm_switch": true}
   }
 ]
