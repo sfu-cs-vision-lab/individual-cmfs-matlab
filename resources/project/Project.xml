@@ -1100,77 +1100,26 @@
         <Reference Location="12f7d672-02a9-48ea-8d14-ac759e507186">
             <Info Ref="tests/data/cvrl" Type="Relative"/>
         </Reference>
-        <Reference Location="13fca0fe-5640-4e6e-a667-2be96e249886">
-            <Info Ref="tests/parity/pycone/.git/refs/remotes/origin" Type="Relative"/>
-        </Reference>
-        <Reference Location="231070b2-6e2a-4332-9112-c19a18d0dbd6">
-            <Info Ref="tests/parity/pycone/.git/objects" Type="Relative"/>
-        </Reference>
-        <Reference Location="2bba8ed1-200d-4b7a-b883-e6ddf1cf2d4e">
-            <Info Ref="tests/parity/pycone" Type="Relative"/>
-        </Reference>
         <Reference Location="3fd760b0-1316-4fae-9935-e4a98b3ecccd">
             <Info Ref="tests" Type="Relative"/>
         </Reference>
         <Reference Location="4533ec7c-3ff2-4939-89a6-23254f1e1e0e">
             <Info Ref="toolbox/examples/utils" Type="Relative"/>
         </Reference>
-        <Reference Location="4a07a7a8-556d-41ee-8e8d-ee90bb05893c">
-            <Info Ref="tests/parity/pycone/.git/refs" Type="Relative"/>
-        </Reference>
         <Reference Location="5775c795-cf2c-4fc0-989d-3e90f72fdf46">
             <Info Ref="toolbox" Type="Relative"/>
-        </Reference>
-        <Reference Location="5d55033c-5261-44f4-a614-9a857f5acd3c">
-            <Info Ref="tests/parity/pycone/.git/logs/refs" Type="Relative"/>
-        </Reference>
-        <Reference Location="609fa96f-370c-4926-a6e0-d1a9ab470078">
-            <Info Ref="tests/parity/pycone/.git/logs" Type="Relative"/>
-        </Reference>
-        <Reference Location="6b4f1e88-522a-49db-821c-d767efb0f2a0">
-            <Info Ref="tests/parity/pycone/.git/logs/refs/remotes/origin" Type="Relative"/>
-        </Reference>
-        <Reference Location="76e9c573-eb54-44a9-912b-cbb23cb3a89d">
-            <Info Ref="tests/parity/pycone/.git/objects/pack" Type="Relative"/>
-        </Reference>
-        <Reference Location="7e164a48-087a-4951-ba3f-785c7ecbcae0">
-            <Info Ref="tests/parity/pycone/.git" Type="Relative"/>
         </Reference>
         <Reference Location="80b1e118-0868-4ac5-a901-deb566f5326f">
             <Info Ref="toolbox/examples" Type="Relative"/>
         </Reference>
-        <Reference Location="889aafb9-0636-4331-9981-11d780426604">
-            <Info Ref="tests/parity/pycone/.git/refs/tags" Type="Relative"/>
-        </Reference>
-        <Reference Location="a876d954-09de-4b07-8e10-758a02b903f7">
-            <Info Ref="tests/parity/pycone/.git/refs/remotes" Type="Relative"/>
-        </Reference>
-        <Reference Location="b3583d12-a7b4-43af-bfa9-256a4edbd429">
-            <Info Ref="tests/parity/pycone/.git/logs/refs/remotes" Type="Relative"/>
-        </Reference>
         <Reference Location="ba991dd8-d183-40c5-9418-b2ed9c90c713">
             <Info Ref="toolbox/doc" Type="Relative"/>
-        </Reference>
-        <Reference Location="c1912dfe-a308-4a2a-8b66-61cf4f283ba3">
-            <Info Ref="tests/parity/pycone/.git/objects/info" Type="Relative"/>
         </Reference>
         <Reference Location="c1f36207-8b9b-4ef8-95e1-b984df397d7e">
             <Info Ref="buildUtilities" Type="Relative"/>
         </Reference>
-        <Reference Location="c6a80443-ab3f-4866-b3b7-94a6d9bd82e8">
-            <Info Ref="tests/parity/pycone/.git/info" Type="Relative"/>
-        </Reference>
-        <Reference Location="ce7ed92a-8780-4956-b2e0-717f56da4eb4">
-            <Info Ref="tests/parity/pycone/.git/logs/refs/heads" Type="Relative"/>
-        </Reference>
         <Reference Location="e915fdce-ee1b-428e-9fe6-4d19c0edc46c">
             <Info Ref="tests/parity" Type="Relative"/>
-        </Reference>
-        <Reference Location="ecb41fad-6549-42cb-b4a7-018f2435d275">
-            <Info Ref="tests/parity/pycone/.git/hooks" Type="Relative"/>
-        </Reference>
-        <Reference Location="ed5df713-dfbf-4e5f-a05b-311eebae7c21">
-            <Info Ref="tests/parity/pycone/.git/refs/heads" Type="Relative"/>
         </Reference>
         <Reference Location="f946ece5-cede-400b-a907-1db90fbf2e76">
             <Info Ref="tests/data" Type="Relative"/>
