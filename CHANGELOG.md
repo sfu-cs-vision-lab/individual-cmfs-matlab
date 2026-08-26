@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-beta.6]
+
+### Added
+- Direct lambda-max shifts now switch the L/M cone template on magnitude, matching pycone 1.0.3. A large positive `M_LambdaMaxShift` makes the M cone borrow the L template, and a large negative `L_LambdaMaxShift` makes the L cone borrow the M template, at the trip points pycone uses (`M_LambdaMaxShift >= 18.41` nm and `L_LambdaMaxShift <= -16.0345` nm). Previously only an opsin genotype (amino acids 277 and 285) triggered the swap, and the genotype path is unchanged. Verified against pycone by ten new parity configurations, including the gap cases that fix the trip point, and by behavioral tests that assert the thresholds directly.
+
 ## [0.1.0-beta.5]
 
 ### Added
