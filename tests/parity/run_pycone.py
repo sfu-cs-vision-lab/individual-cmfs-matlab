@@ -94,6 +94,104 @@ def build_template_array(nm, l_template, lshift, mshift, sshift, m_template="Sta
     return log_abs, lin_abs
 
 
+# Direct-shift magnitude L/M template switching.
+#
+# Faithful transcription of pycone 1.0.3 (LMStemplateCMFs.py): the decision
+# peaks and codon scales (lines 62 to 135), chooseLMtemplates() for the
+# useCodons == False branch (lines 659 to 680), and the template routing
+# (lines 729 to 739). Copied close to line-for-line, not tidied, so it can be
+# diffed directly against the source: when a direct lambda-max shift is large
+# enough, pycone swaps the L/M template, and the values here are what decide
+# that. Reached only when the parity config sets "auto_lm_switch"; the standard
+# configs never set it and stay on build_template_array above.
+
+# Decision peaks (LMStemplateCMFs.py 62, 65, 67)
+Lserlmax_template = 554.86
+Mlmax_template = 531.19
+Lser_Mlmax_diff = Lserlmax_template - Mlmax_template  # 23.67
+
+# Codon base shifts and M->L scale (LMStemplateCMFs.py 91 to 108)
+M_L_116baseshift = 0
+M_L_180baseshift = 3
+M_L_230baseshift = 3
+M_L_233baseshift = 0
+M_L_277baseshift = 7
+M_L_285baseshift = 14
+M_L_309baseshift = 0
+M_L_allbaseshifts = (M_L_116baseshift + M_L_180baseshift + M_L_230baseshift
+                     + M_L_233baseshift + M_L_277baseshift + M_L_285baseshift
+                     + M_L_309baseshift)
+M_L_scale = Lser_Mlmax_diff / M_L_allbaseshifts
+M_L_277shift = M_L_277baseshift * M_L_scale
+M_L_285shift = M_L_285baseshift * M_L_scale
+
+# Codon base shifts and L->M scale (LMStemplateCMFs.py 114 to 135)
+L_M_116baseshift = -3
+L_M_180baseshift = -4
+L_M_230baseshift = -3
+L_M_233baseshift = 0
+L_M_277baseshift = -7
+L_M_285baseshift = -14
+L_M_309baseshift = 0
+L_M_allbaseshifts = (L_M_116baseshift + L_M_180baseshift + L_M_230baseshift
+                     + L_M_233baseshift + L_M_277baseshift + L_M_285baseshift
+                     + L_M_309baseshift)
+L_M_scale = -Lser_Mlmax_diff / L_M_allbaseshifts
+L_M_277shift = L_M_277baseshift * L_M_scale
+L_M_285shift = L_M_285baseshift * L_M_scale
+
+
+def choose_lm_templates(Lshift, Mshift):
+    # LMStemplateCMFs.py chooseLMtemplates(), useCodons == False branch (659 to 680).
+    MisL = False
+    LisM = False
+    MisLshift = 0.0
+    LisMshift = 0.0
+    if Mshift >= (M_L_277shift + M_L_285shift):  # Exon 5 = L
+        MisL = True
+        MisLshift = Mshift - (Lserlmax_template - Mlmax_template)
+    if Lshift <= (L_M_277shift + L_M_285shift):  # Exon 5 = M
+        LisM = True
+        LisMshift = Lshift + (Lserlmax_template - Mlmax_template)
+    return MisL, LisM, MisLshift, LisMshift
+
+
+def build_template_array_lmswitch(nm, lshift, mshift, sshift):
+    # Direct-shift path with magnitude switching. Mirrors pycone's routing
+    # (LMStemplateCMFs.py 729 to 739) into LLS / MMS / MLS / LMSconelog. The
+    # L base here is Lser, matching pycone's direct-shift LMSconelog (the
+    # Lmean path, LMSconelognormal, is the separate standard-observer path).
+    MisL, LisM, MisLshift, LisMshift = choose_lm_templates(lshift, mshift)
+    if LisM and not MisL:  # 2 M-cone templates -> MMSconelog
+        l_log = CMFtemplates.Mconelog(nm, LisMshift)
+        m_log = CMFtemplates.Mconelog(nm, mshift)
+    elif MisL and not LisM:  # 2 L-cone templates -> LLSconelog
+        l_log = CMFtemplates.Lserconelog(nm, lshift)
+        m_log = CMFtemplates.Lserconelog(nm, MisLshift)
+    elif MisL and LisM:  # swapped -> MLSconelog
+        l_log = CMFtemplates.Mconelog(nm, LisMshift)
+        m_log = CMFtemplates.Lserconelog(nm, MisLshift)
+    else:  # normal direct-shift -> LMSconelog (L is Lser)
+        l_log = CMFtemplates.Lserconelog(nm, lshift)
+        m_log = CMFtemplates.Mconelog(nm, mshift)
+    s_log = CMFtemplates.Sconelog(nm, sshift)
+    log_abs = np.column_stack([nm, l_log, m_log, s_log])
+    lin_abs = np.column_stack([nm, 10**l_log, 10**m_log, 10**s_log])
+    return log_abs, lin_abs
+
+
+def build_template_array_for_cfg(nm, cfg):
+    # Dispatch to the magnitude-switching builder when the config opts in,
+    # otherwise the explicit-template builder. Default is inert: configs that
+    # do not set "auto_lm_switch" take the exact path they always did.
+    if cfg.get("auto_lm_switch", False):
+        return build_template_array_lmswitch(
+            nm, cfg["Lshift"], cfg["Mshift"], cfg["Sshift"])
+    return build_template_array(
+        nm, cfg["L_template"], cfg["Lshift"], cfg["Mshift"], cfg["Sshift"],
+        m_template=cfg.get("M_template", "Standard"))
+
+
 def main():
     cfg = json.loads(sys.stdin.read())
 
@@ -107,10 +205,7 @@ def main():
     n_points = int(round((nm_max - nm_min) / nm_step)) + 1
     nm = np.linspace(nm_min, nm_max, n_points)
 
-    _, lin_abs = build_template_array(
-        nm, cfg["L_template"], cfg["Lshift"], cfg["Mshift"], cfg["Sshift"],
-        m_template=cfg.get("M_template", "Standard"),
-    )
+    _, lin_abs = build_template_array_for_cfg(nm, cfg)
 
     Lod, Mod, Sod = cfg["Lod"], cfg["Mod"], cfg["Sod"]
     mac_spectrum = CMFtemplates.macular(nm)
@@ -214,10 +309,7 @@ def compute_rgb_cmfs(cfg, lms_energy, nm):
     # Compute L/M/S at the three primary wavelengths separately,
     # using the same template/density/filter parameters as the spectrum.
     primary_nm = np.array([Rnm, Gnm, Bnm])
-    _, primary_lin_abs = build_template_array(
-        primary_nm, cfg["L_template"], cfg["Lshift"], cfg["Mshift"], cfg["Sshift"],
-        m_template=cfg.get("M_template", "Standard"),
-    )
+    _, primary_lin_abs = build_template_array_for_cfg(primary_nm, cfg)
     primary_retinal = CMFcalc.absorptancefromabsorbance(
         primary_lin_abs, cfg["Lod"], cfg["Mod"], cfg["Sod"], "lin"
     )
@@ -266,10 +358,7 @@ def stages_raw_quantal(cfg, nm):
     Used by compute_rgb_cmfs to normalize the primaries' values by the
     same per-cone peaks used to normalize the spectrum.
     """
-    _, lin_abs = build_template_array(
-        nm, cfg["L_template"], cfg["Lshift"], cfg["Mshift"], cfg["Sshift"],
-        m_template=cfg.get("M_template", "Standard"),
-    )
+    _, lin_abs = build_template_array_for_cfg(nm, cfg)
     retinal = CMFcalc.absorptancefromabsorbance(
         lin_abs, cfg["Lod"], cfg["Mod"], cfg["Sod"], "lin"
     )

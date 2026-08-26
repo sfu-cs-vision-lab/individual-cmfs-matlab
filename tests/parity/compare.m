@@ -112,6 +112,10 @@ for k = 1:nConfigs
 
     isLog = isfield(cfg.pycone, 'log_output') && cfg.pycone.log_output;
     isNormalized = ~(isfield(cfg.pycone, 'normalize') && cfg.pycone.normalize == false);
+    % Direct-shift configs set this so pycone decides the L/M swap itself
+    % (run_pycone.py chooseLMtemplates) instead of being told the template.
+    % Absent for every standard config, so they stay on the existing path.
+    isAutoLMSwitch = isfield(cfg.pycone, 'auto_lm_switch') && cfg.pycone.auto_lm_switch;
     obs.LogOutput = isLog;
     obs.NormalizeOutput = isNormalized;
 
@@ -134,7 +138,8 @@ for k = 1:nConfigs
         'wl_max', wlMax, ...
         'wl_step', wlStep, ...
         'normalize', isNormalized, ...
-        'log_output', isLog);
+        'log_output', isLog, ...
+        'auto_lm_switch', isAutoLMSwitch);
 
     pyTable = invokePycone(runPyconeScript, payload);
 

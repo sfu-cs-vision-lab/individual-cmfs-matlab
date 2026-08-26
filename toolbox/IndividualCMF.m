@@ -902,8 +902,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
 
         function v = get.L_OpsinTemplate(obj)
-            % get.L_OpsinTemplate  Get L-cone opsin template shape.
-            v = obj.p_L_Template;
+            % get.L_OpsinTemplate  Get the effective L-cone opsin template,
+            % including the direct-shift magnitude switch (effectiveLMTemplates).
+            [v, ~] = obj.effectiveLMTemplates();
         end
 
         function set.M_OpsinTemplate(obj, v)
@@ -923,8 +924,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
 
         function v = get.M_OpsinTemplate(obj)
-            % get.M_OpsinTemplate  Get M-cone opsin template shape.
-            v = obj.p_M_Template;
+            % get.M_OpsinTemplate  Get the effective M-cone opsin template,
+            % including the direct-shift magnitude switch (effectiveLMTemplates).
+            [~, v] = obj.effectiveLMTemplates();
         end
 
         function set.PhotopigmentModel(obj, v)
@@ -3702,11 +3704,68 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         function opts = getTemplateOptions(obj)
             % GETTEMPLATEOPTIONS  Build options struct for template methods.
             %
+            %   Uses the effective templates so a direct shift large enough
+            %   to swap L/M reaches the absorbance computation.
+            %
             %   OUTPUTS:
             %       opts - Struct with L_Template and M_Template fields.
+            [effL, effM] = obj.effectiveLMTemplates();
             opts = struct();
-            opts.L_Template = string(obj.p_L_Template);
-            opts.M_Template = string(obj.p_M_Template);
+            opts.L_Template = string(effL);
+            opts.M_Template = string(effM);
+        end
+
+        function [effL, effM] = effectiveLMTemplates(obj)
+            % EFFECTIVELMTEMPLATES  Resolve the L/M templates actually used,
+            % applying pycone's direct-shift magnitude switch.
+            %
+            %   This is the toolbox equivalent of pycone's chooseLMtemplates
+            %   (LMStemplateCMFs.py) for the useCodons == False branch: a
+            %   direct M_LambdaMaxShift at or past the M->L exon-5 shift makes
+            %   the M cone borrow the L template (M_OpsinTemplate "LinM",
+            %   pycone MisL), and a direct L_LambdaMaxShift at or past the
+            %   L->M exon-5 shift makes the L cone borrow the M template
+            %   (L_OpsinTemplate "MinL", pycone LisM). The two flags are
+            %   independent, so both cones can swap at once. The -23.67 /
+            %   +23.67 offset on the borrowed template is applied downstream
+            %   by the existing MinL / LinM template machinery in Nomograms.
+            %
+            %   The genotype/codon path resolves the template by amino-acid
+            %   identity (setGenotype / fromGenotype) and is left untouched:
+            %   when a genotype is active it is the arbiter, so the magnitude
+            %   switch is skipped (mirroring useCodons == True).
+            %
+            %   Scope note. pycone's direct-shift path is entirely Lser-based,
+            %   so this matches pycone when the L base is Serine, which is what
+            %   the parity configs use. A Mean L base combined with a direct
+            %   shift is a toolbox generalization pycone does not model. There
+            %   the swapped cone still matches pycone, but an un-swapped Mean L
+            %   cone stays Mean.
+            effL = obj.p_L_Template;
+            effM = obj.p_M_Template;
+            if numEntries(obj.GenotypeState) > 0
+                return
+            end
+
+            % Trip points computed from the named parity constants (not a
+            % hardcoded 18.41 / -16.0345): the exon-5 base shifts (positions
+            % 277 and 285) scaled by 23.67 / bases-sum, the same scale the
+            % genotype path uses in ObserverParameters.fromGenotype. The two
+            % directions use different bases-sums (27 vs 31); the asymmetry
+            % is intentional and follows pycone.
+            mScale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
+            lScale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
+            mThreshold = (Genotype.GENOTYPE_SHIFTS("M_277_Tyr") ...
+                + Genotype.GENOTYPE_SHIFTS("M_285_Thr")) * mScale;
+            lThreshold = (Genotype.GENOTYPE_SHIFTS("L_277_Phe") ...
+                + Genotype.GENOTYPE_SHIFTS("L_285_Ala")) * lScale;
+
+            if obj.p_Parameters.MCone.LambdaMaxShift >= mThreshold
+                effM = enums.MOpsinTemplate.LinM;
+            end
+            if obj.p_Parameters.LCone.LambdaMaxShift <= lThreshold
+                effL = enums.LOpsinTemplate.MinL;
+            end
         end
 
         function usesAnalyticalPeak = templateSupportsAnalyticalPeak(obj)
