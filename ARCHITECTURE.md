@@ -349,25 +349,37 @@ output bit-for-bit.
 Three derived physiological quantities have an `*Algorithm` companion
 enum that selects how they are computed:
 
-| Quantity | Algorithm enum | Formula values | Custom value |
+| Quantity | Algorithm enum | Assignable formula values | Read-only state |
 |---|---|---|---|
 | Lens density | `enums.LensDensityAlgorithm` | `Auto` (delegates to active `LensTemplate`) | `Custom` |
 | Macular density | `enums.MacularDensityAlgorithm` | `CIE170`, `MorelandAlexander` | `Custom` |
 | Photopigment optical densities | `enums.PhotopigmentDensityAlgorithm` | `CIE170`, `PokornySmith` | `Custom` |
 
 Each quantity defaults to a formula mode and recomputes when its inputs
-(age, field size, template) change. Assigning the dependent property
-directly auto-engages `Custom` and pins the value:
+(age, field size, template) change. Pinning a value engages `Custom`;
+assigning `[]` is the inverse and hands the quantity back to the formula:
 
 ```matlab
-obs.LensDensity = 1.85;            % auto-engages LensDensityAlgorithm="Custom"
-obs.Age = 70;                      % does NOT recompute LensDensity (still Custom)
-obs.LensDensityAlgorithm = "Auto"; % switches back; recomputes from age via the lens template
+obs.LensDensity = 1.85;   % pins it; LensDensityAlgorithm now READS "Custom"
+obs.Age = 70;             % does NOT recompute LensDensity (still Custom)
+obs.LensDensity = [];     % back to the formula, recomputed from the current Age
 ```
 
-The pattern protects user intent from being clobbered by subsequent
-property changes. Modes are enum-typed, so string assignments like
-`"Auto"` and `"Custom"` are validated at assignment.
+`Custom` is a state you observe, not a mode you select: assigning it to an
+`*Algorithm` property, or naming it in the constructor, raises
+`IndividualCMF:CustomIsNotAssignable`. There is no pinned value to claim
+unless you supplied one. The formula values stay assignable, because
+choosing *which* formula is a genuine choice.
+
+Clearing a cone density reverts the whole group. `Lod`, `Mod` and `Sod`
+are produced together by one formula, so `obs.Lod = []` restores all
+three.
+
+To freeze whatever the model computed, read the value and assign it back:
+
+```matlab
+obs.LensDensity = obs.LensDensity;   % pin the model's own value
+```
 
 ### NormalizationCache
 

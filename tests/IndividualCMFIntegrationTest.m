@@ -229,10 +229,12 @@ classdef IndividualCMFIntegrationTest < matlab.unittest.TestCase
             
             obs = IndividualCMF();
             
-            % 1. Set Custom Densities
+            % 1. Set Custom Densities. Assigning the value is what engages
+            % Custom; there is no separate lock step.
             obs.MacularDensity = 0.8;
-            obs.MacularDensityAlgorithm = "Custom"; % Explicitly lock it
-            
+            testCase.assertEqual(string(obs.MacularDensityAlgorithm), "Custom");
+
+
             % 2. Change Field Size (which usually triggers recalc)
             obs.FieldSize = 2; 
             

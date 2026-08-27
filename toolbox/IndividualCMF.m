@@ -655,10 +655,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.MacularDensityAlgorithm(obj, val)
             % set.MacularDensityAlgorithm  Set the macular density calculation algorithm.
+            %   Chooses which formula computes MacularDensity. "Custom" is
+            %   not assignable here: it is engaged by assigning a value to
+            %   MacularDensity and cleared by MacularDensity = [].
             arguments
                 obj
                 val (1,1) enums.MacularDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "MacularDensityAlgorithm", "MacularDensity");
             oldAlg = obj.p_MacularDensityAlgorithm;
             obj.p_MacularDensityAlgorithm = val;
 
@@ -679,10 +684,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.PhotopigmentDensityAlgorithm(obj, val)
             % set.PhotopigmentDensityAlgorithm  Set the photopigment density calculation algorithm.
+            %   Chooses which formula computes Lod / Mod / Sod. "Custom" is
+            %   not assignable here: it is engaged by assigning a value to
+            %   any of the three and cleared by assigning [] to any of them.
             arguments
                 obj
                 val (1,1) enums.PhotopigmentDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "PhotopigmentDensityAlgorithm", "Lod / Mod / Sod");
             oldAlg = obj.p_PhotopigmentDensityAlgorithm;
             obj.p_PhotopigmentDensityAlgorithm = val;
 
@@ -745,9 +755,16 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Lod(obj, v)
             % set.Lod  Set L-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
+            end
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
             obj.p_Parameters.LCone = PhotopigmentParameters( ...
                 OpticalDensity=v, ...
@@ -765,9 +782,16 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Mod(obj, v)
             % set.Mod  Set M-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
+            end
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
             obj.p_Parameters.MCone = PhotopigmentParameters( ...
                 OpticalDensity=v, ...
@@ -785,9 +809,16 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Sod(obj, v)
             % set.Sod  Set S-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
+            end
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
             obj.p_Parameters.SCone = PhotopigmentParameters( ...
                 OpticalDensity=v, ...
@@ -805,9 +836,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.MacularDensity(obj, v)
             % set.MacularDensity  Set macular pigment density.
+            %   Assigning [] clears Custom mode and returns the value to
+            %   the field-size-appropriate formula.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
+            end
+            if isempty(v)
+                obj.revertMacularDensity();
+                return
             end
             obj.p_Parameters.Macular = PreReceptoralFilter(Type="macular", Density=v);
             if ~obj.p_IsInternalUpdate
@@ -1013,9 +1050,18 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   or LensModel changes. Internal recalculations from
             %   recalcLensFromAge bypass the mode switch via the
             %   p_IsInternalUpdate flag.
+            %
+            %   Assigning [] is the inverse: it clears Custom mode and
+            %   recomputes from the Age in force at that moment.
             arguments
                 obj
-                v (1,1) double {mustBeNonnegative, mustBeFinite}
+                v double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite}
+            end
+            if isempty(v)
+                obj.p_LensDensityAlgorithm = "Auto";
+                obj.recalcLensFromAge();
+                obj.invalidateNormalizationCache();
+                return
             end
             obj.p_LensDensity = v;
             if ~obj.p_IsInternalUpdate
@@ -1033,10 +1079,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % set.LensDensityAlgorithm  Set the lens density mode.
             %   Switching from "Custom" to "Auto" warns and recomputes
             %   LensDensity from the active LensModel and current Age.
+            %   "Custom" is not assignable here: it is engaged by assigning
+            %   a value to LensDensity and cleared by LensDensity = [].
             arguments
                 obj
                 val (1,1) enums.LensDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "LensDensityAlgorithm", "LensDensity");
             oldAlg = obj.p_LensDensityAlgorithm;
             obj.p_LensDensityAlgorithm = val;
 
@@ -3406,8 +3456,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             hasMacularOverride = ~isnan(options.MacularDensity);
             hasLensOverride = ~isnan(options.LensDensity);
 
+            % Custom is entailed by passing a density value, never named
+            % directly -- the same rule the algorithm setters enforce.
+            IndividualCMF.rejectCustomAssignment( ...
+                options.PhotopigmentDensityAlgorithm == "Custom", ...
+                "PhotopigmentDensityAlgorithm", "Lod / Mod / Sod");
+            IndividualCMF.rejectCustomAssignment( ...
+                options.MacularDensityAlgorithm == "Custom", ...
+                "MacularDensityAlgorithm", "MacularDensity");
+            IndividualCMF.rejectCustomAssignment( ...
+                options.LensDensityAlgorithm == "Custom", ...
+                "LensDensityAlgorithm", "LensDensity");
+
             % Check if field size is standard (2 or 10)
-            isStandardFieldSize = (obj.p_Parameters.FieldSize == 2 || obj.p_Parameters.FieldSize == 10);
+            isStandardFieldSize = obj.isStandardFieldSize();
 
             % Smart algorithm defaults: density override forces Custom;
             % otherwise an explicit algorithm wins; otherwise the
@@ -3716,6 +3778,34 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.p_IsInternalUpdate = false;
         end
 
+        function revertMacularDensity(obj)
+            % REVERTMACULARDENSITY  Leave Custom mode and recompute macular density.
+            %   Re-derives the algorithm the same way the constructor does
+            %   for an observer with no macular override, so the value
+            %   returns to whatever the current field size implies.
+            obj.p_MacularDensityAlgorithm = IndividualCMF.chooseAlgorithm( ...
+                false, "", obj.isStandardFieldSize(), "CIE170", "MorelandAlexander");
+            obj.updateMacularDensity();
+            obj.invalidateNormalizationCache();
+        end
+
+        function revertPhotopigmentDensities(obj)
+            % REVERTPHOTOPIGMENTDENSITIES  Leave Custom mode and recompute Lod/Mod/Sod.
+            %   Re-derives the algorithm the same way the constructor does
+            %   for an observer with no cone-density override. The formulas
+            %   produce all three densities together, so this reverts the
+            %   group rather than a single cone.
+            obj.p_PhotopigmentDensityAlgorithm = IndividualCMF.chooseAlgorithm( ...
+                false, "", obj.isStandardFieldSize(), "CIE170", "PokornySmith");
+            obj.updatePhotopigmentDensities();
+            obj.invalidateNormalizationCache();
+        end
+
+        function tf = isStandardFieldSize(obj)
+            % ISSTANDARDFIELDSIZE  True when CIE publishes a table for this field size.
+            tf = obj.p_Parameters.FieldSize == 2 || obj.p_Parameters.FieldSize == 10;
+        end
+
         function updateMacularDensity(obj)
             % UPDATEMACULARDENSITY  Update macular density based on MacularDensityAlgorithm.
             obj.p_IsInternalUpdate = true;
@@ -3870,6 +3960,30 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static, Access = private)
+        function rejectCustomAssignment(isCustom, algorithmName, densityName)
+            % REJECTCUSTOMASSIGNMENT  Block Custom on an algorithm property.
+            %   Custom is entailed by pinning a density value, so it is a
+            %   state to read rather than a mode to select. Assigning it
+            %   directly would claim a pinned value that does not exist.
+            %
+            %   INPUTS:
+            %       isCustom - Caller asked for Custom (logical)
+            %       algorithmName - Property being assigned (string)
+            %       densityName - Density that engages Custom (string)
+            arguments
+                isCustom (1,1) logical
+                algorithmName (1,1) string
+                densityName (1,1) string
+            end
+            if ~isCustom
+                return
+            end
+            error("IndividualCMF:CustomIsNotAssignable", ...
+                "%s cannot be set to ""Custom"". Custom is engaged by " + ...
+                "assigning a value to %s, and cleared by assigning [] to it.", ...
+                algorithmName, densityName);
+        end
+
         function alg = chooseAlgorithm(hasOverride, explicit, isStandardFS, fsStandardDefault, fsFormulaDefault)
             % CHOOSEALGORITHM  Pick a density algorithm name from constructor options.
             %

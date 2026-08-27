@@ -406,10 +406,162 @@ classdef DensityAlgorithmTest < matlab.unittest.TestCase
                 'LMS values should differ between 2deg and 10deg field sizes');
         end
 
+        % Custom mode: engaged by value, cleared by []
+
+        function testEmptyLensDensityRevertsToTheFormula(testCase)
+            obs = IndividualCMF(LensModel="Pokorny1987", Age=32);
+            formulaValue = obs.LensDensity;
+
+            obs.LensDensity = 1.85;
+            testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Custom", ...
+                'Assigning a value must engage Custom');
+
+            obs.Age = 70;
+            testCase.verifyEqual(obs.LensDensity, 1.85, 'AbsTol', 1e-12, ...
+                'Custom mode must survive an Age change');
+
+            obs.Age = 32;
+            obs.LensDensity = [];
+            testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Auto", ...
+                'Empty must clear Custom');
+            testCase.verifyEqual(obs.LensDensity, formulaValue, 'AbsTol', 1e-12, ...
+                'Empty must restore the formula value');
+        end
+
+        function testEmptyLensDensityRecomputesFromCurrentAge(testCase)
+            % Reverting recomputes from the age in force now, not the age
+            % that was in force when Custom was engaged.
+            obs = IndividualCMF(LensModel="Pokorny1987", Age=32);
+            obs.LensDensity = 1.85;
+            obs.Age = 70;
+
+            expected = IndividualCMF(LensModel="Pokorny1987", Age=70).LensDensity;
+            obs.LensDensity = [];
+            testCase.verifyEqual(obs.LensDensity, expected, 'AbsTol', 1e-12, ...
+                'Revert must use the current Age');
+        end
+
+        function testEmptyMacularDensityRevertsToTheFieldSizeDefault(testCase)
+            obs = IndividualCMF(StandardObserver=2);
+            standardValue = obs.MacularDensity;
+
+            obs.MacularDensity = 0.4;
+            testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "Custom");
+
+            obs.MacularDensity = [];
+            testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "CIE170", ...
+                'A standard field size reverts to CIE170');
+            testCase.verifyEqual(obs.MacularDensity, standardValue, 'AbsTol', 1e-12);
+        end
+
+        function testEmptyMacularDensityAtNonStandardFieldSize(testCase)
+            % No published table at 4 deg, so the revert lands on the
+            % continuous formula rather than CIE170.
+            obs = IndividualCMF(Age=32, FieldSize=4);
+            formulaValue = obs.MacularDensity;
+
+            obs.MacularDensity = 0.4;
+            obs.MacularDensity = [];
+            testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "MorelandAlexander");
+            testCase.verifyEqual(obs.MacularDensity, formulaValue, 'AbsTol', 1e-12);
+        end
+
+        function testEmptyConeDensityRevertsTheWholeGroup(testCase)
+            % The photopigment formulas produce Lod, Mod and Sod together,
+            % so clearing any one of them reverts all three.
+            obs = IndividualCMF(StandardObserver=10);
+            [stdLod, stdMod, stdSod] = deal(obs.Lod, obs.Mod, obs.Sod);
+
+            obs.Lod = 0.6;
+            obs.Mod = 0.6;
+            testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), "Custom");
+
+            obs.Lod = [];
+            testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), "CIE170");
+            testCase.verifyEqual(obs.Lod, stdLod, 'AbsTol', 1e-12);
+            testCase.verifyEqual(obs.Mod, stdMod, 'AbsTol', 1e-12, ...
+                'Clearing Lod must also revert Mod');
+            testCase.verifyEqual(obs.Sod, stdSod, 'AbsTol', 1e-12);
+        end
+
+        function testEmptyDensityIsIdempotent(testCase)
+            % Clearing a density that was never pinned is a no-op, not an
+            % error, so callers can reset unconditionally.
+            obs = IndividualCMF(StandardObserver=10);
+            before = [obs.Lod, obs.Mod, obs.Sod, obs.MacularDensity, obs.LensDensity];
+
+            obs.Lod = [];
+            obs.MacularDensity = [];
+            obs.LensDensity = [];
+
+            after = [obs.Lod, obs.Mod, obs.Sod, obs.MacularDensity, obs.LensDensity];
+            testCase.verifyEqual(after, before, 'AbsTol', 1e-12);
+        end
+
+        function testEmptyDensityInvalidatesTheCache(testCase)
+            obs = IndividualCMF(StandardObserver=2);
+            baseline = obs.LMS(550);
+
+            obs.MacularDensity = 0.8;
+            pinned = obs.LMS(550);
+            testCase.assertFalse(isequal(pinned, baseline), ...
+                'Pinning should change the output');
+
+            obs.MacularDensity = [];
+            testCase.verifyEqual(obs.LMS(550), baseline, 'AbsTol', 1e-12, ...
+                'Reverting must recompute, not serve a cached value');
+        end
+
+        % Custom is observed, never assigned
+
+        function testCustomIsNotAssignableToLens(testCase)
+            obs = IndividualCMF();
+            testCase.verifyError(@() setLensAlgorithm(obs, "Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+        end
+
+        function testCustomIsNotAssignableToMacular(testCase)
+            obs = IndividualCMF();
+            testCase.verifyError(@() setMacularAlgorithm(obs, "Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+        end
+
+        function testCustomIsNotAssignableToPhotopigment(testCase)
+            obs = IndividualCMF();
+            testCase.verifyError(@() setPhotopigmentAlgorithm(obs, "Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+        end
+
+        function testCustomIsNotAssignableInConstructor(testCase)
+            % The constructor is the other way Custom could be assigned,
+            % so it has to reject it too or the rule is only half true.
+            testCase.verifyError(@() IndividualCMF(LensDensityAlgorithm="Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+            testCase.verifyError(@() IndividualCMF(MacularDensityAlgorithm="Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+            testCase.verifyError(@() IndividualCMF(PhotopigmentDensityAlgorithm="Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+        end
+
+        function testFormulaAlgorithmsStillAssignable(testCase)
+            % Only Custom is blocked; choosing which formula is unchanged.
+            obs = IndividualCMF(Age=32, FieldSize=4);
+            testCase.verifyWarningFree(@() setMacularAlgorithm(obs, "MorelandAlexander"));
+            testCase.verifyWarningFree(@() setPhotopigmentAlgorithm(obs, "PokornySmith"));
+            testCase.verifyWarningFree(@() setLensAlgorithm(obs, "Auto"));
+            testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "MorelandAlexander");
+            testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), "PokornySmith");
+            testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Auto");
+        end
+
     end
 end
 
 %% Helper functions for verifyWarning with property assignment
+
+function setLensAlgorithm(obj, value)
+obj.LensDensityAlgorithm = value;
+end
 
 function setMacularAlgorithm(obj, value)
 obj.MacularDensityAlgorithm = value;

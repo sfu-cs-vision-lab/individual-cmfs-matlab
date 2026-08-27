@@ -9,7 +9,7 @@ exampleDefaults();
 %[text] - **`VanDeKraats2007`**. Five-component total-ocular-media model (van de Kraats & van Norren 2007) with quadratic-in-age density coefficients fitted across 74 donor lenses and 23 in vivo / psychophysics datasets, plus explicit Rayleigh-scatter and tryptophan components that extend the model into the near-UV.
 %[text] - **`Pokorny1987`**. Bi-linear age-dependent model from Pokorny, Smith & Lutze (1987). Yellowing accelerates after age 60. Its tabulated data start at 400 nm and flat-extrapolate below that, so prefer `VanDeKraats2007` for sub-400 nm work (see the `Pokorny1987LensTemplate` class help). \
 %[text] This example focuses on `StockmanRider2023` vs `VanDeKraats2007`; `Pokorny1987` follows the same usage pattern. \\
-%[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`. Conversely, if you assign `LensDensity` directly (say a measured value), it pins to `Custom` mode and then tracks neither `Age` nor `LensModel` until you reassign it or reset `LensDensityAlgorithm`.
+%[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`. Conversely, if you assign `LensDensity` directly (say a measured value), it pins to `Custom` mode and then tracks neither `Age` nor `LensModel` until you reassign it or clear it with `obs.LensDensity = []`.
 ages = [20, 32, 45, 60, 75];
 obs_SR = IndividualCMF.across('Age', ages, LensModel="StockmanRider2023");
 observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", FieldSize=10);
@@ -85,7 +85,7 @@ legend('StockmanRider2023 (flat with age)', 'Pokorny1987', 'VanDeKraats2007', 'L
 grid on
 %%
 %[text] ## Custom-mode override (advanced)
-%[text] The `LensDensity` value computed by the lens model can be overridden directly. Doing so auto-engages `LensDensityAlgorithm="Custom"` so the override is preserved across subsequent `Age` changes. See [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')) for full coverage.
+%[text] The `LensDensity` value computed by the lens model can be overridden directly. Doing so auto-engages `LensDensityAlgorithm="Custom"` so the override is preserved across subsequent `Age` changes; `obs.LensDensity = []` hands it back to the model. See [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')) for full coverage.
 obs_override = IndividualCMF(LensModel="VanDeKraats2007", Age=55, LensDensity=2.0);
 table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensityAlgorithm), ...
       'VariableNames', {'Age', 'LensDensity', 'Algorithm'})

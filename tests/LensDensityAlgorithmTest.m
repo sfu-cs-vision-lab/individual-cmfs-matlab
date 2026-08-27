@@ -27,12 +27,27 @@ classdef LensDensityAlgorithmTest < matlab.unittest.TestCase
             testCase.verifyEqual(obs.LensDensity, 2.5, 'AbsTol', 1e-9);
         end
 
-        function testExplicitAlgorithmInConstructor(testCase)
-            % Passing LensDensityAlgorithm="Custom" without an explicit
-            % LensDensity preserves whatever value was computed by the
-            % active LensModel at construction time.
-            obs = IndividualCMF(LensDensityAlgorithm="Custom");
-            testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Custom");
+        function testCustomInConstructorIsRejected(testCase)
+            % Naming Custom in the constructor used to freeze whatever the
+            % lens model computed. Custom is now entailed by pinning a
+            % value, so claiming the mode without one is rejected.
+            testCase.verifyError(@() IndividualCMF(LensDensityAlgorithm="Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+        end
+
+        function testFreezingTheComputedLensDensity(testCase)
+            % The replacement for the old constructor idiom: read the
+            % model's value, then assign it back to pin it.
+            obs = IndividualCMF(LensModel="Pokorny1987", Age=70);
+            computed = obs.LensDensity;
+
+            obs.LensDensity = computed;
+            testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Custom", ...
+                'Assigning the value back must engage Custom');
+
+            obs.Age = 20;
+            testCase.verifyEqual(obs.LensDensity, computed, 'AbsTol', 1e-12, ...
+                'The frozen value must survive an Age change');
         end
 
         function testCustomModePreservesAcrossAgeChange(testCase)

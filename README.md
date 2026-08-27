@@ -45,7 +45,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 pe
 
 **Parameter precedence**
 
-Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. The formula-driven value is restored only by reassigning it or by switching the algorithm back to its formula (for example `LensDensityAlgorithm = "CIE170"`). This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
+Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. Assigning `[]` is the inverse and returns the quantity to its formula (`obs.LensDensity = []`); because one formula produces all three cone densities together, clearing any of `Lod`, `Mod`, or `Sod` reverts the group. `Custom` itself cannot be assigned to an `*Algorithm` property -- it is a state that pinning a value produces. This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
 
 **Ergonomics**
 
@@ -121,6 +121,7 @@ obs = IndividualCMF(PhotopigmentModel="Govardovskii2000");
 % Manual override engages Custom mode (preserved across Age/FieldSize edits)
 obs.LensDensity = 1.2;
 disp(obs.LensDensityAlgorithm);   % "Custom"
+obs.LensDensity = [];             % back to the model-driven value
 
 % Evaluate cone sensitivities and derived quantities.
 % Case follows the color-science convention: tristimulus quantities

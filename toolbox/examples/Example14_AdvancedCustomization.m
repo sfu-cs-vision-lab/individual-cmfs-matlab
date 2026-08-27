@@ -44,12 +44,10 @@ table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensit
       'VariableNames', {'Age', 'LensDensity', 'Algorithm'})
 %%
 %[text] ## Returning to model-driven behaviour
-%[text] Switching `LensDensityAlgorithm="Auto"` recomputes `LensDensity` from `Age` and the active lens model. The setter emits an `IndividualCMF:LensCustomOverwritten` warning to make the override-loss explicit (we suppress it for the demo). **Note:** the default `LensModel="StockmanRider2023"` is age-flat, so Auto recompute here returns the canonical 32-year-old value (1.7649) even though `Age=80`. Switch to `LensModel="VanDeKraats2007"` for age-dependent recompute.
-warning('off', 'IndividualCMF:LensCustomOverwritten');
-obs_override.LensDensityAlgorithm = "Auto";
-warning('on', 'IndividualCMF:LensCustomOverwritten');
+%[text] Assigning `[]` is the inverse of pinning a value: it clears `Custom` and recomputes `LensDensity` from `Age` and the active lens model. Discarding the override is the whole point of the call, so it does not warn. Setting `LensDensityAlgorithm="Auto"` does the same thing and emits an `IndividualCMF:LensCustomOverwritten` warning, since there the override loss is a side effect rather than the request. **Note:** the default `LensModel="StockmanRider2023"` is age-flat, so the recompute here returns the canonical 32-year-old value (1.7649) even though `Age=80`. Switch to `LensModel="VanDeKraats2007"` for age-dependent recompute.
+obs_override.LensDensity = [];
 table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensityAlgorithm), ...
-      'VariableNames', {'Age', 'LensDensity_after_Auto', 'Algorithm'})
+      'VariableNames', {'Age', 'LensDensity_after_revert', 'Algorithm'})
 %%
 %[text] ## Hypothetical observers -- sensitivity analysis
 %[text] Push parameters to extremes for what-if studies. The next three sections each isolate one effect: extreme lens density, an anomalous trichromat with a strongly blue-shifted L-cone, and the full LMS impact of that anomalous L-cone.
