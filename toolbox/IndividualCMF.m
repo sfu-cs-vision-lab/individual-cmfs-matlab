@@ -2984,7 +2984,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             shift = obj.getConeShift(coneType);
             lb = lb + shift;
             ub = ub + shift;
-            validRange = obj.p_PhotopigmentTemplate.getValidRange();
+            validRange = obj.p_PhotopigmentTemplate.ValidRange;
             lb = max(lb, validRange(1));
             ub = min(ub, validRange(2));
 
@@ -3236,7 +3236,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
 
             % Get valid range from template
-            validRange = obj.p_PhotopigmentTemplate.getValidRange();
+            validRange = obj.p_PhotopigmentTemplate.ValidRange;
             minWl = validRange(1);
             maxWl = validRange(2);
 

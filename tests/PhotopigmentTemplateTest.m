@@ -5,7 +5,7 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
     %   - computeAbsorbance
     %   - computePeakAbsorbance
     %   - getLambdaMax
-    %   - getValidRange
+    %   - ValidRange
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
     %
@@ -134,20 +134,20 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
                 'Positive shift should move peak to longer wavelength');
         end
 
-        %% getValidRange Tests
+        %% ValidRange Tests
 
-        function testGetValidRangeGov(testCase)
-            % Test getValidRange for Govardovskii
-            range = testCase.GovTemplate.getValidRange();
+        function testValidRangeGov(testCase)
+            % Test ValidRange for Govardovskii
+            range = testCase.GovTemplate.ValidRange;
 
             testCase.verifySize(range, [1, 2]);
             testCase.verifyEqual(range, [380, 780], ...
                 'Govardovskii valid range should be [380, 780]');
         end
 
-        function testGetValidRangeSR(testCase)
-            % Test getValidRange for StockmanRider
-            range = testCase.SRTemplate.getValidRange();
+        function testValidRangeSR(testCase)
+            % Test ValidRange for StockmanRider
+            range = testCase.SRTemplate.ValidRange;
 
             testCase.verifySize(range, [1, 2]);
             testCase.verifyEqual(range, [360, 830], ...
@@ -287,14 +287,14 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
         end
 
         function testPhotopigmentTemplateGetValidRange(testCase)
-            % Test getValidRange for both template types
+            % Test ValidRange for both template types
             sr = StockmanRiderPhotopigmentTemplate();
             gov = GovardovskiiPhotopigmentTemplate();
 
-            srRange = sr.getValidRange();
+            srRange = sr.ValidRange;
             testCase.verifyEqual(srRange, [360, 830]);
 
-            govRange = gov.getValidRange();
+            govRange = gov.ValidRange;
             testCase.verifyEqual(govRange, [380, 780]);
         end
 

@@ -23,7 +23,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
     %
     %   PhotopigmentTemplate Concrete Methods:
     %       getLambdaMax  - Get lambda-max for a cone type with shift.
-    %       getValidRange - Returns the ValidRange constant of the subclass.
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
     %
@@ -65,8 +64,8 @@ classdef (Abstract) PhotopigmentTemplate < handle
         % ValidRange  [min_nm, max_nm] over which the template was fitted.
         %
         %   Queries outside this range may produce unreliable results due
-        %   to limitations of the template's parametric formulas. The
-        %   base class exposes this constant via getValidRange().
+        %   to limitations of the template's parametric formulas. Read it
+        %   directly from the template instance.
         ValidRange (1,2) double
     end
 
@@ -99,13 +98,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
     end
 
     methods
-        function range = getValidRange(obj)
-            % GETVALIDRANGE  Returns the [min, max] wavelength range
-            %   over which this template was fitted. Defers to each
-            %   subclass's ValidRange constant property.
-            range = obj.ValidRange;
-        end
-
         function lmax = getLambdaMax(obj, coneType, shift)
             % GETLAMBDAMAX  Get lambda-max wavelength for a cone type.
             %

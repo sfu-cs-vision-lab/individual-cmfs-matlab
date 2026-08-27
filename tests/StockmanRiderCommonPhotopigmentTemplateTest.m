@@ -143,7 +143,7 @@ classdef StockmanRiderCommonPhotopigmentTemplateTest < matlab.unittest.TestCase
 
         function testValidRange(testCase)
             % ValidRange should match the SR valid range [360, 830].
-            testCase.verifyEqual(testCase.Template.getValidRange(), [360, 830]);
+            testCase.verifyEqual(testCase.Template.ValidRange, [360, 830]);
         end
 
         function testSupportsAnalyticalPeakIsFalse(testCase)
