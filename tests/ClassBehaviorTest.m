@@ -117,9 +117,69 @@ classdef ClassBehaviorTest < matlab.unittest.TestCase
             % Test disabling normalization (sanity check)
             obs.NormalizeOutput = false;
             % For this check, a simple point sample is sufficient to prove it changed
-            l_val_at_peak = obs.L(555); 
+            l_val_at_peak = obs.L(555);
             testCase.verifyNotEqual(l_val_at_peak, 1.0, 'Disabling normalization failed to change output');
         end
-        
+
+        %% Copy semantics
+
+        function testCopyPreservesEveryTemplateModel(testCase)
+            % copyElement used to rebuild the lens and macular templates
+            % through switch statements whose otherwise branches returned a
+            % StockmanRider template for any unrecognised ShortName, so a
+            % model missing a case came back as a different model with no
+            % error. It also never copied the photopigment template at all.
+            % Both paths now go through the registries, which throw on an
+            % unknown name.
+            wl = (400:10:700)';
+
+            % The common template warns that opsin-template options are
+            % ignored, and getTemplateOptions always supplies them, so the
+            % warning fires on every fminbnd iteration during peak finding.
+            warnState = warning('off', ...
+                'StockmanRiderCommonPhotopigmentTemplate:IgnoredOption');
+            cleanup = onCleanup(@() warning(warnState)); %#ok<NASGU>
+
+            for m = string(enumeration('enums.PhotopigmentModel'))'
+                obs = IndividualCMF(PhotopigmentModel=m);
+                cp = copy(obs);
+                testCase.verifyEqual(string(cp.PhotopigmentModel), m, ...
+                    sprintf('Copy lost PhotopigmentModel "%s"', m));
+                testCase.verifyEqual(cp.LMS(wl), obs.LMS(wl), 'AbsTol', 0, ...
+                    sprintf('Copy of PhotopigmentModel "%s" computes differently', m));
+            end
+
+            for m = string(enumeration('enums.LensModel'))'
+                obs = IndividualCMF(LensModel=m);
+                cp = copy(obs);
+                testCase.verifyEqual(string(cp.LensModel), m, ...
+                    sprintf('Copy lost LensModel "%s"', m));
+                testCase.verifyEqual(cp.getLensDensitySpectrum(wl), ...
+                    obs.getLensDensitySpectrum(wl), 'AbsTol', 0, ...
+                    sprintf('Copy of LensModel "%s" computes differently', m));
+            end
+
+            for m = string(enumeration('enums.MacularModel'))'
+                obs = IndividualCMF(MacularModel=m);
+                cp = copy(obs);
+                testCase.verifyEqual(string(cp.MacularModel), m, ...
+                    sprintf('Copy lost MacularModel "%s"', m));
+            end
+        end
+
+        function testCopyDoesNotShareTemplateHandles(testCase)
+            % Templates are handle classes. A shallow copy would alias them,
+            % so changing the copy's model must not disturb the original.
+            obs = IndividualCMF(PhotopigmentModel="StockmanRider2023", ...
+                LensModel="StockmanRider2023");
+            cp = copy(obs);
+
+            cp.PhotopigmentModel = "Govardovskii2000";
+            cp.LensModel = "Pokorny1987";
+
+            testCase.verifyEqual(string(obs.PhotopigmentModel), "StockmanRider2023");
+            testCase.verifyEqual(string(obs.LensModel), "StockmanRider2023");
+        end
+
     end
 end

@@ -3043,25 +3043,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 cpObj.GenotypeState = dictionary;
             end
 
-            % Deep copy the LensTemplate (handle class requires explicit copy)
-            switch obj.p_LensTemplate.ShortName
-                case "StockmanRider2023"
-                    cpObj.p_LensTemplate = StockmanRiderLensTemplate();
-                case "Pokorny1987"
-                    cpObj.p_LensTemplate = Pokorny1987LensTemplate();
-                case "VanDeKraats2007"
-                    cpObj.p_LensTemplate = VanDeKraatsVanNorren2007LensTemplate();
-                otherwise
-                    cpObj.p_LensTemplate = StockmanRiderLensTemplate();
-            end
-
-            % Deep copy the MacularTemplate (handle class requires explicit copy)
-            switch obj.p_MacularTemplate.ShortName
-                case "StockmanRider2023"
-                    cpObj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-                otherwise
-                    cpObj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-            end
+            % Templates are handle classes, so re-create rather than share.
+            % create() errors on an unregistered ShortName instead of
+            % silently substituting a default, which is what the switch
+            % statements this replaces used to do.
+            cpObj.p_LensTemplate = LensTemplate.create(obj.p_LensTemplate.ShortName);
+            cpObj.p_MacularTemplate = MacularTemplate.create(obj.p_MacularTemplate.ShortName);
+            cpObj.p_PhotopigmentTemplate = PhotopigmentTemplate.create( ...
+                obj.p_PhotopigmentTemplate.ShortName);
 
             % Deep copy the ObserverParameters snapshot. Although ObserverParameters
             % is a value class, we explicitly reconstruct it to ensure complete
