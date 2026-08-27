@@ -145,19 +145,15 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
                 'MATLAB:validators:mustBeFinite');
         end
 
-        function testSampledConfigRejectsNonFiniteGrid(testCase)
-            % validateSampledConfig used to do only relational checks,
-            % which NaN and some Inf values pass. A NaN/Inf Start/Stop/
-            % Step would then produce an invalid colon grid in
-            % computeSampledPeak.
+        function testSampledGridRejectsNonFiniteWavelengths(testCase)
+            % A NaN or Inf anywhere in the grid would reach
+            % computeSampledPeak and poison max(). The property validator
+            % rejects it at assignment instead.
             obs = IndividualCMF();
-            badStart = struct('Method', "Sampled", 'Start', NaN, 'Stop', 780, 'Step', 1);
-            badStop  = struct('Method', "Sampled", 'Start', 380, 'Stop', Inf, 'Step', 1);
-            badStep  = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', NaN);
-            for cfg = {badStart, badStop, badStep}
+            for bad = {[NaN 500 780], [380 Inf 780], [380 500 NaN]}
                 testCase.verifyError( ...
-                    @() setNorm(obs, cfg{1}), ...
-                    'IndividualCMF:InvalidNormalizationConfig');
+                    @() setNormGrid(obs, bad{1}), ...
+                    'MATLAB:validators:mustBeFinite');
             end
         end
 
@@ -402,6 +398,6 @@ function setMacularDensity(obs, v)
     obs.MacularDensity = v;
 end
 
-function setNorm(obs, cfg)
-    obs.NormalizationMethod = cfg;
+function setNormGrid(obs, grid)
+    obs.NormalizationGrid = grid;
 end

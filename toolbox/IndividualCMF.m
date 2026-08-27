@@ -46,7 +46,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       OutputFormat                 - "energy", "quantal", "absorptance", or "absorbance" (string) Default: "energy"
     %       NormalizeOutput              - Scale each cone peak to 1.0 (logical) Default: true
     %       LogOutput                    - Return log10 of output (logical) Default: false
-    %       NormalizationMethod          - "Continuous", "Sampled", or config struct (string|struct) Default: "Continuous"
+    %       NormalizationMethod          - "Continuous" or "Sampled" (string) Default: "Continuous"
+    %       NormalizationGrid            - Grid for Sampled mode, nm (vector) Default: 380:1:780
     %       Primaries                    - RGB primary wavelengths in nm (1x3 double) Default: [645.15 526.32 444.44]
     %
     %   OUTPUTS:
@@ -76,8 +77,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       OutputFormat                 - "energy", "quantal", "absorptance", or "absorbance".
     %       NormalizeOutput              - Logical; if true, scales each cone peak to 1.
     %       LogOutput                    - Logical; if true, returns log10 values.
-    %       NormalizationMethod          - "Continuous" or "Sampled" (or a config struct).
-    %       NormalizationConfig          - Active normalization configuration (read-only).
+    %       NormalizationMethod          - "Continuous" or "Sampled".
+    %       NormalizationGrid            - Wavelength grid used in "Sampled" mode.
     %       Primaries                    - 1x3 RGB primary wavelengths in nm.
     %
     %   IndividualCMF Methods:
@@ -349,39 +350,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   emits a warning.
         LensDensityAlgorithm
 
-        % Normalization method ("Continuous", "Sampled", or a config struct).
-        %   Controls how the peak of the sensitivity curve is defined.
-        %   "Continuous" (default) - Peak computed via
-        %                            computePeakForFormat: an analytical
-        %                            formula for Govardovskii absorptance,
-        %                            fminbnd otherwise. Results are
-        %                            independent of wavelength sampling.
-        %   "Sampled"              - Maximum of a discretely sampled
-        %                            spectrum. Shorthand for the default
-        %                            config struct (380:1:780 nm).
-        %   struct(...)            - Explicit Sampled configuration. Fields:
-        %                              Method: "Sampled" (required)
-        %                              Start:  380 (nm, default)
-        %                              Stop:   780 (nm, default)
-        %                              Step:   1 (nm, default)
-        %                            Example matching the Pycone 5 nm grid:
-        %                              obs.NormalizationMethod = struct( ...
-        %                                  Method="Sampled", Start=390, ...
-        %                                  Stop=830, Step=5);
-        %   Sampled results depend on the grid; for reproducibility or
-        %   compatibility with external tools (e.g., Pycone) specify the
-        %   resolution explicitly. Evaluating at wavelengths finer than the
-        %   sampled normalization grid can produce values slightly above 1.0
-        %   (the true peak falls between grid points). For guaranteed
-        %   unit-bounded output, use "Continuous" or evaluate only on the
-        %   wavelengths used for normalization.
-        NormalizationMethod
-
-        % Active normalization configuration (read-only).
-        %   Returns the full configuration struct used by the current
-        %   NormalizationMethod, including resolution parameters for
-        %   Sampled mode.
-        NormalizationConfig
     end
 
     properties (SetObservable, AbortSet)
@@ -401,6 +369,33 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         % If true, returns log10 of the requested output. Default false.
         LogOutput (1,1) logical = false
+
+        % How the normalization peak is located.
+        %   "Continuous" (default) finds the peak of the continuous
+        %   spectral model, so the normalized peak is 1 regardless of which
+        %   wavelengths the caller evaluates at. "Sampled" takes the
+        %   maximum over NormalizationGrid, matching pycone.
+        NormalizationMethod (1,1) enums.NormalizationMethod = ...
+            enums.NormalizationMethod.Continuous
+
+        % Wavelength grid used when NormalizationMethod is "Sampled".
+        %   A wavelength vector in nm, written in MATLAB's own
+        %   start:step:stop form:
+        %       obs.NormalizationGrid = 390:5:830;
+        %   Ignored in "Continuous" mode. Default 380:1:780.
+        %
+        %   Sampled results depend on this grid. For reproducibility, or to
+        %   match an external implementation such as pycone, set it to the
+        %   same wavelengths the reference uses. Evaluating at wavelengths
+        %   finer than the grid can produce values slightly above 1.0,
+        %   because the true peak falls between grid points; for guaranteed
+        %   unit-bounded output use "Continuous" or evaluate only on the
+        %   grid wavelengths.
+        %   An empty grid is rejected: a descending or negatively-stepped
+        %   colon expression produces one, and max() over it would silently
+        %   break normalization rather than error.
+        NormalizationGrid double {mustBeVector, mustBeNonempty, ...
+            validators.mustBeWavelengthVector} = (380:1:780)'
     end
 
     properties
@@ -466,11 +461,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         p_MacularTemplate
         GenotypeState dictionary = configureDictionary("string", "string")
 
-        % Normalization configuration struct
-        % For Continuous: struct('Method', "Continuous")
-        % For Sampled: struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 1)
-        p_NormalizationConfig struct = struct('Method', "Continuous")
-
         % NormalizationCache instance for caching peak values
         p_NormalizationCache
 
@@ -496,12 +486,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     properties (Constant, Access = private)
         DEFAULT_WL = (360:1:830)';
 
-        % Default operating range and step used by the "Sampled"
-        % normalization mode. [380, 780] nm at 1 nm is the toolbox's
-        % default sampling grid for normalization, NOT the CIE 170-1:2006
-        % tabulation range (which is 390-830 nm; see tests/data/cvrl/).
-        DEFAULT_SAMPLED_RANGE_NM = [380, 780]
-        DEFAULT_SAMPLED_STEP_NM  = 1
     end
     
     methods
@@ -533,7 +517,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.LogOutput (1,1) logical = false
                 options.OutputFormat (1,1) string = "energy"
                 % String or struct
-                options.NormalizationMethod = "Continuous"
+                options.NormalizationMethod (1,1) enums.NormalizationMethod = ...
+                    enums.NormalizationMethod.Continuous
+                options.NormalizationGrid double {mustBeVector, mustBeNonempty, ...
+                    validators.mustBeWavelengthVector} = (380:1:780)'
                 options.PhotopigmentModel (1,1) string = "StockmanRider2023"
                 options.LensModel (1,1) string {mustBeMember(options.LensModel, ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"])} = "StockmanRider2023"
                 options.MacularModel (1,1) string {mustBeMember(options.MacularModel, "StockmanRider2023")} = "StockmanRider2023"
@@ -563,7 +550,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.p_Parameters = ObserverParameters();
 
             % 2. Initialize normalization config (before cache)
-            obj.p_NormalizationConfig = struct('Method', "Continuous");
 
             % 3. Initialize cache (needs observer reference)
             obj.p_NormalizationCache = NormalizationCache(obj);
@@ -572,6 +558,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             addlistener(obj, 'OutputFormat',   'PostSet', @(s,e) obj.invalidateNormalizationCache());
             addlistener(obj, 'LogOutput',      'PostSet', @(s,e) obj.invalidateNormalizationCache());
             addlistener(obj, 'NormalizeOutput','PostSet', @(s,e) obj.invalidateNormalizationCache());
+            addlistener(obj, 'NormalizationMethod','PostSet', @(s,e) obj.invalidateNormalizationCache());
+            addlistener(obj, 'NormalizationGrid','PostSet', @(s,e) obj.invalidateNormalizationCache());
 
             obj.GenotypeState = dictionary(string.empty, string.empty);
 
@@ -598,8 +586,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % Note: FieldSizeMethod is set in applyManualConfig based on density overrides
             obj.Primaries = options.Primaries;
 
-            % 7. Set normalization method last (may override defaults)
+            % 7. Set normalization last (may override defaults)
             obj.NormalizationMethod = options.NormalizationMethod;
+            obj.NormalizationGrid = options.NormalizationGrid;
         end
     end
 
@@ -1066,57 +1055,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             v = obj.p_LensDensityAlgorithm;
         end
 
-        function set.NormalizationMethod(obj, val)
-            % set.NormalizationMethod  Set the normalization method.
-            %
-            %   Accepts:
-            %     - "Continuous" string - Optimization-based peak finding (default)
-            %     - "Sampled" string    - Discrete sampling with default resolution
-            %     - struct with Method="Sampled" - Explicit resolution for reproducibility
-            %
-            %   EXAMPLE:
-            %       obj.NormalizationMethod = "Continuous";
-            %       obj.NormalizationMethod = "Sampled";
-            %       obj.NormalizationMethod = struct('Method', "Sampled", 'Step', 5);
-            if isstring(val) || ischar(val)
-                val = string(val);
-                switch val
-                    case "Continuous"
-                        obj.p_NormalizationConfig = struct('Method', "Continuous");
-                    case "Sampled"
-                        obj.p_NormalizationConfig = struct(...
-                            'Method', "Sampled", ...
-                            'Start', IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(1), ...
-                            'Stop',  IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(2), ...
-                            'Step',  IndividualCMF.DEFAULT_SAMPLED_STEP_NM);
-                    otherwise
-                        error('IndividualCMF:InvalidNormalizationMethod', ...
-                            'NormalizationMethod must be "Continuous", "Sampled", or a struct with Method="Sampled".');
-                end
-            elseif isstruct(val)
-                obj.p_NormalizationConfig = obj.validateSampledConfig(val);
-            else
-                error('IndividualCMF:InvalidNormalizationMethod', ...
-                    'NormalizationMethod must be "Continuous", "Sampled", or a struct with Method="Sampled".');
-            end
-            obj.invalidateNormalizationCache();
-        end
-
-        function v = get.NormalizationMethod(obj)
-            % get.NormalizationMethod  Get the normalization method name.
-            %
-            %   Returns "Continuous" or "Sampled" for clean display.
-            %   Use NormalizationConfig to get the full configuration struct.
-            v = obj.p_NormalizationConfig.Method;
-        end
-
-        function v = get.NormalizationConfig(obj)
-            % get.NormalizationConfig  Get the full normalization configuration.
-            %
-            %   Returns the complete configuration struct, allowing inspection
-            %   of all settings including resolution parameters for Sampled mode.
-            v = obj.p_NormalizationConfig;
-        end
     end
 
     % Public API
@@ -3019,7 +2957,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                     'MacularDensity', 'MacularDensityAlgorithm'}, 'Macular')
                 matlab.mixin.util.PropertyGroup(outputCfg, 'Output Configuration')
                 matlab.mixin.util.PropertyGroup({'NormalizationMethod', ...
-                    'NormalizationConfig'}, 'Normalization')
+                    'NormalizationGrid'}, 'Normalization')
             ];
         end
 
@@ -3034,7 +2972,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             % Create a NEW NormalizationCache instance linked to the copy
             cpObj.p_NormalizationCache = NormalizationCache(cpObj);
-            cpObj.p_NormalizationCache.setConfig(cpObj.p_NormalizationConfig);
+            cpObj.p_NormalizationCache.setConfig(cpObj.NormalizationMethod, cpObj.NormalizationGrid);
 
             % Deep copy the GenotypeState dictionary
             if ~isempty(obj.GenotypeState) && numEntries(obj.GenotypeState) > 0
@@ -3068,6 +3006,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             addlistener(cpObj, 'OutputFormat',   'PostSet', @(s,e) cpObj.invalidateNormalizationCache());
             addlistener(cpObj, 'LogOutput',      'PostSet', @(s,e) cpObj.invalidateNormalizationCache());
             addlistener(cpObj, 'NormalizeOutput','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
+            addlistener(cpObj, 'NormalizationMethod','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
+            addlistener(cpObj, 'NormalizationGrid','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
         end
     end
 
@@ -3166,7 +3106,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   Called when any property affecting sensitivity calculations changes.
             if ~isempty(obj.p_NormalizationCache)
-                obj.p_NormalizationCache.setConfig(obj.p_NormalizationConfig);
+                obj.p_NormalizationCache.setConfig(obj.NormalizationMethod, obj.NormalizationGrid);
             end
         end
 
@@ -3248,59 +3188,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                     'for the %s template. Results may be unreliable.'], ...
                     wlStr, minWl, maxWl, obj.p_PhotopigmentTemplate.ShortName);
             end
-        end
-
-        function cfg = validateSampledConfig(~, val)
-            % VALIDATESAMPLEDCONFIG  Validate and normalize Sampled configuration struct.
-            %
-            %   INPUTS:
-            %       val - Configuration struct with Method="Sampled" (struct)
-            %
-            %   OUTPUTS:
-            %       cfg - Validated configuration with defaults applied (struct)
-            arguments
-                ~
-                val (1,1) struct
-            end
-
-            if ~isfield(val, 'Method') || string(val.Method) ~= "Sampled"
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Struct configuration requires Method="Sampled". For continuous normalization, use NormalizationMethod="Continuous".');
-            end
-
-            % Apply defaults for missing fields
-            if ~isfield(val, 'Start'), val.Start = IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(1); end
-            if ~isfield(val, 'Stop'),  val.Stop  = IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(2); end
-            if ~isfield(val, 'Step'),  val.Step  = IndividualCMF.DEFAULT_SAMPLED_STEP_NM; end
-
-            % Finite-scalar guards run BEFORE the relational checks --
-            % NaN and Inf bypass `a >= b` / `a <= 0` (NaN comparisons
-            % return false; Inf passes `>= Stop` only if Stop is also
-            % Inf) and would otherwise be stored in the config, where
-            % `Start:Step:Stop` later produces an invalid wavelength
-            % vector or an accidental huge grid.
-            for fieldName = ["Start", "Stop", "Step"]
-                v = val.(fieldName);
-                if ~(isscalar(v) && isnumeric(v) && isfinite(v))
-                    error('IndividualCMF:InvalidNormalizationConfig', ...
-                        '%s must be a finite numeric scalar.', fieldName);
-                end
-            end
-
-            % Relational checks
-            if val.Start >= val.Stop
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Start (%.1f) must be less than Stop (%.1f).', val.Start, val.Stop);
-            end
-            if val.Step <= 0
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Step must be positive.');
-            end
-
-            cfg = struct('Method', "Sampled", ...
-                'Start', double(val.Start), ...
-                'Stop', double(val.Stop), ...
-                'Step', double(val.Step));
         end
 
         function logAbs = computePigmentAbsorbance(obj, wl, coneType)

@@ -1,7 +1,7 @@
 classdef NormalizationTest < matlab.unittest.TestCase
     % NORMALIZATIONTEST  Tests for normalization configuration and behavior.
     %
-    %   Tests the NormalizationMethod property, NormalizationConfig, and
+    %   Tests the NormalizationMethod and NormalizationGrid properties, and
     %   the NormalizationCache class for correct behavior.
     %
     %   Key concepts:
@@ -18,8 +18,9 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testContinuousIsDefault(testCase)
             % Verify Continuous is the default normalization method
             obs = IndividualCMF();
-            testCase.verifyEqual(obs.NormalizationMethod, "Continuous");
-            testCase.verifyEqual(obs.NormalizationConfig.Method, "Continuous");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Continuous);
+            testCase.verifyEqual(obs.NormalizationGrid, (380:1:780)');
         end
 
         function testSampledStringExpandsToStruct(testCase)
@@ -27,99 +28,89 @@ classdef NormalizationTest < matlab.unittest.TestCase
             obs = IndividualCMF();
             obs.NormalizationMethod = "Sampled";
 
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
-
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Method, "Sampled");
-            testCase.verifyEqual(cfg.Start, 380);
-            testCase.verifyEqual(cfg.Stop, 780);
-            testCase.verifyEqual(cfg.Step, 1);
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
+            testCase.verifyEqual(obs.NormalizationGrid, (380:1:780)');
         end
 
         function testSampledStructWithExplicitResolution(testCase)
             % Verify struct with explicit resolution is accepted
             obs = IndividualCMF();
-            obs.NormalizationMethod = struct('Method', "Sampled", ...
-                'Start', 390, 'Stop', 730, 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 390:5:730;
 
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
 
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Start, 390);
-            testCase.verifyEqual(cfg.Stop, 730);
-            testCase.verifyEqual(cfg.Step, 5);
+            testCase.verifyEqual(obs.NormalizationGrid, 390:5:730);
         end
 
         function testSampledStructWithPartialFields(testCase)
             % Verify struct with partial fields gets defaults
             obs = IndividualCMF();
-            obs.NormalizationMethod = struct('Method', "Sampled", 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 380:5:780;
 
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Start, 380);  % Default
-            testCase.verifyEqual(cfg.Stop, 780);   % Default
-            testCase.verifyEqual(cfg.Step, 5);     % Specified
+            testCase.verifyEqual(obs.NormalizationGrid, 380:5:780);
         end
 
         function testConstructorAcceptsContinuousString(testCase)
             % Verify constructor accepts "Continuous" string
             obs = IndividualCMF(NormalizationMethod="Continuous");
-            testCase.verifyEqual(obs.NormalizationMethod, "Continuous");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Continuous);
         end
 
         function testConstructorAcceptsSampledString(testCase)
             % Verify constructor accepts "Sampled" string
             obs = IndividualCMF(NormalizationMethod="Sampled");
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
         end
 
         function testConstructorAcceptsSampledStruct(testCase)
             % Verify constructor accepts Sampled struct
-            obs = IndividualCMF(NormalizationMethod=struct('Method', "Sampled", 'Step', 5));
-            testCase.verifyEqual(obs.NormalizationConfig.Step, 5);
-        end
-
-        function testNormalizationConfigIsReadOnly(testCase)
-            % Verify NormalizationConfig cannot be set directly
-            obs = IndividualCMF();
-            testCase.verifyError(@() setNormConfig(obs), 'MATLAB:class:noSetMethod');
+            obs = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=380:5:780);
+            testCase.verifyEqual(obs.NormalizationGrid, 380:5:780);
         end
 
         %% --- Error Handling Tests ---
 
-        function testInvalidStructMissingMethodErrors(testCase)
-            % Verify error when struct is missing Method field
+        function testDescendingGridErrors(testCase)
+            % 800:1:400 and 380:-1:780 both produce an empty vector. An
+            % empty grid must error: max() over it would silently return
+            % empty and break normalization rather than fail.
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Start', 380)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            testCase.verifyError(@() setNormGrid(obs, 800:1:400), ...
+                'MATLAB:validators:mustBeNonempty');
+            testCase.verifyError(@() setNormGrid(obs, 380:-1:780), ...
+                'MATLAB:validators:mustBeNonempty');
         end
 
-        function testInvalidStructWrongMethodErrors(testCase)
-            % Verify error when struct has invalid Method value
+        function testNonFiniteGridErrors(testCase)
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Invalid")), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            testCase.verifyError(@() setNormGrid(obs, [380 NaN 780]), ...
+                'MATLAB:validators:mustBeFinite');
+            testCase.verifyError(@() setNormGrid(obs, [380 Inf 780]), ...
+                'MATLAB:validators:mustBeFinite');
         end
 
-        function testInvalidStructStartGTEStopErrors(testCase)
-            % Verify error when Start >= Stop
+        function testGridAcceptsEitherOrientation(testCase)
+            % 390:5:830 is a row; the toolbox's wl convention is a column.
+            % Both must be accepted, since start:step:stop yields a row.
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Sampled", 'Start', 800, 'Stop', 400)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
-        end
-
-        function testInvalidStructNegativeStepErrors(testCase)
-            % Verify error when Step is negative
-            obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Sampled", 'Step', -1)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            obs.NormalizationGrid = 390:5:830;
+            testCase.verifyEqual(obs.NormalizationGrid, 390:5:830);
+            obs.NormalizationGrid = (390:5:830)';
+            testCase.verifyEqual(obs.NormalizationGrid, (390:5:830)');
         end
 
         function testInvalidStringErrors(testCase)
             % Verify error for invalid string values
             obs = IndividualCMF();
             testCase.verifyError(@() setNormMethod(obs, "Invalid"), ...
-                'IndividualCMF:InvalidNormalizationMethod');
+                'MATLAB:validation:UnableToConvert');
         end
 
         %% --- Continuous Normalization Behavior Tests ---
@@ -169,11 +160,12 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testSampledPeakMatchesGridMaximum(testCase)
             % Sampled normalization peak should equal max of the sampling grid
 
-            cfg = struct('Method', "Sampled", 'Start', 400, 'Stop', 700, 'Step', 5);
-            obs = IndividualCMF(NormalizationMethod=cfg, OutputFormat="energy");
+            grid = 400:5:700;
+            obs = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid, OutputFormat="energy");
 
             % The configured grid
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
 
             % Evaluate raw (unnormalized) at grid points
             L_raw = obs.computeRawSensitivity(wl_grid, 'L', "energy");
@@ -189,11 +181,13 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testSampledResolutionAffectsPeak(testCase)
             % Coarser Sampled resolution may find a different (lower) peak
 
-            cfg_fine = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 1);
-            cfg_coarse = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 20);
+            grid_fine = 380:1:780;
+            grid_coarse = 380:20:780;
 
-            obs_fine = IndividualCMF(NormalizationMethod=cfg_fine, OutputFormat="energy");
-            obs_coarse = IndividualCMF(NormalizationMethod=cfg_coarse, OutputFormat="energy");
+            obs_fine = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid_fine, OutputFormat="energy");
+            obs_coarse = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid_coarse, OutputFormat="energy");
 
             peak_fine = obs_fine.getPeak('L', OutputFormat="energy");
             peak_coarse = obs_coarse.getPeak('L', OutputFormat="energy");
@@ -224,11 +218,11 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % Sampled normalization guarantees values never exceed 1.0
             % ONLY when evaluated at the same grid used for normalization
 
-            cfg = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 5);
-            obs = IndividualCMF(NormalizationMethod=cfg);
+            grid = 380:5:780;
+            obs = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=grid);
 
             % Evaluate at the normalization grid
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
 
             testCase.verifyLessThanOrEqual(max(obs.L(wl_grid)), 1.0, ...
                 'Sampled L at grid points');
@@ -244,8 +238,8 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % This is expected behavior - documenting it here.
 
             % Use coarse normalization grid
-            cfg = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 10);
-            obs = IndividualCMF(NormalizationMethod=cfg);
+            grid = 380:10:780;
+            obs = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=grid);
 
             % Evaluate at finer resolution (off-grid points)
             wl_fine = (380:0.5:780)';
@@ -257,7 +251,7 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Sampled peak at fine resolution should be approximately 1.0');
 
             % The key point: at the actual normalization grid, it should be exactly <= 1.0
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
             testCase.verifyLessThanOrEqual(max(obs.L(wl_grid)), 1.0, ...
                 'But at grid points, should not exceed 1.0');
         end
@@ -357,7 +351,7 @@ classdef NormalizationTest < matlab.unittest.TestCase
             cache = NormalizationCache(obs);
 
             % Set configuration
-            cache.setConfig(struct('Method', "Continuous"));
+            cache.setConfig(enums.NormalizationMethod.Continuous);
 
             % Get peak (should compute and cache)
             peak1 = cache.getPeak('L', "energy");
@@ -396,7 +390,8 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % Sampled normalization for Pycone compatibility.
             % Peak should be exactly 1.0 when evaluated at normalization grid.
             obs = IndividualCMF(StandardObserver=10);
-            obs.NormalizationMethod = struct('Method', "Sampled", 'Start', 390, 'Stop', 830, 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 390:5:830;
             obs.OutputFormat = "absorptance";
             obs.NormalizeOutput = true;
 
@@ -655,8 +650,8 @@ function setNormMethod(obs, val)
     obs.NormalizationMethod = val;
 end
 
-function setNormConfig(obs)
-    obs.NormalizationConfig = struct('Method', "Continuous");
+function setNormGrid(obs, val)
+    obs.NormalizationGrid = val;
 end
 
 function verifyRelativeFormula(testCase, photopigmentModel, wl, ods)
