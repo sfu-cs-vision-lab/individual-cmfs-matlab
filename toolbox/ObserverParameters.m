@@ -49,22 +49,20 @@ classdef ObserverParameters
     %       ObserverParameters     - Constructor with optional Name=Value arguments.
     %       isStandardConfiguration - Check if parameters match CIE standard.
     %
-    %   ObserverParameters Static Methods:
-    %       standard2Deg  - Create CIE 170-1:2006 2-degree standard observer.
-    %       standard10Deg - Create CIE 170-1:2006 10-degree standard observer.
-    %       fromGenotype  - Create observer from opsin genotype string.
-    %
     %   Syntax:
     %       params = ObserverParameters()
     %       params = ObserverParameters(Age=45)
     %       params = ObserverParameters(FieldSize=2)
     %       params = ObserverParameters(LCone=PhotopigmentParameters(OpticalDensity=0.45))
-    %       params = ObserverParameters.standard2Deg()
-    %       params = ObserverParameters.standard10Deg()
+    %
+    %   Snapshots of configured observers come from IndividualCMF, which
+    %   is the single construction path:
+    %       std10 = IndividualCMF(StandardObserver=10).getParameters()
+    %       geno  = IndividualCMF(Genotype=struct('L_180', 'Ala')).getParameters()
     %
     %   EXAMPLE:
-    %       std10 = ObserverParameters.standard10Deg();
-    %       std2 = ObserverParameters.standard2Deg();
+    %       std10 = IndividualCMF(StandardObserver=10).getParameters();
+    %       std2 = IndividualCMF(StandardObserver=2).getParameters();
     %       custom = ObserverParameters(Age=50, FieldSize=10);
     %
     %   References:
@@ -268,194 +266,6 @@ classdef ObserverParameters
             end
 
             tf = obj.isStandard2Deg() || obj.isStandard10Deg();
-        end
-    end
-
-    methods (Static)
-        function params = standard2Deg()
-            % STANDARD2DEG  Create CIE 170-1:2006 2-degree standard observer.
-            %
-            %   params = ObserverParameters.standard2Deg() returns an
-            %   ObserverParameters object configured with the CIE 170-1:2006
-            %   standard values for the 2-degree observer:
-            %   - L-cone optical density: 0.50
-            %   - M-cone optical density: 0.50
-            %   - S-cone optical density: 0.40
-            %   - Macular density at 460nm: 0.350
-            %   - Age: 32 years
-            %   - Field size: 2 degrees
-            %
-            %   OUTPUTS:
-            %       params - 2-degree standard observer (ObserverParameters)
-            lCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_2DEG_L_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-            mCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_2DEG_M_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-            sCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_2DEG_S_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-
-            lens = PreReceptoralFilter( ...
-                Type="lens", ...
-                Density=1.0, ...
-                Age=CIE170.STD_AGE);
-
-            macular = PreReceptoralFilter( ...
-                Type="macular", ...
-                Density=CIE170.STD_2DEG_MACULAR_DENSITY);
-
-            params = ObserverParameters( ...
-                LCone=lCone, ...
-                MCone=mCone, ...
-                SCone=sCone, ...
-                Lens=lens, ...
-                Macular=macular, ...
-                Age=CIE170.STD_AGE, ...
-                FieldSize=CIE170.STD_FIELD_SIZE_2DEG);
-        end
-
-        function params = standard10Deg()
-            % STANDARD10DEG  Create CIE 170-1:2006 10-degree standard observer.
-            %
-            %   params = ObserverParameters.standard10Deg() returns an
-            %   ObserverParameters object configured with the CIE 170-1:2006
-            %   standard values for the 10-degree observer:
-            %   - L-cone optical density: 0.38
-            %   - M-cone optical density: 0.38
-            %   - S-cone optical density: 0.30
-            %   - Macular density at 460nm: 0.095
-            %   - Age: 32 years
-            %   - Field size: 10 degrees
-            %
-            %   OUTPUTS:
-            %       params - 10-degree standard observer (ObserverParameters)
-            lCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_10DEG_L_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-            mCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_10DEG_M_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-            sCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_10DEG_S_OPTICAL_DENSITY, ...
-                LambdaMaxShift=0);
-
-            lens = PreReceptoralFilter( ...
-                Type="lens", ...
-                Density=1.0, ...
-                Age=CIE170.STD_AGE);
-
-            macular = PreReceptoralFilter( ...
-                Type="macular", ...
-                Density=CIE170.STD_10DEG_MACULAR_DENSITY);
-
-            params = ObserverParameters( ...
-                LCone=lCone, ...
-                MCone=mCone, ...
-                SCone=sCone, ...
-                Lens=lens, ...
-                Macular=macular, ...
-                Age=CIE170.STD_AGE, ...
-                FieldSize=CIE170.STD_FIELD_SIZE_10DEG);
-        end
-
-        function params = fromGenotype(genotypeString)
-            % FROMGENOTYPE  Create observer parameters from opsin genotype.
-            %
-            %   params = ObserverParameters.fromGenotype(genotypeString)
-            %   creates an ObserverParameters value object with lambda-max
-            %   shifts computed from the specified opsin genotype, using
-            %   the same Stockman & Rider 2023 Table 3 dictionary as the
-            %   Genotype class.
-            %
-            %   The genotype string is a semicolon-separated list of
-            %   "Cone_Position_AminoAcid" entries (per-position partial
-            %   override syntax). Unknown entries are silently ignored;
-            %   absent cones are NOT zeroed (this is the partial-override
-            %   convention, not a complete-genotype specification).
-            %
-            %   This is one of several genotype entry points. Most users
-            %   should prefer:
-            %     - IndividualCMF(Genotype=struct('L_180', 'Ala')) for
-            %       partial overrides on a normal observer.
-            %     - IndividualCMF(Genotype="LIAVA/SIAVA") /
-            %       obs.applyGenotype("LIAVA/SIAVA") for complete 5-letter
-            %       genotypes that can express dichromacy via empty sides.
-            %   fromGenotype is kept for round-trip compatibility with
-            %   parameter-object snapshots that recorded a semicolon
-            %   string.
-            %
-            %   Key polymorphic positions:
-            %   - Position 180: Ser/Ala affects L-cone lambda-max by ~4nm
-            %   - Position 277: Tyr/Phe affects lambda-max by ~7nm
-            %   - Position 285: Thr/Ala affects lambda-max by ~14nm
-            %
-            %   INPUTS:
-            %       genotypeString - Genotype specification, e.g., (string)
-            %           "L_180_Ser;L_277_Tyr;L_285_Thr" for serine at 180,
-            %           tyrosine at 277, and threonine at 285 in L-cone opsin.
-            %
-            %   OUTPUTS:
-            %       params - Observer with computed shifts (ObserverParameters)
-            %
-            %   EXAMPLE:
-            %       params = ObserverParameters.fromGenotype("L_180_Ala");
-            %       params = ObserverParameters.fromGenotype("L_180_Ser;M_180_Ser");
-            arguments
-                genotypeString (1,1) string
-            end
-
-            % Start with standard 10-degree observer as base
-            params = ObserverParameters.standard10Deg();
-
-            if strlength(genotypeString) == 0
-                return
-            end
-
-            % Genotype shift lookup and scaling constants are owned by the
-            % Genotype class (Stockman & Rider 2023, Table 3, with pycone
-            % parity scaling). Use those directly so this older
-            % semicolon-syntax path stays in sync with the rest of the
-            % toolbox's genotype machinery.
-            genotypeShifts = Genotype.GENOTYPE_SHIFTS;
-            mScale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
-            lScale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
-
-            % Parse the genotype string into individual entries
-            entries = strsplit(genotypeString, ";");
-
-            % Track shifts for L and M cones
-            lShift = 0;
-            mShift = 0;
-
-            % Process each genotype entry
-            for i = 1:numel(entries)
-                entry = strtrim(entries{i});
-                if strlength(entry) == 0
-                    continue
-                end
-
-                % Look up the shift value
-                if isKey(genotypeShifts, entry)
-                    baseShift = genotypeShifts(entry);
-
-                    % Determine which cone this affects
-                    if startsWith(entry, "L_")
-                        lShift = lShift + (baseShift * lScale);
-                    elseif startsWith(entry, "M_")
-                        mShift = mShift + (baseShift * mScale);
-                    end
-                end
-            end
-
-            % Apply computed shifts to cone parameters
-            params.LCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_10DEG_L_OPTICAL_DENSITY, ...
-                LambdaMaxShift=lShift);
-            params.MCone = PhotopigmentParameters( ...
-                OpticalDensity=CIE170.STD_10DEG_M_OPTICAL_DENSITY, ...
-                LambdaMaxShift=mShift);
         end
     end
 

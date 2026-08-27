@@ -1378,7 +1378,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       isequal(obs1.LMS(400:5:700), obs2.LMS(400:5:700))   % true
             %
             %       % Apply a CIE standard observer's parameters:
-            %       obs.setParameters(ObserverParameters.standard2Deg());
+            %       obs.setParameters(IndividualCMF(StandardObserver=2).getParameters());
             %
             %   See also: getParameters, applyGenotype, ObserverParameters
             arguments
@@ -3588,7 +3588,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   by the existing MinL / LinM template machinery in Nomograms.
             %
             %   The genotype/codon path resolves the template by amino-acid
-            %   identity (setGenotype / fromGenotype) and is left untouched:
+            %   identity (setGenotype / Genotype=) and is left untouched:
             %   when a genotype is active it is the arbiter, so the magnitude
             %   switch is skipped (mirroring useCodons == True).
             %
@@ -3607,7 +3607,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % Trip points computed from the named parity constants (not a
             % hardcoded 18.41 / -16.0345): the exon-5 base shifts (positions
             % 277 and 285) scaled by 23.67 / bases-sum, the same scale the
-            % genotype path uses in ObserverParameters.fromGenotype. The two
+            % genotype path uses in Genotype.computeShift. The two
             % directions use different bases-sums (27 vs 31); the asymmetry
             % is intentional and follows pycone.
             mScale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
