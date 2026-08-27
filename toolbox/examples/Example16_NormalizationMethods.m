@@ -95,7 +95,7 @@ table(string(obs_pycone.NormalizationMethod), ...
 %[text] - Use `struct('Method', "Sampled", 'Start', a, 'Stop', b, 'Step', s)` for explicit grid control
 %[text] - `obs.getPeak('L')` returns the unnormalised peak (the divisor)
 %[text] - For Pycone parity, set `Step` to match the Pycone session's configuration and evaluate on the same grid \
-%[text] **Next:** [Example 17: Publication-Quality Figures](matlab:edit('Example17_PublicationFigures.m')) -- using the `CMFPlotter` class for publication-quality multi-panel figures.
+%[text] **Next:** [Example 17: Publication-Quality Figures](matlab:edit('Example17_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
 
 %[appendix]{"version":"1.0"}
 %---
