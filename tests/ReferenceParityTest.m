@@ -59,7 +59,7 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
 
             % 3. Evaluate and Verify
             wl = testCase.LegacyData.nm;
-            new_LMS = obs.evaluate(wl);
+            new_LMS = obs.LMS(wl);
 
             legacy_matrix = [testCase.LegacyData.L_absorptance, ...
                 testCase.LegacyData.M_absorptance, ...
@@ -81,7 +81,7 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
             % Evaluate near the expected shifted peak
             target_peak = base_L + shift_amount;
             wl = (target_peak-5 : 0.1 : target_peak+5)';
-            l_curve = obs.evaluate(wl, Data="L");
+            l_curve = obs.L(wl);
 
             [~, idx] = max(l_curve);
             found_peak = wl(idx);
@@ -116,7 +116,7 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
 
             % Scan UV range to find actual peak
             wl = (300:0.5:400)';
-            l_curve = obs.evaluate(wl, Data="L");
+            l_curve = obs.L(wl);
 
             [~, idx] = max(l_curve);
             found_peak = wl(idx);
@@ -170,13 +170,13 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
                                      L_LambdaMaxShift=-30, ...
                                      OutputFormat="absorbance");
             wl = (300:1:800)';
-            curve_blue = obs_blue.evaluate(wl, Data="L");
+            curve_blue = obs_blue.L(wl);
             
             % 2. Standard / Redder (0 nm)
             obs_red  = IndividualCMF(PhotopigmentModel="Govardovskii2000", ...
                                      L_LambdaMaxShift=0, ...
                                      OutputFormat="absorbance");
-            curve_red = obs_red.evaluate(wl, Data="L");
+            curve_red = obs_red.L(wl);
             
             % 3. Calculate FWHM (Full Width Half Max)
             width_blue = sum(curve_blue > 0.5);

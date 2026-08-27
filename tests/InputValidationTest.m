@@ -105,19 +105,22 @@ classdef InputValidationTest < matlab.unittest.TestCase
         function testEvaluateInvalidData(testCase)
             obs = IndividualCMF(StandardObserver=2);
 
+            % 'XYZ' used to be the canonical invalid value here. It is now
+            % a supported Data option, so this needs a genuinely unknown one.
             testCase.verifyError(...
-                @() obs.evaluate(550, Data='XYZ'), ...
+                @() obs.evaluate(550, Data='NotAQuantity'), ...
                 'MATLAB:validators:mustBeMember', ...
                 'Should reject invalid Data parameter');
         end
 
-        function testEvaluateInvalidFormat(testCase)
+        function testEvaluateRejectsFormatArgument(testCase)
             obs = IndividualCMF(StandardObserver=2);
 
+            % Format is removed: evaluate always returns a table.
             testCase.verifyError(...
                 @() obs.evaluate(550, Format='csv'), ...
-                'MATLAB:validators:mustBeMember', ...
-                'Should reject invalid Format parameter');
+                'MATLAB:TooManyInputs', ...
+                'Format is no longer an accepted argument');
         end
 
         function testEvaluateWithModifiedObserver(testCase)
@@ -126,11 +129,11 @@ classdef InputValidationTest < matlab.unittest.TestCase
             wl = 500:10:600;  % Range around L-cone peak
 
             % Get baseline
-            baseline = obs.evaluate(wl, Data='L');
+            baseline = obs.L(wl);
 
             % Make a dramatic change - age affects lens density with Pokorny1987
             obs.Age = 70;  % Major age change
-            aged = obs.evaluate(wl, Data='L');
+            aged = obs.L(wl);
 
             % Should be different (older age = more lens absorption = lower sensitivity)
             testCase.verifyNotEqual(aged, baseline, ...
@@ -149,7 +152,7 @@ classdef InputValidationTest < matlab.unittest.TestCase
 
             % Compare methods
             LMS_direct = obs.LMS(wl);
-            LMS_eval = obs.evaluate(wl);
+            LMS_eval = obs.LMS(wl);
 
             % Verify sizes match
             testCase.verifySize(LMS_direct, size(LMS_eval), ...

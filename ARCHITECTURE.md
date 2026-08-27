@@ -197,9 +197,11 @@ published CIE tables:
 | `xyChromaticity(wl)` | Nx2 (x, y) | XYZ divided by X+Y+Z sum. |
 | `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | L/(L+M), S/(L+M). |
 
-`evaluate(wl, Data=..., Format=...)` is the entry point that returns
-any of these in `"array"`, `"table"`, or `"struct"` form; the `"table"`
-form is paired with `writetable` for CSV / Excel export.
+`evaluate(wl, Data=...)` returns any of these as a table -- a
+`Wavelength_nm` column followed by one column per channel -- ready for
+`writetable` CSV / Excel export. Each branch delegates to the method
+named by `Data`, so the two never diverge. Call the method directly when
+you want the bare numeric array.
 
 The pre-receptoral filter spectra used internally by stage 3 are also
 exposed directly:

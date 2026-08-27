@@ -323,8 +323,8 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
             obs_gov.NormalizeOutput = true;
             obs_sr.NormalizeOutput = true;
 
-            LMS_gov = obs_gov.evaluate(wl);
-            LMS_sr = obs_sr.evaluate(wl);
+            LMS_gov = obs_gov.LMS(wl);
+            LMS_sr = obs_sr.LMS(wl);
 
             testCase.verifyNotEqual(LMS_gov, LMS_sr, ...
                 'Different template models should produce different LMS values');
@@ -340,11 +340,11 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
 
             % Initial model
             obs.PhotopigmentModel = "StockmanRider2023";
-            LMS_sr = obs.evaluate(wl);
+            LMS_sr = obs.LMS(wl);
 
             % Switch model
             obs.PhotopigmentModel = "Govardovskii2000";
-            LMS_gov = obs.evaluate(wl);
+            LMS_gov = obs.LMS(wl);
 
             testCase.verifyNotEqual(LMS_sr, LMS_gov, ...
                 'Switching template model should change output');

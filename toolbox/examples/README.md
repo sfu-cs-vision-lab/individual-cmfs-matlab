@@ -141,7 +141,7 @@ params = obs.getParameters();   % captures everything that affects LMS
 obs2.setParameters(params);     % obs2 now matches obs exactly
 
 % Export
-data = obs.evaluate(wl, Data='LMS', Format='table');
+data = obs.evaluate(wl, Data='LMS');
 writetable(data, 'cone_fundamentals.csv');
 ```
 

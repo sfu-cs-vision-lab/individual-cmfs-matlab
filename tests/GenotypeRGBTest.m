@@ -146,7 +146,7 @@ classdef GenotypeRGBTest < matlab.unittest.TestCase
             wl = (400:10:700)';  % Ensure column vector
 
             % Should be equivalent
-            result1 = obs.evaluate(wl, Data='M');
+            result1 = obs.M(wl);
             result2 = obs.M(wl);
 
             % Both should be column vectors
@@ -158,7 +158,7 @@ classdef GenotypeRGBTest < matlab.unittest.TestCase
             % Verifies that RGB data from `evaluate` matches the dedicated `RGB` method.
             obs = IndividualCMF();
             wl = (380:5:780)';
-            RGB_eval = obs.evaluate(wl, Data='RGB');
+            RGB_eval = obs.RGB(wl);
             testCase.verifySize(RGB_eval, [length(wl), 3]);
             RGB_direct = obs.RGB(wl);
             testCase.verifyEqual(RGB_eval, RGB_direct, ...

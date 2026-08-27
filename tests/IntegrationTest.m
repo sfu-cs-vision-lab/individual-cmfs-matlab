@@ -38,9 +38,9 @@ classdef IntegrationTest < matlab.unittest.TestCase
             % 2. Get data in multiple formats
             wl = 400:10:700;
             
-            array_LMS = obs.evaluate(wl);
-            table_LMS = obs.evaluate(wl, Format='table');
-            struct_LMS = obs.evaluate(wl, Format='struct');
+            array_LMS = obs.LMS(wl);
+            table_LMS = obs.evaluate(wl);
+            struct_LMS = table2struct(table_LMS, ToScalar=true);
             
             % 3. Verify consistency
             testCase.verifyEqual([table_LMS.L, table_LMS.M, table_LMS.S], ...
@@ -55,7 +55,7 @@ classdef IntegrationTest < matlab.unittest.TestCase
             wl = 400:5:700;
             
             % Export-friendly format
-            data_table = obs.evaluate(wl, Format='table');
+            data_table = obs.evaluate(wl);
             
             % Verify it can be written to file
             temp_file = [tempname, '.csv'];
@@ -76,23 +76,29 @@ classdef IntegrationTest < matlab.unittest.TestCase
             obs.setGenotype('L', 180, 'Ala');
             obs.OutputFormat = "quantal";
             
-            wl = 400:10:700;
-            
+            % A column grid: L/M/S preserve the caller's orientation, so a
+            % row here would return rows.
+            wl = (400:10:700)';
+
             % Get various outputs
-            LMS = obs.evaluate(wl);
-            L_only = obs.evaluate(wl, Data='L');
-            RGB = obs.evaluate(wl, Data='RGB');
-            chrom = obs.evaluate(wl, Data='chromaticity');
+            LMS = obs.LMS(wl);
+            L_only = obs.L(wl);
+            RGB = obs.RGB(wl);
+            chrom = obs.lmChromaticity(wl);
 
             % Basic sanity checks
             testCase.verifySize(LMS, [length(wl), 3]);
             testCase.verifySize(L_only, [length(wl), 1]);
             testCase.verifySize(RGB, [length(wl), 3]);
-            testCase.verifySize(chrom, [length(wl), 3]);
-            
-            % Chromaticity should sum to 1
-            testCase.verifyEqual(sum(chrom, 2), ones(length(wl), 1), ...
+            % lmChromaticity returns (l, m) only; s = 1 - l - m is implicit.
+            testCase.verifySize(chrom, [length(wl), 2]);
+
+            % The implicit third coordinate completes the unit sum.
+            s_implicit = 1 - chrom(:,1) - chrom(:,2);
+            testCase.verifyEqual(sum([chrom, s_implicit], 2), ones(length(wl), 1), ...
                 'AbsTol', 1e-10);
+            testCase.verifyGreaterThanOrEqual(s_implicit, -1e-10, ...
+                'The implicit s coordinate must not go negative');
         end
         
         function testComparisonWorkflow(testCase)
@@ -103,8 +109,8 @@ classdef IntegrationTest < matlab.unittest.TestCase
 
             wl = 400:10:700;
 
-            LMS_young = obs_young.evaluate(wl);
-            LMS_old = obs_old.evaluate(wl);
+            LMS_young = obs_young.LMS(wl);
+            LMS_old = obs_old.LMS(wl);
 
             % They should be different due to age-dependent lens density with Pokorny1987
             testCase.verifyNotEqual(LMS_young, LMS_old, ...

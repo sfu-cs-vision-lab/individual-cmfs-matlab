@@ -8,7 +8,7 @@
 exampleDefaults();
 %%
 %[text] ## Computing chromaticity coordinates
-%[text] Three equivalent ways to get $l, m$ chromaticity: compute directly from `LMS`, call `obs.evaluate(wl, Data='chromaticity')`, or use the direct `obs.lmChromaticity(wl)` method, which returns an `Nx2` matrix of `[l, m]` (the third coordinate is implicit since $l + m + s = 1$).
+%[text] Three equivalent ways to get $l, m$ chromaticity: compute directly from `LMS`, call `obs.evaluate(wl, Data='lmChromaticity')`, or use the direct `obs.lmChromaticity(wl)` method, which returns an `Nx2` matrix of `[l, m]` (the third coordinate is implicit since $l + m + s = 1$).
 obs = IndividualCMF();
 wl = (390:1:700)';
 lmCoords = obs.lmChromaticity(wl);
@@ -119,7 +119,7 @@ end
 %[text] ## Key takeaways
 %[text] - Chromaticity separates color from luminance via normalization
 %[text] - lm coordinates: $ l = L / (L+M+S) $, $ m = M / (L+M+S) $; the third is implicit
-%[text] - Direct coordinate access: `lmChromaticity` returns $(l, m)$ via $L/(L+M+S), M/(L+M+S)$; `MacLeodBoynton` returns the equiluminant $(L/(L+M), S/(L+M))$ form (different normalisation, different diagram); `xyChromaticity` returns CIE 1931 $(x, y)$. Use `evaluate(wl, Data='chromaticity')` for the table form.
+%[text] - Direct coordinate access: `lmChromaticity` returns $(l, m)$ via $L/(L+M+S), M/(L+M+S)$; `MacLeodBoynton` returns the equiluminant $(L/(L+M), S/(L+M))$ form (different normalisation, different diagram); `xyChromaticity` returns CIE 1931 $(x, y)$. Use `evaluate(wl, Data='lmChromaticity')` for the table form.
 %[text] - The spectral locus bounds all real colors; non-spectral colors close the diagram via the line of purples
 %[text] - 2 deg/10 deg observers differ slightly; age (with `LensModel="VanDeKraats2007"`) shifts the short-$\\lambda$ region
 %[text] - CIE xy chromaticity errors for dichromats (LMS->XYZ is rank-deficient); use a custom matrix to override \

@@ -65,13 +65,13 @@ table(string(observers(:,2)), rms_diffs(:,1), rms_diffs(:,2), rms_diffs(:,3), ..
 %[text] ## Spectral locus comparison
 %[text] Plotting all six observers in chromaticity space shows where the differences land on the locus. The 2 deg observer is offset from 10 deg because of macular pigment; the age and genotype variants pull the locus into nearby positions.
 obscol = lines(n);
-chrom1 = observers{1, 1}.evaluate(wl, Data='chromaticity', Format='array');
+chrom1 = observers{1, 1}.lmChromaticity(wl);
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(chrom1(:,1), chrom1(:,2), '-', 'Color', obscol(1,:), 'LineWidth', 1.5, ...
     'DisplayName', observers{1, 2})
 hold on
 for i = 2:n
-    chrom = observers{i, 1}.evaluate(wl, Data='chromaticity', Format='array');
+    chrom = observers{i, 1}.lmChromaticity(wl);
     plot(chrom(:,1), chrom(:,2), '-', 'Color', obscol(i,:), 'LineWidth', 1.5, ...
         'DisplayName', observers{i, 2})
 end

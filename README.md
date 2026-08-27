@@ -163,7 +163,7 @@ obs2 = IndividualCMF();
 obs2.setParameters(params);
 
 % Export to CSV
-data = obs.evaluate(wl, Data="LMS", Format="table");
+data = obs.evaluate(wl, Data="LMS");
 writetable(data, "cone_fundamentals.csv");
 ```
 

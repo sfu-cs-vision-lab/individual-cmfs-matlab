@@ -107,7 +107,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
             % Test Absorbance
             obs.OutputFormat = "absorbance";
             obs.LogOutput = true;
-            result = obs.evaluate(wl, Data='L');
+            result = obs.L(wl);
             expected = obs.L(wl);
 
             testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
@@ -116,7 +116,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
             % Test Absorptance
             obs.OutputFormat = "absorptance";
             obs.LogOutput = false;
-            result = obs.evaluate(wl, Data='L');
+            result = obs.L(wl);
             expected = obs.L(wl);
 
             testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
@@ -130,7 +130,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test 1: Normalized output should be close to but not exceed 1.0
             obs.NormalizeOutput = true;
-            result_norm = obs.evaluate(wl, Data='L');
+            result_norm = obs.L(wl);
             testCase.verifyLessThanOrEqual(max(result_norm), 1.0, ...
                 'Normalized output should not exceed 1.0');
             testCase.verifyGreaterThan(max(result_norm), 0.99, ...
@@ -138,7 +138,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test 2: Unnormalized should be larger in absolute terms
             obs.NormalizeOutput = false;
-            result_unnorm = obs.evaluate(wl, Data='L');
+            result_unnorm = obs.L(wl);
             testCase.verifyGreaterThan(max(result_unnorm), max(result_norm), ...
                 'Unnormalized max should be greater than normalized max');
 
@@ -156,11 +156,11 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Linear
             obs.LogOutput = false;
-            lin_result = obs.evaluate(wl, Data='LMS');
+            lin_result = obs.LMS(wl);
 
             % Log
             obs.LogOutput = true;
-            log_result = obs.evaluate(wl, Data='LMS');
+            log_result = obs.LMS(wl);
 
             % Verify relationship
             testCase.verifyEqual(log_result, log10(lin_result), 'AbsTol', 1e-12, ...
@@ -212,15 +212,18 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test consistency within same format
             obs.OutputFormat = "energy";
-            chrom1 = obs.evaluate(wl, Data='chromaticity');
-            chrom2 = obs.evaluate(wl, Data='chromaticity');
+            chrom1 = obs.lmChromaticity(wl);
+            chrom2 = obs.lmChromaticity(wl);
 
             testCase.verifyEqual(chrom1, chrom2, 'AbsTol', 1e-10, ...
                 'Chromaticity should be consistent with same format');
 
-            % Verify chromaticity sums to 1
-            testCase.verifyEqual(sum(chrom1, 2), ones(size(chrom1, 1), 1), ...
-                'AbsTol', 1e-10, 'Chromaticity should sum to 1');
+            % lmChromaticity returns (l, m); the third coordinate is
+            % implicit, so l + m + s = 1 with s = 1 - l - m.
+            s_implicit = 1 - chrom1(:,1) - chrom1(:,2);
+            testCase.verifyEqual(sum([chrom1, s_implicit], 2), ...
+                ones(size(chrom1, 1), 1), 'AbsTol', 1e-10, ...
+                'Chromaticity coordinates plus the implicit s should sum to 1');
 
             % Note: Different OutputFormats (energy vs quantal) WILL give different
             % chromaticity values. This is expected because the spectral shape differs.

@@ -362,8 +362,8 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
             obs = IndividualCMF(StandardObserver=2);
             wl = linspace(380, 780, 10000)';
 
-            testCase.verifyWarningFree(@() obs.evaluate(wl));
-            result = obs.evaluate(wl);
+            testCase.verifyWarningFree(@() obs.LMS(wl));
+            result = obs.LMS(wl);
             testCase.verifySize(result, [10000, 3]);
         end
 

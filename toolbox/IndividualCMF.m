@@ -87,7 +87,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       applyGenotype          - Configure observer from a "L-geno/M-geno" string.
     %       getParameters          - Snapshot current parameters as ObserverParameters.
     %       setParameters          - Restore parameters from an ObserverParameters object.
-    %       evaluate               - Evaluate the model with Data and Format options.
+    %       evaluate               - Return a derived quantity as a table.
     %       L, M, S                - Per-cone sensitivity at the given wavelengths.
     %       LMS                    - L, M, S sensitivities as an Nx3 matrix.
     %       XYZ                    - CIE XYZ CMFs (2-deg matrix below 4 deg, else 10-deg).
@@ -1513,68 +1513,56 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
 
         function [result, wl] = evaluate(obj, wl, options)
-            % EVALUATE  Evaluates the model to return data in specific formats.
-            %   Calculates sensitivities for the provided wavelengths and formats the output
-            %   as arrays, tables, or structures based on the configuration options.
+            % EVALUATE  Return a derived quantity as a table.
+            %   Computes the requested quantity at the given wavelengths and
+            %   returns it as a table with a Wavelength_nm column, ready for
+            %   writetable.
+            %
+            %   Every branch delegates to the correspondingly named method,
+            %   so evaluate and the named methods cannot drift apart. For an
+            %   array, call the named method directly: obs.LMS(wl).
             %
             %   OPTIONAL INPUTS:
             %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
-            %       Data - Type of data to return: "LMS", "RGB", "chromaticity" (string) Default: "LMS"
-            %       Format - Return structure: "array" (matrix), "table", "struct" (string) Default: "array"
+            %       Data - Quantity to return (string). One of "LMS", "L",
+            %              "M", "S", "RGB", "XYZ", "Luminance",
+            %              "lmChromaticity", "xyChromaticity",
+            %              "MacLeodBoynton". Default "LMS".
             %
             %   OUTPUTS:
-            %       result - The calculated data in the requested format (array)
+            %       result - Table with Wavelength_nm plus one column per channel
             %       wl - Wavelengths in nm (vector)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       writetable(obs.evaluate((400:10:700)'), "cmfs.csv");
             arguments
                 obj
                 wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
-                options.Data {mustBeMember(options.Data, ...
-                    {'LMS', 'L', 'M', 'S', 'RGB', 'chromaticity'})} = 'LMS'
-                options.Format {mustBeMember(options.Format, ...
-                    {'array', 'table', 'struct'})} = 'array'
+                options.Data (1,1) string {mustBeMember(options.Data, ...
+                    ["LMS", "L", "M", "S", "RGB", "XYZ", "Luminance", ...
+                     "lmChromaticity", "xyChromaticity", "MacLeodBoynton"])} = "LMS"
             end
 
-            % Ensure wl is column vector
             wl = wl(:);
 
             switch options.Data
-                case 'LMS', data = obj.LMS(wl); var_names = {'L', 'M', 'S'};
-                case 'L', data = obj.L(wl); var_names = {'L'};
-                case 'M', data = obj.M(wl); var_names = {'M'};
-                case 'S', data = obj.S(wl); var_names = {'S'};
-                case 'RGB'
-                    data = obj.RGB(wl);
-                    var_names = {'R', 'G', 'B'};
-                case 'chromaticity'
-                    % Force the energy/normalized/non-log basis required
-                    % by the projective chromaticity formula. Otherwise
-                    % the result silently changes shape with the
-                    % observer's OutputFormat.
-                    LMS = obj.chromaticityBasisLMS(wl);
-                    sum_LMS = sum(LMS, 2); sum_LMS(sum_LMS == 0) = eps;
-                    data = LMS ./ sum_LMS; var_names = {'l', 'm', 's'};
+                case "LMS",            data = obj.LMS(wl);            names = ["L" "M" "S"];
+                case "L",              data = obj.L(wl);              names = "L";
+                case "M",              data = obj.M(wl);              names = "M";
+                case "S",              data = obj.S(wl);              names = "S";
+                case "RGB",            data = obj.RGB(wl);            names = ["R" "G" "B"];
+                case "XYZ",            data = obj.XYZ(wl);            names = ["X" "Y" "Z"];
+                case "Luminance",      data = obj.Luminance(wl);      names = "V";
+                case "lmChromaticity", data = obj.lmChromaticity(wl); names = ["l" "m"];
+                case "xyChromaticity", data = obj.xyChromaticity(wl); names = ["x" "y"];
+                case "MacLeodBoynton", data = obj.MacLeodBoynton(wl); names = ["l_MB" "s_MB"];
             end
 
-            switch lower(options.Format)
-                case 'array'
-                    % RESULT IS DATA ONLY. WL is returned as 2nd arg.
-                    result = data;
-                case 'table'
-                    if size(data, 2) == 1
-                        result = table(wl, data, 'VariableNames', {'Wavelength_nm', var_names{1}});
-                    else
-                        T = array2table(data, 'VariableNames', var_names);
-                        result = [table(wl, 'VariableNames', {'Wavelength_nm'}), T];
-                    end
-                case 'struct'
-                    result.Wavelength_nm = wl;
-                    for i = 1:length(var_names)
-                        if size(data, 2) == 1, result.(var_names{i}) = data;
-                        else, result.(var_names{i}) = data(:,i); end
-                    end
-            end
+            result = [table(wl, VariableNames="Wavelength_nm"), ...
+                      array2table(data, VariableNames=names)];
         end
 
         function [RGB, wl] = RGB(obj, wl)
@@ -3045,8 +3033,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   of the observer's current OutputFormat / LogOutput /
             %   NormalizeOutput state.
             %
-            %   Used by Luminance, MacLeodBoynton, lmChromaticity, and the
-            %   evaluate(Data='chromaticity') path. plotChromaticity
+            %   Used by Luminance, MacLeodBoynton, and lmChromaticity.
+            %   evaluate reaches it through those methods. plotChromaticity
             %   delegates to obs.lmChromaticity, so it picks up this basis
             %   transitively.
             LMS = obj.LMS(wl, OutputFormat="energy", ...
