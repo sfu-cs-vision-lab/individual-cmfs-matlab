@@ -133,13 +133,6 @@ classdef ClassBehaviorTest < matlab.unittest.TestCase
             % unknown name.
             wl = (400:10:700)';
 
-            % The common template warns that opsin-template options are
-            % ignored, and getTemplateOptions always supplies them, so the
-            % warning fires on every fminbnd iteration during peak finding.
-            warnState = warning('off', ...
-                'StockmanRiderCommonPhotopigmentTemplate:IgnoredOption');
-            cleanup = onCleanup(@() warning(warnState)); %#ok<NASGU>
-
             for m = string(enumeration('enums.PhotopigmentModel'))'
                 obs = IndividualCMF(PhotopigmentModel=m);
                 cp = copy(obs);

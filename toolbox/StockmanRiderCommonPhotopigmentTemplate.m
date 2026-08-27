@@ -73,9 +73,11 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
             %
             %   The common template positions a single shared Fourier shape
             %   per cone via Nomograms.stockmanRiderCommon. Opsin-template
-            %   options (L_Template / M_Template) do not apply to the common
-            %   template and are ignored with a warning, mirroring the
-            %   Govardovskii model.
+            %   options (L_Template / M_Template) do not apply and are
+            %   ignored silently, as the Govardovskii model does.
+            %   IndividualCMF warns at the point of use instead: assigning
+            %   L_OpsinTemplate or M_OpsinTemplate while this model is
+            %   active raises IndividualCMF:IgnoredProperty.
             %
             %   INPUTS:
             %       wl - Wavelengths in nm (vector)
@@ -90,15 +92,7 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
                 wl (:,1) double {validators.mustBeWavelengthVector}
                 coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
                 shift (1,1) double
-                options (1,1) struct = struct()
-            end
-
-            % The common template ignores per-cone opsin templates. Warn if
-            % such options are supplied, like the Govardovskii model.
-            if isfield(options, 'L_Template') || isfield(options, 'M_Template')
-                warning('StockmanRiderCommonPhotopigmentTemplate:IgnoredOption', ...
-                    ['Opsin-template options are ignored by the common ' ...
-                    '(shape-invariant) Stockman-Rider template.']);
+                options (1,1) struct = struct() %#ok<INUSA>
             end
 
             logAbs = Nomograms.stockmanRiderCommon(wl, coneType, shift);
