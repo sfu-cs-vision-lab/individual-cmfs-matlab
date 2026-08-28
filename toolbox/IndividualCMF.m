@@ -3435,6 +3435,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             if options.PhotopigmentModel ~= "StockmanRider2023"
                 error('IndividualCMF:Conflict', 'Standard Observer requires PhotopigmentModel="StockmanRider2023".');
             end
+            % The CIE standard observers are defined on the Stockman-Rider
+            % pre-receptoral filters. Another lens or macular model gives a
+            % different LensDensity and a different spectrum, so the result
+            % would read StandardObserver=2 while no longer being one.
+            % Build it as a manual observer instead; that is what
+            % Type="Individualized" is for.
+            if options.LensModel ~= "StockmanRider2023"
+                error('IndividualCMF:Conflict', ...
+                    ['Standard Observer requires LensModel="StockmanRider2023". ' ...
+                     'Build a manual observer (Age=, FieldSize=) to use %s.'], ...
+                    options.LensModel);
+            end
+            if options.MacularModel ~= "StockmanRider2023"
+                error('IndividualCMF:Conflict', ...
+                    'Standard Observer requires MacularModel="StockmanRider2023".');
+            end
+
+            % The density algorithms follow from the standard configuration
+            % and are not selectable alongside it. Custom in particular is
+            % never assignable anywhere, so name it explicitly rather than
+            % letting it fall through as a silently ignored option.
+            algorithms = ["PhotopigmentDensityAlgorithm", ...
+                          "MacularDensityAlgorithm", "LensDensityAlgorithm"];
+            for k = 1:numel(algorithms)
+                requested = options.(algorithms(k));
+                if requested == ""
+                    continue
+                end
+                IndividualCMF.rejectCustomAssignment(requested == "Custom", ...
+                    algorithms(k), "the corresponding density");
+                error('IndividualCMF:Conflict', ...
+                    'Cannot specify %s with StandardObserver.', algorithms(k));
+            end
 
             obj.snapToStandardObserver(options.StandardObserver);
         end
