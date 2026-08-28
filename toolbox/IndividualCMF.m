@@ -2946,7 +2946,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
-            % Stage 1: Absorbance
+            % Stage 1: photopigment absorbance. Kept behind a method
+            % because it assembles the shift and the template options --
+            % getTemplateOptions carries the L/M magnitude switch, and
+            % losing it reverts the toolbox to codon-only switching.
             logAbs = obj.computePigmentAbsorbance(wl, coneType);
 
             if outputFormat == "absorbance"
@@ -2954,24 +2957,34 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
-            % Stage 2: Absorptance
-            absorptance = obj.computeRetinalAbsorptance(coneType, logAbs);
+            % Stage 2: Beer-Lambert self-screening. `true` selects the
+            % relative form (1-10^(-OD*A))/(1-10^(-OD)); the raw fraction
+            % is reachable via absorptanceFromAbsorbance(Normalize=false).
+            absorptance = pipeline.PhotopigmentStage.retinalAbsorptance( ...
+                logAbs, obj.getConeOD(coneType), true);
 
             if outputFormat == "absorptance"
                 val = absorptance;
                 return;
             end
 
-            % Stage 3: Corneal Quantal
-            quantal = obj.computeCornealQuantal(wl, absorptance);
+            % Stage 3: lens and macular pre-receptoral filtering.
+            quantal = pipeline.PreReceptoralStage.applyFilters( ...
+                absorptance, wl, ...
+                LensTemplate=obj.p_LensTemplate, ...
+                LensDensity=obj.LensDensity, ...
+                MacularTemplate=obj.p_MacularTemplate, ...
+                MacularDensity=obj.MacularDensity, ...
+                Age=obj.p_Parameters.Age, ...
+                FieldSize=obj.p_Parameters.FieldSize);
 
             if outputFormat == "quantal"
                 val = quantal;
                 return;
             end
 
-            % Stage 4: Energy
-            val = obj.convertToEnergy(wl, quantal);
+            % Stage 4: quantal -> energy (S&R 2023 Eq. 8).
+            val = pipeline.OutputStage.quantalToEnergy(quantal, wl);
         end
 
         function peak = computeAnalyticalAbsorptancePeak(obj, coneType)
@@ -3001,7 +3014,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             peakAbsorbance = obj.p_PhotopigmentTemplate.computePeakAbsorbance(coneType, shift, opts);
             % Relative retinal absorptance peak: matches the helper-norm
-            % convention applied by computeRetinalAbsorptance. For an
+            % convention applied by the stage-2 call in
+            % computeRawSensitivity. For an
             % absorbance template whose peak is exactly 1 (Govardovskii
             % alpha-band), this reduces to (1-10^(-od))/(1-10^(-od)) = 1.
             peak = (1 - 10^(-od * peakAbsorbance)) / (1 - 10^(-od));
@@ -3421,85 +3435,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj.p_PhotopigmentTemplate, wl, coneType, shift, templateOpts);
         end
 
-        function absorptance = computeRetinalAbsorptance(obj, coneType, logAbs)
-            % COMPUTERETINALABSORPTANCE  Apply self-screening to get absorptance.
-            %
-            %   Converts pigment absorbance to retinal absorptance by applying
-            %   the optical density (self-screening) of the photopigment.
-            %
-            %   INPUTS:
-            %       coneType - 'L', 'M', or 'S' (char)
-            %       logAbs - Log10 absorbance from Stage 1 (vector)
-            %
-            %   OUTPUTS:
-            %       absorptance - Retinal absorptance spectrum (0 to 1) (vector)
-            arguments
-                obj
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
-                logAbs (:,1) double
-            end
 
-            od = obj.getConeOD(coneType);
 
-            % Public OutputFormat="absorptance" is RELATIVE retinal
-            % absorptance: (1 - 10^(-OD*A)) / (1 - 10^(-OD)), where A is
-            % the linear photopigment absorbance normalised to peak 1.
-            % Both template families use this convention so the user gets
-            % the same physical quantity regardless of PhotopigmentModel.
-            % The raw Beer-Lambert fraction 1 - 10^(-OD*A) is still
-            % available through pipeline.PhotopigmentStage.absorptanceFromAbsorbance
-            % with Normalize=false.
-            absorptance = pipeline.PhotopigmentStage.retinalAbsorptance(logAbs, od, true);
-        end
-
-        function quantal = computeCornealQuantal(obj, wl, absorptance)
-            % COMPUTECORNEALQUANTAL  Apply pre-receptoral filtering.
-            %
-            %   Applies macular pigment and lens filtering to get corneal
-            %   (external) quantal sensitivity.
-            %
-            %   INPUTS:
-            %       wl - Wavelengths in nm (vector)
-            %       absorptance - Retinal absorptance from Stage 2 (vector)
-            %
-            %   OUTPUTS:
-            %       quantal - Corneal quantal sensitivity (vector)
-            arguments
-                obj
-                wl (:,1) double {validators.mustBeWavelengthVector}
-                absorptance (:,1) double
-            end
-
-            quantal = pipeline.PreReceptoralStage.applyFilters( ...
-                absorptance, wl, ...
-                LensTemplate=obj.p_LensTemplate, ...
-                LensDensity=obj.LensDensity, ...
-                MacularTemplate=obj.p_MacularTemplate, ...
-                MacularDensity=obj.MacularDensity, ...
-                Age=obj.p_Parameters.Age, ...
-                FieldSize=obj.p_Parameters.FieldSize);
-        end
-
-        function energy = convertToEnergy(~, wl, quantal)
-            % CONVERTTOENERGY  Convert quantal to energy-based sensitivity.
-            %
-            %   Multiplies by wavelength to convert from photon-based to
-            %   energy-based (Watt) sensitivity units.
-            %
-            %   INPUTS:
-            %       wl - Wavelengths in nm (vector)
-            %       quantal - Quantal sensitivity from Stage 3 (vector)
-            %
-            %   OUTPUTS:
-            %       energy - Energy-based sensitivity (vector)
-            arguments
-                ~
-                wl (:,1) double {validators.mustBeWavelengthVector}
-                quantal (:,1) double
-            end
-
-            energy = pipeline.OutputStage.quantalToEnergy(quantal, wl);
-        end
 
         % Internal sensitivity calculator (must bind to L/M/S properties)
         function applyStandardObserver(obj, options)
