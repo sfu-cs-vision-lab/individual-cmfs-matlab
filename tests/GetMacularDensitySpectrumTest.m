@@ -81,7 +81,7 @@ classdef GetMacularDensitySpectrumTest < matlab.unittest.TestCase
             obs = IndividualCMF();
             % 300 nm is below the 360 nm ValidRange, so the out-of-range
             % warning is correct here and deliberately silenced.
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
             wlBelow = (300:10:370)';
             wlAbove = (560:10:780)';
             specBelow = obs.getMacularDensitySpectrum(wlBelow);

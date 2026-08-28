@@ -370,18 +370,18 @@ classdef NomogramsTest < matlab.unittest.TestCase
                 'Latch must not flip when warning was suppressed');
         end
 
-        function testIndividualCMFWavelengthWarningSuppressesNomograms(testCase)
-            % obs.WavelengthWarning=false must silence both the
+        function testModelRangeWarningSuppressesNomograms(testCase)
+            % obs.ModelRangeWarning=false must silence both the
             % IndividualCMF warning AND the Nomograms warning that
             % subsequent template calls trigger -- they are independent
             % paths and the user expects the single property to govern
             % both.
             Nomograms.resetWarnings();
             obs = IndividualCMF();
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
             testCase.verifyWarningFree( ...
                 @() obs.LMS([200; 400]), ...
-                'WavelengthWarning=false must suppress Nomograms warning');
+                'ModelRangeWarning=false must suppress Nomograms warning');
         end
 
         function testNoWarningForValidWavelengths(testCase)

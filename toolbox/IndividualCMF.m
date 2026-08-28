@@ -205,7 +205,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   Setting StandardObserver = 0 is rejected; 0 is a state you
         %   drift into by editing parameters, not one you set directly.
         %   Output-shape options (OutputFormat, NormalizeOutput, LogOutput,
-        %   NormalizationMethod, Primaries, WavelengthWarning) are
+        %   NormalizationMethod, Primaries, ModelRangeWarning) are
         %   preserved across the snap.
         StandardObserver
 
@@ -410,11 +410,22 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         Primaries (1,3) double {validators.mustBeValidPrimaries} = ...
             CIE170.STILES_BURCH_10DEG_PRIMARIES_NM
 
-        % If true (default), warn once when wavelengths fall outside the active template range.
-        %   Valid ranges: 360-830 nm for Stockman-Rider templates,
-        %   380-780 nm for Govardovskii. Warning is emitted once per
-        %   session per template configuration.
-        WavelengthWarning (1,1) logical = true
+        % If true (default), warn once per observer when a query falls
+        % outside an active model's published range, on either axis.
+        %   Wavelength: warns outside the active templates' ValidRange
+        %     (360-830 nm for Stockman-Rider, 380-780 nm for Govardovskii,
+        %     400-830 nm for the Pokorny lens, 300-700 nm for vdK&vN).
+        %   Age: warns outside the active lens model's AgeValidRange
+        %     (0-80 years for vdK&vN; the Pokorny model errors rather than
+        %     warns outside 20-80, and that error is not suppressible).
+        %
+        %   This is a convenience master switch. For finer control use
+        %   MATLAB's own mechanism on the individual identifiers, which
+        %   stay distinct:
+        %       warning('off', 'IndividualCMF:WavelengthOutOfRange')
+        %       warning('off', 'IndividualCMF:AgeOutOfRange')
+        %       warning('off', 'Nomograms:WavelengthOutOfRange')
+        ModelRangeWarning (1,1) logical = true
     end
 
     properties (Access = private)
@@ -471,6 +482,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         % Flag to track if wavelength range warning has been issued this session
         p_WavelengthWarningIssued (1,1) logical = false
 
+        % Tracks the age axis separately: a lens-model change re-arms it,
+        % the same way a photopigment change re-arms the wavelength flag.
+        p_AgeWarningIssued (1,1) logical = false
+
         % Strategy 1 storage: the cone parameters, pre-receptoral
         % filters, Age, and FieldSize. Read/written directly by the
         % corresponding public Dependent property accessors.
@@ -501,7 +516,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   (Nomograms.GOV_VALID_RANGE), so a Govardovskii observer using
         %   this default emits IndividualCMF:WavelengthOutOfRange once.
         %   That is intended -- the model reporting that it is
-        %   extrapolating. Set obs.WavelengthWarning = false to silence it.
+        %   extrapolating. Set obs.ModelRangeWarning = false to silence it.
         %
         %   Not a published tabulation range: CIE 170-1:2006 tabulates
         %   390-830 (see tests/data/cvrl/NOTES.md) and the golden parity
@@ -1028,6 +1043,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 v (1,1) enums.LensModel
             end
             obj.p_LensTemplate = LensTemplate.create(string(v));
+            obj.p_AgeWarningIssued = false;
             obj.recalcLensFromAge();
             obj.invalidateNormalizationCache();
         end
@@ -2913,12 +2929,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = wl(:);
 
             % Validate wavelengths against template's valid range.
-            % Honour WavelengthWarning at both the IndividualCMF boundary
+            % Honour ModelRangeWarning at both the IndividualCMF boundary
             % and inside the Nomograms layer, which has its own
             % independent warning. Restore on exit so we don't pollute
             % the caller's warning state.
             obj.validateWavelengths(wl);
-            if ~obj.WavelengthWarning
+            if ~obj.ModelRangeWarning
                 prevWarn = warning('off', 'Nomograms:WavelengthOutOfRange');
                 cleanupWarn = onCleanup(@() warning(prevWarn));
             end
@@ -3071,7 +3087,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 'OutputFormat',      obj.OutputFormat, ...
                 'NormalizeOutput',   string(obj.NormalizeOutput), ...
                 'LogOutput',         string(obj.LogOutput), ...
-                'WavelengthWarning', string(obj.WavelengthWarning), ...
+                'ModelRangeWarning', string(obj.ModelRangeWarning), ...
                 'Primaries',         obj.Primaries);
 
             propgroups = [
@@ -3284,7 +3300,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
 
             % Skip if warnings are disabled or already issued
-            if ~obj.WavelengthWarning || obj.p_WavelengthWarningIssued
+            if ~obj.ModelRangeWarning || obj.p_WavelengthWarningIssued
                 return;
             end
 
@@ -3332,6 +3348,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                     'for the %s template. Results may be unreliable.'], ...
                     wlStr, minWl, maxWl, tmpl.ShortName);
                 break
+            end
+        end
+
+        function validateAgeForLensModel(obj)
+            % VALIDATEAGEFORLENSMODEL  Guard Age against the active lens model.
+            %
+            %   Errors outside AgeDomain, the span the source publication
+            %   permits the model to be evaluated over. Warns once per
+            %   observer outside AgeValidRange, the span it presents.
+            age = obj.p_Parameters.Age;
+            if isempty(age) || isnan(age)
+                return
+            end
+
+            dom = obj.p_LensTemplate.AgeDomain;
+            if age < dom(1) || age > dom(2)
+                error("IndividualCMF:AgeOutsideModelDomain", ...
+                    "Age %g is outside the %g-%g year range the %s lens " + ...
+                    "model is defined over, and its authors do not sanction " + ...
+                    "extrapolation. Use LensModel=""VanDeKraats2007"", whose " + ...
+                    "aging formula is stated to apply at any age.", ...
+                    age, dom(1), dom(2), obj.p_LensTemplate.ShortName);
+            end
+
+            valid = obj.p_LensTemplate.AgeValidRange;
+            if (age < valid(1) || age > valid(2)) && ...
+                    obj.ModelRangeWarning && ~obj.p_AgeWarningIssued
+                obj.p_AgeWarningIssued = true;
+                warning("IndividualCMF:AgeOutOfRange", ...
+                    "Age %g is outside the %g-%g year span the %s lens " + ...
+                    "model presents. Its authors permit the aging formula " + ...
+                    "at any age, but the result is an extrapolation.", ...
+                    age, valid(1), valid(2), obj.p_LensTemplate.ShortName);
             end
         end
 
@@ -3495,7 +3544,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   Output-shape settings (OutputFormat, NormalizeOutput,
             %   LogOutput, NormalizationMethod, Primaries,
-            %   WavelengthWarning) are intentionally preserved.
+            %   ModelRangeWarning) are intentionally preserved.
             arguments
                 obj
                 fieldSize (1,1) double {mustBeMember(fieldSize, [2, 10])}
@@ -4006,6 +4055,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             arguments
                 obj
             end
+
+            % Before the Custom early return: an out-of-domain age is
+            % invalid whether or not the density happens to be pinned, and
+            % skipping the check here would let a bad age hide until the
+            % algorithm switched back.
+            obj.validateAgeForLensModel();
 
             if obj.p_LensDensityAlgorithm == "Custom"
                 return

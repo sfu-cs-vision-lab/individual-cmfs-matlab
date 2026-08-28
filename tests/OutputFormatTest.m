@@ -311,7 +311,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             for model = ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"]
                 obs = IndividualCMF(LensModel=model, Age=45);
-                obs.WavelengthWarning = false;
+                obs.ModelRangeWarning = false;
                 s = obs.getLensDensitySpectrum();
 
                 % Pokorny has no value below 400 nm and reports NaN there

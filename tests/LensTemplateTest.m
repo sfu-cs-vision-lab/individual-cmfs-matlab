@@ -147,7 +147,7 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             % Andy Rider's objection resolved rather than documented: the
             % flat 400 nm extrapolation is no longer reported as data.
             obs = IndividualCMF(LensModel="Pokorny1987", Age=70);
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
             wl = (360:1:830)';
             LMS = obs.LMS(wl);
 
@@ -176,7 +176,7 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             wl = (360:1:830)';
 
             o1 = IndividualCMF(LensModel="VanDeKraats2007");
-            o1.WavelengthWarning = false;
+            o1.ModelRangeWarning = false;
             od = o1.getLensDensitySpectrum(wl);
 
             tail = od(wl >= 700);
@@ -188,7 +188,7 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             % Govardovskii keeps its tails outside 380-780 nm too.
             o2 = IndividualCMF(PhotopigmentModel="Govardovskii2000", ...
                 LensModel="VanDeKraats2007");
-            o2.WavelengthWarning = false;
+            o2.ModelRangeWarning = false;
             LMS = o2.LMS(wl);
             testCase.verifyTrue(all(LMS(:,1) >= 0));
             testCase.verifyGreaterThan(max(LMS(wl > 780, 1)), 0, ...
@@ -200,7 +200,7 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             % normalized peak of 1.0, and 8.36e+153 on the common template.
             for m = ["StockmanRider2023", "StockmanRider2023Common"]
                 obs = IndividualCMF(PhotopigmentModel=m);
-                obs.WavelengthWarning = false;
+                obs.ModelRangeWarning = false;
                 for w = [300 310 320 330 340 350]
                     testCase.verifyEqual(obs.L(w), 0, 'AbsTol', 0, ...
                         sprintf('%s at %d nm must report zero, not a diverged value', m, w));
@@ -224,11 +224,11 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             testCase.verifyWarningFree(@() obs.LMS(wl));
         end
 
-        function testWavelengthWarningSilencesTheFilterPath(testCase)
+        function testModelRangeWarningSilencesTheFilterPath(testCase)
             % The density accessors now validate, so the existing opt-out
             % has to reach them too.
             obs = IndividualCMF(LensModel="Pokorny1987");
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
             testCase.verifyWarningFree(@() obs.getLensDensitySpectrum((360:1:830)'));
         end
 
@@ -236,7 +236,7 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             % A Pokorny lens (400) with a Stockman-Rider pigment (360)
             % must take the tighter floor.
             obs = IndividualCMF(LensModel="Pokorny1987");
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
             testCase.verifyEqual(obs.L(399), 0, 'AbsTol', 0);
             testCase.verifyGreaterThan(obs.L(400), 0);
 

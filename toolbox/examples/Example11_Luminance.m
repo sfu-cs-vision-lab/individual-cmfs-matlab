@@ -44,7 +44,7 @@ agecol = lines(numel(ages));
 %[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
-[age_observers.WavelengthWarning] = deal(false);
+[age_observers.ModelRangeWarning] = deal(false);
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on

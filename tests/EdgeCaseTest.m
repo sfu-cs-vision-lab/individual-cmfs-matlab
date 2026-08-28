@@ -320,21 +320,37 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testExtremeAgeValues(testCase)
-            % Test age boundary conditions
-            % Use Pokorny1987 lens model for age-dependent comparisons
+            % Test age boundary conditions. Ages 1 and 100 are outside the
+            % 20-80 span Pokorny 1987 publishes, and the toolbox now
+            % refuses those rather than extrapolating, so this uses
+            % VanDeKraats2007 -- whose authors state the aging formula
+            % applies at any age -- for the extremes.
+            % Age 100 is past the 0-80 span vdK&vN presents, so construction
+            % warns; the extrapolation itself is sanctioned.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'IndividualCMF:AgeOutOfRange'));
 
-            % Young observer
-            obs_young = IndividualCMF(Age=1, FieldSize=2, LensModel="Pokorny1987");
+            obs_young = IndividualCMF(Age=1, FieldSize=2, LensModel="VanDeKraats2007");
             testCase.verifyWarningFree(@() obs_young.L(550));
 
-            % Elderly observer
-            obs_old = IndividualCMF(Age=100, FieldSize=2, LensModel="Pokorny1987");
+            obs_old = IndividualCMF(Age=100, FieldSize=2, LensModel="VanDeKraats2007");
             testCase.verifyWarningFree(@() obs_old.L(550));
 
             % Older should have more lens absorption at short wavelengths
-            % due to increased lens optical density (yellowing) with Pokorny1987 model
+            % due to increased lens optical density (yellowing).
             testCase.verifyLessThan(obs_old.S(420), obs_young.S(420), ...
-                'Older observer should have reduced short-wavelength sensitivity with Pokorny1987');
+                'Older observer should have reduced short-wavelength sensitivity');
+        end
+
+        function testExtremeAgesAtTheEdgeOfThePokornySpan(testCase)
+            % The published Pokorny endpoints must still work, and the
+            % same monotonic relationship must hold inside the span.
+            obs_young = IndividualCMF(Age=20, FieldSize=2, LensModel="Pokorny1987");
+            obs_old = IndividualCMF(Age=80, FieldSize=2, LensModel="Pokorny1987");
+            testCase.verifyWarningFree(@() obs_young.L(550));
+            testCase.verifyWarningFree(@() obs_old.L(550));
+            testCase.verifyLessThan(obs_old.S(420), obs_young.S(420));
         end
 
         function testExtremeFieldSizes(testCase)

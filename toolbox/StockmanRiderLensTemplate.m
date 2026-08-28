@@ -47,6 +47,11 @@ classdef StockmanRiderLensTemplate < LensTemplate
         %   exists. This is the guard that stopped obs.L(320) returning
         %   2.897e+13 against a normalized peak of 1.0.
         Domain = [360, Inf]
+
+        % Age-invariant: computeTemplate ignores `age` entirely, so there
+        %   is nothing to extrapolate and no bound to declare.
+        AgeValidRange = [0, Inf]
+        AgeDomain = [0, Inf]
     end
 
     properties (Constant, Access = private)

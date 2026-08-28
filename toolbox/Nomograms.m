@@ -542,7 +542,7 @@ classdef Nomograms
             if minWl < validRange(1) || maxWl > validRange(2)
                 % Only flip the once-per-session latch when the warning
                 % is actually emitted. If the caller (typically
-                % IndividualCMF when WavelengthWarning=false) has
+                % IndividualCMF when ModelRangeWarning=false) has
                 % suppressed Nomograms:WavelengthOutOfRange, leave
                 % hasWarned alone so the warning will fire next time the
                 % suppression is lifted.

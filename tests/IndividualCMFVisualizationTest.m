@@ -525,8 +525,8 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             obsComp = IndividualCMF(Age=70, FieldSize=2, LensModel="Pokorny1987");
             % Pokorny has no value below 400 nm, so the plotted curve
             % carries NaN there. Expected, and not what this test is about.
-            obsRef.WavelengthWarning = false;
-            obsComp.WavelengthWarning = false;
+            obsRef.ModelRangeWarning = false;
+            obsComp.ModelRangeWarning = false;
 
             p = obsRef.plotLens(Compare=obsComp);
             testCase.verifyNumElements(p, 2);

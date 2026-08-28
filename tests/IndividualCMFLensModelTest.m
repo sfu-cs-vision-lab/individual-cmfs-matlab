@@ -431,5 +431,132 @@ classdef IndividualCMFLensModelTest < matlab.unittest.TestCase
             obs2.setParameters(params);
             testCase.verifyEqual(string(obs2.MacularModel), "StockmanRider2023");
         end
+        % Age validity: AgeValidRange warns, AgeDomain refuses
+
+        function testPokornyRefusesAgesItsAuthorsDidNotModel(testCase)
+            % Pokorny, Smith & Lutze (1987) scope their equations to ages
+            % 20-80 and never sanction extrapolation.
+            testCase.verifyError(@() IndividualCMF(LensModel="Pokorny1987", Age=5), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+            testCase.verifyError(@() IndividualCMF(LensModel="Pokorny1987", Age=95), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+
+            % Switching INTO the model at a bad age must fail the same way.
+            % Age 5 is fine on the age-invariant default model.
+            obs = IndividualCMF(Age=5);
+            testCase.verifyError(@() setLensModel(obs, "Pokorny1987"), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+
+            % And moving the age out from under an already-selected model.
+            obs2 = IndividualCMF(LensModel="Pokorny1987", Age=40);
+            testCase.verifyError(@() setAge(obs2, 5), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+        end
+
+        function testPokornyGuardAppliesInCustomMode(testCase)
+            % The guard runs before the Custom early return, so pinning a
+            % density cannot hide a bad age until the mode switches back.
+            obs = IndividualCMF(LensModel="Pokorny1987", Age=40, LensDensity=2.0);
+            testCase.assertEqual(string(obs.LensDensityAlgorithm), "Custom");
+            testCase.verifyError(@() setAge(obs, 5), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+        end
+
+        function testPokornyAcceptsItsPublishedSpan(testCase)
+            % Density must rise across the published span and accelerate
+            % past the age-60 knee.
+            ages = [20 32 60 61 80];
+            d = arrayfun(@(a) IndividualCMF(LensModel="Pokorny1987", Age=a).LensDensity, ages);
+            testCase.verifyTrue(all(diff(d) > 0), ...
+                'Pokorny lens density must increase with age');
+            testCase.verifyGreaterThan(d(end) - d(4), d(3) - d(2), ...
+                'Yellowing must accelerate above age 60');
+        end
+
+        function testVanDeKraatsWarnsButExtrapolates(testCase)
+            % vdK&vN Section 6 applies the aging formula "at any age" and
+            % builds a newborn case, so extrapolation is sanctioned.
+            testCase.verifyWarning(@() IndividualCMF(LensModel="VanDeKraats2007", Age=95), ...
+                'IndividualCMF:AgeOutOfRange');
+
+            % The value survives the warning: this is an extrapolation the
+            % authors permit, not a refusal.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'IndividualCMF:AgeOutOfRange'));
+            obs = IndividualCMF(LensModel="VanDeKraats2007", Age=95);
+            testCase.verifyGreaterThan(obs.LensDensity, 0, ...
+                'vdK&vN must still produce a density outside 0-80');
+            inSpan = IndividualCMF(LensModel="VanDeKraats2007", Age=80).LensDensity;
+            testCase.verifyGreaterThan(obs.LensDensity, inSpan, ...
+                'The aging formula must keep rising past the presented span');
+        end
+
+        function testAgeWarningIsOncePerObserverAndRearms(testCase)
+            obs = IndividualCMF(LensModel="VanDeKraats2007", Age=32);
+            testCase.verifyWarning(@() setAge(obs, 95), 'IndividualCMF:AgeOutOfRange');
+            testCase.verifyWarningFree(@() setAge(obs, 96), ...
+                'The age warning must fire once per observer');
+
+            % A lens-model change re-arms the flag. Switching back to an
+            % age-bounded model at an out-of-span age fires immediately, so
+            % the switch itself is what must warn.
+            obs.LensModel = "StockmanRider2023";
+            testCase.verifyWarning(@() setLensModel(obs, "VanDeKraats2007"), ...
+                'IndividualCMF:AgeOutOfRange', ...
+                'A lens-model change must re-arm the age warning');
+        end
+
+        function testModelRangeWarningSilencesTheAgeAxis(testCase)
+            obs = IndividualCMF(LensModel="VanDeKraats2007", Age=32);
+            obs.ModelRangeWarning = false;
+            testCase.verifyWarningFree(@() setAge(obs, 95));
+        end
+
+        function testAgeDomainErrorIsNotSuppressible(testCase)
+            % A refusal is not an advisory: ModelRangeWarning must not
+            % turn it off.
+            obs = IndividualCMF(LensModel="Pokorny1987", Age=40);
+            obs.ModelRangeWarning = false;
+            testCase.verifyError(@() setAge(obs, 5), ...
+                'IndividualCMF:AgeOutsideModelDomain');
+        end
+
+        function testAgeInvariantModelHasNoAgeBound(testCase)
+            for a = [1 5 100 120]
+                obs = IndividualCMF(LensModel="StockmanRider2023", Age=a);
+                testCase.verifyEqual(obs.LensDensity, CIE170.STD_LENS_DENSITY_400, ...
+                    'AbsTol', 1e-12);
+            end
+        end
+
+        function testEveryLensTemplateDeclaresBothAgeRanges(testCase)
+            templates = {StockmanRiderLensTemplate(), Pokorny1987LensTemplate(), ...
+                         VanDeKraatsVanNorren2007LensTemplate()};
+            for k = 1:numel(templates)
+                t = templates{k};
+                name = class(t);
+                testCase.verifySize(t.AgeValidRange, [1 2], [name ' AgeValidRange']);
+                testCase.verifySize(t.AgeDomain, [1 2], [name ' AgeDomain']);
+                testCase.verifyLessThan(t.AgeValidRange(1), t.AgeValidRange(2));
+                testCase.verifyLessThan(t.AgeDomain(1), t.AgeDomain(2));
+                % A model may permit more than it presents, never less.
+                testCase.verifyLessThanOrEqual(t.AgeDomain(1), t.AgeValidRange(1), ...
+                    [name ' AgeDomain must not be narrower than AgeValidRange']);
+                testCase.verifyGreaterThanOrEqual(t.AgeDomain(2), t.AgeValidRange(2), ...
+                    [name ' AgeDomain must not be narrower than AgeValidRange']);
+            end
+        end
+
     end
+end
+
+%% Helper functions for verifyError / verifyWarning with property assignment
+
+function setAge(obj, value)
+obj.Age = value;
+end
+
+function setLensModel(obj, value)
+obj.LensModel = value;
 end

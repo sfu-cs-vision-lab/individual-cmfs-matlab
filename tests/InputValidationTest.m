@@ -162,9 +162,9 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'evaluate() should match LMS() after property changes');
         end
 
-        function testWavelengthWarningIssuedForOutOfRange(testCase)
+        function testModelRangeWarningIssuedForOutOfRangeWavelengths(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Stockman-Rider template has valid range [360, 830] nm
             % Request wavelengths outside this range
@@ -174,9 +174,9 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Should warn when wavelengths are outside the valid range');
         end
 
-        function testWavelengthWarningOnlyOnce(testCase)
+        function testModelRangeWarningIssuedOnlyOnce(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % First call should warn
             wl_out = (340:10:380)';
@@ -191,18 +191,18 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Third call with same object should not warn again');
         end
 
-        function testWavelengthWarningDisabled(testCase)
+        function testModelRangeWarningDisabled(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
 
             wl_out = (340:10:380)';
             testCase.verifyWarningFree(@() obs.L(wl_out), ...
-                'Should not warn when WavelengthWarning is disabled');
+                'Should not warn when ModelRangeWarning is disabled');
         end
 
-        function testWavelengthWarningValidRangeNoWarning(testCase)
+        function testInRangeWavelengthsDoNotWarn(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Request wavelengths strictly within Stockman-Rider valid range [360, 830]
             wl_valid = (400:10:700)';
@@ -211,9 +211,9 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Valid wavelengths should not trigger warning');
         end
 
-        function testWavelengthWarningResetsOnTemplateChange(testCase)
+        function testModelRangeWarningResetsOnTemplateChange(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Trigger the warning with Stockman-Rider template
             wl_out = (340:10:380)';
@@ -233,11 +233,11 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Warning should reset after template change');
         end
 
-        function testWavelengthWarningGovardovskiiRange(testCase)
+        function testGovardovskiiLowerBoundWarns(testCase)
             % Test Govardovskii template's different valid range [380, 780]
             obs = IndividualCMF(StandardObserver=10);
             obs.PhotopigmentModel = "Govardovskii2000";
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Wavelengths 360-380 are valid for Stockman-Rider but invalid for Govardovskii
             wl_out = (360:5:400)';
@@ -245,11 +245,11 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Govardovskii should warn for wavelengths below 380 nm');
         end
 
-        function testWavelengthWarningGovardovskiiUpperBound(testCase)
+        function testGovardovskiiUpperBoundWarns(testCase)
             % Test Govardovskii template warns for wavelengths above 780 nm
             obs = IndividualCMF(StandardObserver=10);
             obs.PhotopigmentModel = "Govardovskii2000";
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % 800 nm is valid for Stockman-Rider but invalid for Govardovskii
             wl_out = (750:10:810)';

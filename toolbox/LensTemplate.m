@@ -32,6 +32,14 @@ classdef (Abstract) LensTemplate < handle
     % Licensed under AGPL-3.0-or-later. See LICENSE file for details.
     % Repository: https://github.com/sfu-cs-vision-lab/Individual-CMFs
 
+    %   Pupil size is not modelled. Each concrete template inherits
+    %   whatever pupil basis its source publication used, and those bases
+    %   differ -- Pokorny 1987 Table I is tabulated for a small pupil
+    %   (<3 mm), while the Wyszecki & Stiles data it derives from was for
+    %   a maximally open pupil. Mixing a lens model with macular or
+    %   photopigment constants from a different source does not reconcile
+    %   those assumptions. Document the basis in each subclass's help.
+
     properties (Abstract, SetAccess = protected)
         % Name  Full descriptive name of the template model.
         Name
@@ -63,6 +71,18 @@ classdef (Abstract) LensTemplate < handle
         %   and IndividualCMF reports zero sensitivity or a NaN density
         %   rather than a number the model cannot support.
         Domain (1,2) double
+
+        % AgeValidRange  [min, max] years the source publication presents.
+        %   Outside it IndividualCMF warns once per observer.
+        AgeValidRange (1,2) double
+
+        % AgeDomain  [min, max] years the model may be evaluated at.
+        %   Narrower than AgeValidRange only where the authors bound their
+        %   equations without sanctioning extrapolation; outside it
+        %   IndividualCMF errors rather than producing a number the paper
+        %   does not support. Set it unbounded when the authors explicitly
+        %   permit any age.
+        AgeDomain (1,2) double
     end
 
     properties (Constant)
