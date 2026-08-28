@@ -74,6 +74,19 @@ classdef VanDeKraatsVanNorren2007LensTemplate < LensTemplate
         ShortName = "VanDeKraats2007"
     end
 
+    properties (Constant)
+        % ValidRange  300-700 nm, the span the five-component model is
+        %   fitted on.
+        ValidRange = [300, 700]
+
+        % Domain  Unbounded. Outside the fit the model stays positive and
+        %   bounded (0.0577 of the 400 nm reference at 700 nm, 0.0473 at
+        %   830), so the values are admissible and the ValidRange warning
+        %   carries the caveat. Truncating them would put a cliff in the
+        %   long-wavelength tail.
+        Domain = [0, Inf]
+    end
+
     properties (Constant, Access = private)
         % All constants in this block derive from:
         %   van de Kraats & van Norren (2007). Optical density of the aging

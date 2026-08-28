@@ -74,9 +74,14 @@ classdef GetMacularDensitySpectrumTest < matlab.unittest.TestCase
         end
 
         function testZeroOutsideTemplateRange(testCase)
-            % Wavelengths outside the template's defined range (375-550 nm)
-            % return zero.
+            % Wavelengths outside the macular support band (375-550 nm)
+            % return zero. That zero is the model's answer, not a missing
+            % value, which is why the template's ValidRange still spans
+            % 360-830 and its Domain is unbounded.
             obs = IndividualCMF();
+            % 300 nm is below the 360 nm ValidRange, so the out-of-range
+            % warning is correct here and deliberately silenced.
+            obs.WavelengthWarning = false;
             wlBelow = (300:10:370)';
             wlAbove = (560:10:780)';
             specBelow = obs.getMacularDensitySpectrum(wlBelow);

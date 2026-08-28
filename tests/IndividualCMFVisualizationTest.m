@@ -523,9 +523,23 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             % curves, masking a copy-bug where p(2) plots the reference).
             obsRef  = IndividualCMF(Age=32, FieldSize=2, LensModel="Pokorny1987");
             obsComp = IndividualCMF(Age=70, FieldSize=2, LensModel="Pokorny1987");
+            % Pokorny has no value below 400 nm, so the plotted curve
+            % carries NaN there. Expected, and not what this test is about.
+            obsRef.WavelengthWarning = false;
+            obsComp.WavelengthWarning = false;
+
             p = obsRef.plotLens(Compare=obsComp);
             testCase.verifyNumElements(p, 2);
-            testCase.verifyNotEqual(p(1).YData, p(2).YData);
+
+            % Compare where both curves have values. NaN never equals NaN,
+            % so comparing the raw YData would pass even if p(2) plotted
+            % the reference by mistake -- the bug this test exists to catch.
+            y1 = p(1).YData(:);
+            y2 = p(2).YData(:);
+            defined = isfinite(y1) & isfinite(y2);
+            testCase.assertTrue(any(defined), ...
+                'The two curves must overlap somewhere');
+            testCase.verifyNotEqual(y1(defined), y2(defined));
         end
 
         function testPlotLensCompareRejectsNonObserver(testCase)

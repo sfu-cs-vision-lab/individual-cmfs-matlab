@@ -61,6 +61,12 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
         % ValidRange  Matches the Stockman & Rider valid range (360-830 nm),
         % the same SR_VALID_RANGE used by the per-cone templates.
         ValidRange = [360, 830]
+
+        % Domain  Same 360 nm anchor as the other Stockman-Rider template.
+        %   Below it the common template genuinely diverges rather than
+        %   merely oscillating: linear absorbance reaches 230 at 320 nm and
+        %   8.5e+07 at 300 nm, which drove obs.L(300) to 8.36e+153.
+        Domain = [360, Inf]
     end
 
     methods

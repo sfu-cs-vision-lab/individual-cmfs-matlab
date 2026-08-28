@@ -1757,9 +1757,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 wavelengths (:,1) double {validators.mustBeWavelengthVector}
             end
 
+            obj.validateWavelengths(wavelengths);
+
             template = obj.p_LensTemplate.computeTemplate(wavelengths, ...
                 obj.p_Parameters.Age, FieldSize=obj.p_Parameters.FieldSize);
             spectrum = obj.LensDensity * template;
+
+            % An optical density has no zero-valued "no answer": zero reads
+            % as perfectly transparent, the opposite of reality in the UV,
+            % and would silently inflate anything computed from it. Report
+            % NaN instead. These survive -- pipeline.OutputStage.cleanNaN
+            % runs only in the sensitivity path, not here.
+            dom = obj.p_LensTemplate.Domain;
+            spectrum((wavelengths < dom(1)) | (wavelengths > dom(2))) = NaN;
         end
 
         function spectrum = getMacularDensitySpectrum(obj, wavelengths)
@@ -1785,8 +1795,16 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 wavelengths (:,1) double {validators.mustBeWavelengthVector}
             end
 
+            obj.validateWavelengths(wavelengths);
+
             template = obj.p_MacularTemplate.computeTemplate(wavelengths);
             spectrum = obj.MacularDensity * template;
+
+            % NaN rather than zero outside the domain, for the same reason
+            % as the lens spectrum: zero optical density is a claim, not an
+            % absence of one.
+            dom = obj.p_MacularTemplate.Domain;
+            spectrum((wavelengths < dom(1)) | (wavelengths > dom(2))) = NaN;
         end
 
         function [XYZ, wl] = XYZ(obj, wl, options)
@@ -3195,18 +3213,31 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
-            % Get valid range from template
-            validRange = obj.p_PhotopigmentTemplate.ValidRange;
-            minWl = validRange(1);
-            maxWl = validRange(2);
+            % Check every active template, not just the photopigment one.
+            % The lens and macular models have their own fitted ranges, and
+            % a query outside any of them is equally unreliable.
+            sources = { ...
+                obj.p_PhotopigmentTemplate, ...
+                obj.p_LensTemplate, ...
+                obj.p_MacularTemplate};
 
-            % Find out-of-range wavelengths
-            belowRange = wl < minWl;
-            aboveRange = wl > maxWl;
-            outOfRange = belowRange | aboveRange;
+            for s = 1:numel(sources)
+                tmpl = sources{s};
+                if isempty(tmpl)
+                    continue
+                end
 
-            if any(outOfRange)
-                % Mark that we've issued the warning
+                validRange = tmpl.ValidRange;
+                minWl = validRange(1);
+                maxWl = validRange(2);
+                outOfRange = (wl < minWl) | (wl > maxWl);
+                if ~any(outOfRange)
+                    continue
+                end
+
+                % One warning per observer regardless of how many templates
+                % are out of range: three warnings for one call would train
+                % people to filter the channel.
                 obj.p_WavelengthWarningIssued = true;
 
                 % Build informative message
@@ -3224,8 +3255,24 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 warning('IndividualCMF:WavelengthOutOfRange', ...
                     ['Wavelengths [%s] nm are outside the valid range [%.0f-%.0f nm] ' ...
                     'for the %s template. Results may be unreliable.'], ...
-                    wlStr, minWl, maxWl, obj.p_PhotopigmentTemplate.ShortName);
+                    wlStr, minWl, maxWl, tmpl.ShortName);
+                break
             end
+        end
+
+        function d = activeDomain(obj)
+            % ACTIVEDOMAIN  Intersection of the active templates' Domains.
+            %
+            %   Outside this span no active template can produce a finite,
+            %   physically admissible value, so the toolbox reports nothing
+            %   rather than a number the model cannot support.
+            %
+            %   OUTPUTS:
+            %       d - [min_nm, max_nm] (1x2 double)
+            domains = [obj.p_PhotopigmentTemplate.Domain
+                       obj.p_LensTemplate.Domain
+                       obj.p_MacularTemplate.Domain];
+            d = [max(domains(:,1)), min(domains(:,2))];
         end
 
         function logAbs = computePigmentAbsorbance(obj, wl, coneType)
@@ -3730,6 +3777,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
+            % Outside the active domain no template has an admissible
+            % value. Report zero sensitivity -- the cone does not respond
+            % where the model cannot see -- rather than a diverged or
+            % fabricated number. validateWavelengths has already warned.
+            dom = obj.activeDomain();
+            outOfDomain = (nm_col < dom(1)) | (nm_col > dom(2));
+
             % Absorbance: raw template output, no normalization via cache
             if fmt == "absorbance"
                 logAbs = obj.computePigmentAbsorbance(nm_col, cone_type);
@@ -3738,6 +3792,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 else
                     val = pipeline.OutputStage.cleanNaN(10.^(logAbs), false);
                 end
+                val = IndividualCMF.applyDomainFloor(val, outOfDomain, logOutput);
                 if wasRow, val = val'; end
                 return;
             end
@@ -3757,6 +3812,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             else
                 val = pipeline.OutputStage.cleanNaN(val, false);
             end
+
+            val = IndividualCMF.applyDomainFloor(val, outOfDomain, logOutput);
 
             % Restore input shape
             if wasRow
@@ -3960,6 +4017,30 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static, Access = private)
+        function val = applyDomainFloor(val, outOfDomain, logOutput)
+            % APPLYDOMAINFLOOR  Report no sensitivity outside the active domain.
+            %
+            %   In log mode the floor is -10, the value the toolbox uses
+            %   elsewhere for "below dynamic range"; -Inf would poison any
+            %   downstream arithmetic.
+            %
+            %   INPUTS:
+            %       val - Sensitivity values (vector)
+            %       outOfDomain - Mask of samples with no admissible value (logical)
+            %       logOutput - Whether val is log-transformed (logical)
+            %
+            %   OUTPUTS:
+            %       val - Values with out-of-domain samples floored (vector)
+            if ~any(outOfDomain)
+                return
+            end
+            if logOutput
+                val(outOfDomain) = -10;
+            else
+                val(outOfDomain) = 0;
+            end
+        end
+
         function rejectCustomAssignment(isCustom, algorithmName, densityName)
             % REJECTCUSTOMASSIGNMENT  Block Custom on an algorithm property.
             %   Custom is entailed by pinning a density value, so it is a

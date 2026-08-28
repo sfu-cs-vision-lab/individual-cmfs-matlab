@@ -42,6 +42,23 @@ classdef Pokorny1987LensTemplate < LensTemplate
         ShortName = "Pokorny1987"
     end
 
+    properties (Constant)
+        % ValidRange  400-830 nm. Pokorny, Smith & Lutze (1987) Table I is
+        %   tabulated 400-650 nm in 10 nm steps, but it *terminates* at
+        %   T_L = 0.000 rather than running out of data: the lens is
+        %   transparent from 650 nm on, so zero stays the model's answer
+        %   above it. Only the 400 nm lower bound is a real boundary.
+        ValidRange = [400, 830]
+
+        % Domain  Also floored at 400 nm. Below it computeTemplate holds the
+        %   400 nm value flat. That is bounded but non-physical: real lens
+        %   optical density rises steeply into the UV, so a flat value
+        %   understates absorption and overstates short-wavelength
+        %   sensitivity. VanDeKraats2007 is fitted from 300 nm and is the
+        %   model to use below 400.
+        Domain = [400, Inf]
+    end
+
     properties (Constant, Access = private)
         % All constants in this block derive from:
         %   Source: Pokorny, J., Smith, V.C. & Lutze, M. (1987). Aging of the

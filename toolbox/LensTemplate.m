@@ -40,6 +40,31 @@ classdef (Abstract) LensTemplate < handle
         ShortName
     end
 
+    properties (Abstract, Constant)
+        % ValidRange  [min_nm, max_nm] over which the publication has a basis.
+        %
+        %   Where the source paper fitted or tabulated the model -- NOT
+        %   where the output happens to be non-zero. A template that
+        %   deliberately returns zero outside a support band is giving the
+        %   model's answer, not extrapolating, and its ValidRange should
+        %   still cover the full query range.
+        %
+        %   IndividualCMF.validateWavelengths warns once per observer when
+        %   a query falls outside this range. Mirrors
+        %   PhotopigmentTemplate.ValidRange.
+        ValidRange (1,2) double
+
+        % Domain  [min_nm, max_nm] where the implementation has an answer.
+        %
+        %   Where the math can produce a finite, physically admissible
+        %   number. Distinct from ValidRange: outside ValidRange but inside
+        %   Domain the value is kept and warned about, so a smooth decay
+        %   past the fit survives intact. Outside Domain no value exists,
+        %   and IndividualCMF reports zero sensitivity or a NaN density
+        %   rather than a number the model cannot support.
+        Domain (1,2) double
+    end
+
     properties (Constant)
         % REGISTRY  Maps enums.LensModel member names to constructors.
         %

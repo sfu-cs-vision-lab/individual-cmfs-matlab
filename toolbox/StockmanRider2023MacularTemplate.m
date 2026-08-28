@@ -35,6 +35,16 @@ classdef StockmanRider2023MacularTemplate < MacularTemplate
     end
 
     properties (Constant)
+        % ValidRange  360-830 nm. The zero outside 375-550 nm is the
+        %   model's answer -- macular pigment does not absorb there -- not
+        %   extrapolation, so the basis covers the whole range.
+        ValidRange = [360, 830]
+
+        % Domain  Unbounded. computeTemplate returns exactly zero outside
+        %   the support band at every wavelength tested from 100 to 1200 nm,
+        %   which is an admissible optical density.
+        Domain = [0, Inf]
+
         % Macular pigment Fourier coefficients (Stockman & Rider 2023, Table 2).
         % 11-term (8th-order) Fourier polynomial in normalized wavelength
         %     x = (lambda - 375) / 55.70423008

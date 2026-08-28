@@ -34,6 +34,21 @@ classdef StockmanRiderLensTemplate < LensTemplate
         ShortName = "StockmanRider2023"
     end
 
+    properties (Constant)
+        % ValidRange  360-830 nm. The zero above LENS_UPPER_LIMIT = 660 nm
+        %   is the model's answer -- lens absorption there is nil -- not
+        %   extrapolation, so the published basis covers the whole range.
+        ValidRange = [360, 830]
+
+        % Domain  Floored at the 360 nm expansion anchor (LENS_NORM_WL).
+        %   Below it the Fourier polynomial diverges into negative optical
+        %   density: -1.08 at 330 nm, -10.6 at 320, -87.2 at 300 (Age=32).
+        %   A negative OD means the lens amplifies, so no admissible value
+        %   exists. This is the guard that stopped obs.L(320) returning
+        %   2.897e+13 against a normalized peak of 1.0.
+        Domain = [360, Inf]
+    end
+
     properties (Constant, Access = private)
         % Lens pigment Fourier coefficients. These coefficients define a
         % 9-term (8th-order) Fourier polynomial that describes the spectral

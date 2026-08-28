@@ -59,6 +59,13 @@ classdef GovardovskiiPhotopigmentTemplate < PhotopigmentTemplate
         % range. The parametric formula extends outside this range but
         % accuracy degrades for extreme wavelengths.
         ValidRange = [380, 780]
+
+        % Domain  Unbounded. The alpha/beta-band nomogram is analytic and
+        %   decays smoothly far outside its fitted range: absorbance 7.8e-04
+        %   at 200 nm and 2.96e-13 at 1200 nm, monotone and finite
+        %   throughout. The values are admissible, so only the ValidRange
+        %   warning applies.
+        Domain = [0, Inf]
     end
 
     methods

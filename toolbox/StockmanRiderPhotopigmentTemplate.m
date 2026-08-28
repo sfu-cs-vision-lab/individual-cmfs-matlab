@@ -87,6 +87,19 @@ classdef StockmanRiderPhotopigmentTemplate < PhotopigmentTemplate
         % to produce accurate absorbance over 360-830 nm, covering the
         % full visible spectrum plus near-UV and near-IR extension.
         ValidRange = [360, 830]
+
+        % Domain  Floored at the log10(360) expansion anchor
+        %   (Nomograms.SR_LOG_WL_CENTER, which equals log10(360) exactly).
+        %   The 8th-order Fourier polynomial does not diverge below it, but
+        %   it stops meaning anything: absorbance oscillates to 8.5e-27 at
+        %   300 nm and back up to 0.99 at 100 nm, a spurious near-unity
+        %   value. Only wavelengths at or above the anchor are answerable.
+        %
+        %   ponytail: the same oscillation puts a false 0.16 absorbance at
+        %   2000 nm, which this open upper bound admits. Nothing queries
+        %   there, and bounding it would truncate the genuine tail just past
+        %   830 nm; add an upper Domain if a real caller reaches that far.
+        Domain = [360, Inf]
     end
 
     methods

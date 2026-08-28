@@ -65,8 +65,16 @@ classdef (Abstract) PhotopigmentTemplate < handle
         %
         %   Queries outside this range may produce unreliable results due
         %   to limitations of the template's parametric formulas. Read it
-        %   directly from the template instance.
+        %   directly from the template instance. Drives the warning only.
         ValidRange (1,2) double
+
+        % Domain  [min_nm, max_nm] where the implementation has an answer.
+        %
+        %   Where the math can produce a finite, physically admissible
+        %   number. Outside ValidRange but inside Domain the value is kept
+        %   and warned about; outside Domain no value exists and
+        %   IndividualCMF reports zero sensitivity instead.
+        Domain (1,2) double
     end
 
     properties (Constant)
