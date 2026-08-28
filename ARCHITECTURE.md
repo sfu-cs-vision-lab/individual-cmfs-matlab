@@ -340,9 +340,31 @@ model selections, and algorithm modes. Because it is a value class,
 assigning a property produces a copy rather than mutating shared state,
 so a captured snapshot is decoupled from the live observer.
 `getParameters()` returns such a snapshot; `setParameters(params)`
-applies one. The round-trip preserves observer state exactly:
-`obs2.setParameters(obs1.getParameters())` reproduces `obs1`'s LMS
-output bit-for-bit.
+applies one.
+
+The round-trip carries **who the observer is**, and
+`ObserverParametersRoundTripTest` sweeps every settable public property
+to keep that precise:
+
+| Category | Round-trips | Properties |
+|---|---|---|
+| Physiology, model selections, algorithm modes | exactly (delta 0) | `Age`, `FieldSize`, `LensModel`, `PhotopigmentModel`, `L`/`M_OpsinTemplate`, the three lambda-max shifts, `Lod`/`Mod`/`Sod`, `MacularDensity`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` |
+| Lens density | to ~1e-12 relative | `LensDensity` |
+| Output-shape settings | **not carried, by design** | `OutputFormat`, `LogOutput`, `NormalizeOutput`, `Primaries`, `NormalizationMethod`, `ModelRangeWarning` |
+
+`LensDensity` is stored in the snapshot as a ratio to
+`CIE170.STD_LENS_DENSITY_400` -- which is what lets
+`isStandardConfiguration` test it against exactly 1.0 -- so the
+round-trip divides and multiplies by that constant and `x/c*c` does not
+return `x` bit-for-bit. The residual is ~1e-12 relative, and the
+standard-observer ratio of 1.0 is lossless.
+
+Output-shape settings are excluded deliberately: a snapshot describes an
+observer, not the mode you happen to be viewing them in, so transferring
+physiology from a log-mode observer must not flip the receiver's display
+mode. `IndividualCMF.snapToStandardObserver` names the same group and
+preserves it across a physiology reset, so this is one decision applied
+consistently.
 
 ### Formula vs Custom algorithm modes
 

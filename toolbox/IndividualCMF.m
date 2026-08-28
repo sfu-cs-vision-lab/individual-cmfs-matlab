@@ -451,9 +451,18 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %      getParameters/setParameters time, not on every change.
         %
         % ObserverParameters is a transfer DTO: getParameters() gathers
-        % both strategies into a snapshot; setParameters() reverses
-        % the operation. Treat ObserverParameters as the wire format,
-        % not a live mirror of IndividualCMF state.
+        % both strategies into a snapshot; setParameters() reverses the
+        % operation. It is a snapshot, not a live mirror -- mutating one
+        % does not affect the observer it came from.
+        %
+        % It carries who the observer is, not how you are viewing them.
+        % Physiology, model selections, and algorithm modes round-trip
+        % exactly; LensDensity round-trips to ~1e-12 because the snapshot
+        % stores it as a ratio to CIE170.STD_LENS_DENSITY_400; and the
+        % output-shape group (OutputFormat, LogOutput, NormalizeOutput,
+        % Primaries, NormalizationMethod, ModelRangeWarning) is
+        % deliberately not carried, matching snapToStandardObserver.
+        % ObserverParametersRoundTripTest enforces all three.
         %
         % The p_ prefix marks "private working state of IndividualCMF"
         % and is applied uniformly to both strategies. Several p_*
