@@ -542,6 +542,29 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             testCase.verifyNotEqual(y1(defined), y2(defined));
         end
 
+        function testPlotRGBComparisonPlotsRGBNotLMS(testCase)
+            % CMFPlotterTest asserted the six DisplayName labels because
+            % they were "the only contract distinguishing this method's
+            % output from compareLMS -- a routing mistake otherwise passes
+            % every shape and count check". plot(Data=...) dispatches LMS
+            % to compareTo and RGB to an inline overlay, so that is exactly
+            % the routing at risk. Counting six handles does not catch it.
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            wl = (400:10:700)';
+            p = testCase.Observer1.plot(Data="RGB", ...
+                Compare=testCase.Observer2, Wavelength=wl, Parent=axes(fig));
+
+            testCase.assertNumElements(p, 6);
+            expected = testCase.Observer1.RGB(wl);
+            testCase.verifyEqual(p(1).YData(:), expected(:,1), 'AbsTol', 1e-12, ...
+                'The first series must be the reference observer''s R, not L');
+            lms = testCase.Observer1.LMS(wl);
+            testCase.verifyNotEqual(p(1).YData(:), lms(:,1), ...
+                'A mis-dispatch to compareTo would plot LMS and still return six handles');
+        end
+
         function testPlotLensCompareRejectsNonObserver(testCase)
             testCase.verifyError( ...
                 @() testCase.Observer1.plotLens(Compare="not an observer"), ...

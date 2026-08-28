@@ -145,23 +145,28 @@ classdef GenotypeRGBTest < matlab.unittest.TestCase
 
             wl = (400:10:700)';  % Ensure column vector
 
-            % Should be equivalent
-            result1 = obs.M(wl);
-            result2 = obs.M(wl);
+            % evaluate must still agree with M() once a genotype has
+            % moved the M cone. Comparing M against itself would pass even
+            % if evaluate had stopped delegating.
+            evaluated = obs.evaluate(wl, Data="M");
+            viaEvaluate = evaluated.M;
+            direct = obs.M(wl);
 
-            % Both should be column vectors
-            testCase.verifyEqual(result1, result2, 'AbsTol', 1e-10, ...
-                'evaluate() should match M() after genotype change');
+            testCase.verifyEqual(viaEvaluate, direct, 'AbsTol', 0, ...
+                'evaluate(Data="M") should match M() after a genotype change');
+            testCase.verifyNotEqual(direct, IndividualCMF(Age=32, FieldSize=2).M(wl), ...
+                'The genotype must actually have moved the M cone');
         end
 
         function testRGBViaEvaluate(testCase)
             % Verifies that RGB data from `evaluate` matches the dedicated `RGB` method.
             obs = IndividualCMF();
             wl = (380:5:780)';
-            RGB_eval = obs.RGB(wl);
+            evaluated = obs.evaluate(wl, Data="RGB");
+            RGB_eval = table2array(evaluated(:, 2:end));
             testCase.verifySize(RGB_eval, [length(wl), 3]);
             RGB_direct = obs.RGB(wl);
-            testCase.verifyEqual(RGB_eval, RGB_direct, ...
+            testCase.verifyEqual(RGB_eval, RGB_direct, 'AbsTol', 0, ...
                 'evaluate(Data="RGB") should match RGB()');
         end
     end

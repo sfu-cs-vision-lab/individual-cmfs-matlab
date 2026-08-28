@@ -150,15 +150,16 @@ classdef InputValidationTest < matlab.unittest.TestCase
             obs.OutputFormat = "quantal";
             obs.NormalizeOutput = false;
 
-            % Compare methods
+            % evaluate must still agree with LMS after the property
+            % changes above. Comparing LMS against itself would pass even
+            % if evaluate had stopped delegating.
             LMS_direct = obs.LMS(wl);
-            LMS_eval = obs.LMS(wl);
+            evaluated = obs.evaluate(wl, Data="LMS");
+            LMS_eval = table2array(evaluated(:, 2:end));
 
-            % Verify sizes match
-            testCase.verifySize(LMS_direct, size(LMS_eval), ...
+            testCase.verifySize(LMS_eval, size(LMS_direct), ...
                 'Size mismatch between LMS() and evaluate');
-
-            testCase.verifyEqual(LMS_eval, LMS_direct, 'AbsTol', 1e-10, ...
+            testCase.verifyEqual(LMS_eval, LMS_direct, 'AbsTol', 0, ...
                 'evaluate() should match LMS() after property changes');
         end
 

@@ -87,6 +87,11 @@ classdef EvaluateTest < matlab.unittest.TestCase
             [result, wl] = IndividualCMF().evaluate();
             testCase.verifyEqual(wl, IndividualCMF.DEFAULT_WL);
             testCase.verifyEqual(height(result), numel(IndividualCMF.DEFAULT_WL));
+
+            % Pin the step too, not just the endpoints: a 5 nm DEFAULT_WL
+            % would otherwise pass the whole suite.
+            testCase.verifyEqual(numel(IndividualCMF.DEFAULT_WL), 471);
+            testCase.verifyEqual(unique(diff(IndividualCMF.DEFAULT_WL)), 1);
         end
 
         function testSingleWavelength(testCase)
@@ -129,6 +134,31 @@ classdef EvaluateTest < matlab.unittest.TestCase
             obs.NormalizeOutput = false;
             testCase.verifyEqual(obs.evaluate(wl, Data="lmChromaticity"), ref, ...
                 'chromaticity must not depend on NormalizeOutput');
+        end
+
+        function testChromaticityMatchesTheProjectiveFormula(testCase)
+            % The anchor. Every other chromaticity assertion in the suite
+            % compares one toolbox path against another, and the bounds
+            % check below is an algebraic identity that cannot fail --
+            % normalising by L+M instead of L+M+S passes it. This is the
+            % only test that pins lmChromaticity to an independently
+            % computed formula, which is what the pre-4.3 suite had.
+            obs = IndividualCMF(StandardObserver=2);
+            wl = (400:5:700)';
+
+            % The projective basis is forced: energy, normalized, linear.
+            LMS = obs.LMS(wl, OutputFormat="energy", ...
+                NormalizeOutput=true, LogOutput=false);
+            expected = LMS(:, 1:2) ./ sum(LMS, 2);
+
+            testCase.verifyEqual(obs.lmChromaticity(wl), expected, 'AbsTol', 1e-12, ...
+                'lmChromaticity must equal LMS(:,1:2) ./ sum(LMS,2)');
+
+            % Parity is not covering this: configs.json exercises L/M/S
+            % only, so this test is the sole guard on the formula.
+            testCase.verifyGreaterThan( ...
+                max(abs(expected(:,1) - LMS(:,1) ./ (LMS(:,1) + LMS(:,2)))), 1e-3, ...
+                'Sanity: the L+M denominator is materially different from L+M+S');
         end
 
         function testChromaticityCoordinatesAreBounded(testCase)

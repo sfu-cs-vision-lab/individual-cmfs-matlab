@@ -104,23 +104,25 @@ classdef OutputFormatTest < matlab.unittest.TestCase
             obs = IndividualCMF(StandardObserver=2);
             wl = testCase.RefData.nm;
 
-            % Test Absorbance
+            % The persistent OutputFormat must reach the result, and the
+            % two formats must not produce the same numbers. Comparing the
+            % method against itself would pass whatever the property did.
             obs.OutputFormat = "absorbance";
             obs.LogOutput = true;
-            result = obs.L(wl);
-            expected = obs.L(wl);
+            absorbance = obs.L(wl);
+            testCase.verifyEqual(absorbance, ...
+                obs.L(wl, OutputFormat="absorbance", LogOutput=true), ...
+                'AbsTol', 0, 'The property and the per-call override must agree');
 
-            testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
-                'evaluate() should respect OutputFormat=absorbance');
-
-            % Test Absorptance
             obs.OutputFormat = "absorptance";
             obs.LogOutput = false;
-            result = obs.L(wl);
-            expected = obs.L(wl);
+            absorptance = obs.L(wl);
+            testCase.verifyEqual(absorptance, ...
+                obs.L(wl, OutputFormat="absorptance", LogOutput=false), ...
+                'AbsTol', 0, 'The property and the per-call override must agree');
 
-            testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
-                'evaluate() should respect OutputFormat=absorptance');
+            testCase.verifyNotEqual(absorbance, absorptance, ...
+                'The two output formats must produce different values');
         end
 
         function testEvaluateRespectsNormalization(testCase)
