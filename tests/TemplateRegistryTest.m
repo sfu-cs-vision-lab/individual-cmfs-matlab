@@ -109,5 +109,31 @@ classdef TemplateRegistryTest < matlab.unittest.TestCase
             end
         end
 
+        function testEveryModelIsSelectableThroughTheConstructor(testCase)
+            % The setter path was already covered. The constructor had
+            % hardcoded mustBeMember lists for LensModel and MacularModel,
+            % so a newly registered model would work via obs.LensModel =
+            % "New" and be rejected by IndividualCMF(LensModel="New") --
+            % breaking the registry's promise that registration takes one
+            % line in the template base and nothing in IndividualCMF.
+            for m = string(enumeration('enums.LensModel'))'
+                obs = IndividualCMF(LensModel=m);
+                testCase.verifyEqual(string(obs.LensModel), m);
+            end
+            for m = string(enumeration('enums.MacularModel'))'
+                obs = IndividualCMF(MacularModel=m);
+                testCase.verifyEqual(string(obs.MacularModel), m);
+            end
+            for m = string(enumeration('enums.PhotopigmentModel'))'
+                obs = IndividualCMF(PhotopigmentModel=m);
+                testCase.verifyEqual(string(obs.PhotopigmentModel), m);
+            end
+
+            % An unregistered name must still be refused, by the enum
+            % conversion rather than by a duplicated list.
+            testCase.verifyError(@() IndividualCMF(LensModel="NotAModel"), ...
+                'MATLAB:validation:UnableToConvert');
+        end
+
     end
 end

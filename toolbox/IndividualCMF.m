@@ -567,8 +567,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.NormalizationGrid double {mustBeVector, mustBeNonempty, ...
                     validators.mustBeWavelengthVector} = (380:1:780)'
                 options.PhotopigmentModel (1,1) string = "StockmanRider2023"
-                options.LensModel (1,1) string {mustBeMember(options.LensModel, ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"])} = "StockmanRider2023"
-                options.MacularModel (1,1) string {mustBeMember(options.MacularModel, "StockmanRider2023")} = "StockmanRider2023"
+                % No mustBeMember: the enum conversion in set.LensModel is
+                % the gate, exactly as it is for PhotopigmentModel above.
+                % A hardcoded list here would silently break the registry's
+                % promise that a new model needs one line in LensTemplate
+                % and nothing in IndividualCMF.
+                options.LensModel (1,1) string = "StockmanRider2023"
+                options.MacularModel (1,1) string = "StockmanRider2023"
                 options.MacularDensityAlgorithm (1,1) string {mustBeMember(options.MacularDensityAlgorithm, ["", "CIE170", "MorelandAlexander", "Custom"])} = ""
                 options.PhotopigmentDensityAlgorithm (1,1) string {mustBeMember(options.PhotopigmentDensityAlgorithm, ["", "CIE170", "PokornySmith", "Custom"])} = ""
                 options.LensDensityAlgorithm (1,1) string {mustBeMember(options.LensDensityAlgorithm, ["", "Auto", "Custom"])} = ""
@@ -712,14 +717,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             oldAlg = obj.p_MacularDensityAlgorithm;
             obj.p_MacularDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val ~= "Custom"
+            % val can no longer be Custom -- the setter rejects it above.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:MacularCustomOverwritten', ...
                     'Switching from Custom macular mode. MacularDensity will be recalculated.');
             end
 
-            if val ~= "Custom"
-                obj.updateMacularDensity();
-            end
+            obj.updateMacularDensity();
         end
 
         function v = get.MacularDensityAlgorithm(obj)
@@ -741,14 +745,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             oldAlg = obj.p_PhotopigmentDensityAlgorithm;
             obj.p_PhotopigmentDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val ~= "Custom"
+            % val can no longer be Custom -- the setter rejects it above.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:PhotopigmentCustomOverwritten', ...
                     'Switching from Custom photopigment mode. Lod/Mod/Sod will be recalculated.');
             end
 
-            if val ~= "Custom"
-                obj.updatePhotopigmentDensities();
-            end
+            obj.updatePhotopigmentDensities();
         end
 
         function v = get.PhotopigmentDensityAlgorithm(obj)
@@ -1114,14 +1117,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             oldAlg = obj.p_LensDensityAlgorithm;
             obj.p_LensDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val == "Auto"
+            % LensDensityAlgorithm has only Auto and Custom, and Custom is
+            % rejected above, so val is necessarily Auto here.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:LensCustomOverwritten', ...
                     'Switching from Custom lens mode. LensDensity will be recalculated from Age.');
             end
 
-            if val == "Auto"
-                obj.recalcLensFromAge();
-            end
+            obj.recalcLensFromAge();
         end
 
         function v = get.LensDensityAlgorithm(obj)
@@ -2255,7 +2258,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Data - Type of data to plot: (string)
             %                         "LMS" (default) - Cone fundamentals
             %                         "RGB"           - RGB Color Matching Functions
-            %                         "chromaticity"  - rg-chromaticity diagram
+            %                         "lmChromaticity" - lm chromaticity diagram
             %                         "absorbance"    - Photopigment absorbance
             %                         "absorptance"   - Relative retinal absorptance (see OutputFormat docs)
             %       Title - Custom title. Default: auto-generated based on Data (string)
@@ -2274,7 +2277,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             arguments
                 obj
                 options.Data (1,1) string {mustBeMember(options.Data, ...
-                    ["LMS", "RGB", "chromaticity", "absorbance", "absorptance"])} = "LMS"
+                    ["LMS", "RGB", "lmChromaticity", "absorbance", "absorptance"])} = "LMS"
                 options.Title (1,1) string = ""
                 options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
@@ -2325,7 +2328,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                     case "RGB"
                         [p, ax] = obj.plotRGBCMFs(Wavelength=wl, Title=titleStr, ...
                             ConeColors=options.ConeColors, Parent=options.Parent);
-                    case "chromaticity"
+                    case "lmChromaticity"
                         [p, ax] = obj.plotChromaticity(Wavelength=wl, Title=titleStr, ...
                             Parent=options.Parent);
                     case "absorbance"
@@ -3847,6 +3850,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             outOfDomain = (nm_col < dom(1)) | (nm_col > dom(2));
 
             % Absorbance: raw template output, no normalization via cache
+            % Absorbance deliberately bypasses normalization: pycone
+            % emits a raw absorbance stage, and the parity harness compares
+            % against it, so honouring NormalizeOutput here would break
+            % faithfulness to the reference implementation. See the
+            % NormalizeOutput property help.
             if fmt == "absorbance"
                 logAbs = obj.computePigmentAbsorbance(nm_col, cone_type);
                 if logOutput

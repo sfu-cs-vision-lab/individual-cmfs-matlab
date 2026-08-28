@@ -19,7 +19,7 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
     end
 
     properties(TestParameter)
-        PlotDataType = {"LMS", "RGB", "chromaticity", "absorbance", "absorptance"};
+        PlotDataType = {"LMS", "RGB", "lmChromaticity", "absorbance", "absorptance"};
     end
 
     methods(TestMethodSetup)
@@ -540,6 +540,22 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             testCase.assertTrue(any(defined), ...
                 'The two curves must overlap somewhere');
             testCase.verifyNotEqual(y1(defined), y2(defined));
+        end
+
+        function testPlotAndEvaluateShareOneChromaticityName(testCase)
+            % evaluate renamed Data='chromaticity' to "lmChromaticity" as a
+            % breaking change in 4.3; plot kept the old token, so a user
+            % paid the rename toll in one method and met the retired name
+            % in the other. One vocabulary.
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            testCase.verifyWarningFree( ...
+                @() testCase.Observer1.plot(Data="lmChromaticity", Parent=axes(fig)));
+            testCase.verifyError( ...
+                @() testCase.Observer1.plot(Data="chromaticity", Parent=axes(fig)), ...
+                'MATLAB:validators:mustBeMember', ...
+                'The retired token must not survive in plot');
         end
 
         function testPlotRGBComparisonPlotsRGBNotLMS(testCase)
