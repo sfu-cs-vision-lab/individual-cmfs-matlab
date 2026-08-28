@@ -573,7 +573,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.LensDensity double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
                 options.L_LambdaMaxShift (1,1) double {mustBeInRange(options.L_LambdaMaxShift, -40, 10)} = 0
                 options.M_LambdaMaxShift (1,1) double {mustBeInRange(options.M_LambdaMaxShift, -20, 30)} = 0
-                options.S_LambdaMaxShift (1,1) double {mustBeFinite} = 0
+                options.S_LambdaMaxShift (1,1) double {mustBeInRange(options.S_LambdaMaxShift, -40, 30)} = 0
                 options.L_OpsinTemplate (1,1) string {mustBeMember(options.L_OpsinTemplate, ["Mean", "Serine", "Alanine", "MinL"])} = "Mean"
                 options.M_OpsinTemplate (1,1) string {mustBeMember(options.M_OpsinTemplate, ["Mean", "Standard", "LinM"])} = "Mean"
                 options.NormalizeOutput (1,1) logical = true
@@ -953,14 +953,37 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.S_LambdaMaxShift(obj, v)
             % set.S_LambdaMaxShift  Set S-cone peak wavelength shift.
-            %   S is left otherwise unbounded (L and M shifts use
-            %   mustBeInRange to clamp to the physiologically plausible
-            %   window). mustBeFinite still rejects NaN/Inf, which would
-            %   propagate into the fminbnd peak-search bounds and produce
-            %   non-finite spectra downstream.
+            %
+            %   Bounded to [-40, 30], the same endpoints already used for
+            %   L (-40) and M (+30). Outside that window the Fourier
+            %   template stops being evaluable, not merely imprecise.
+            %
+            %   Stockman & Rider fit an 8th-order Fourier polynomial over
+            %   HALF a period, log 360 to log 850 nm mapped to 0 to pi
+            %   (2023, p. 820, Eq. 2). A shift slides the query window
+            %   along that arc by (lambdaMax + shift)/lambdaMax, and past
+            %   the arc the series climbs again. Measured on the raw
+            %   template at 830 nm: 1.2e-10 at shift -40, 5.3e-04 at -50,
+            %   2.2e+03 at -55. At the short end, 360 nm gives 0.55 at
+            %   +30, 2.2 at +35, and 24.3 at +40. The peak search tracks
+            %   the shifted peak and never samples those wavelengths, so
+            %   normalization does not catch it.
+            %
+            %   pycone applies the identical formula with no bound and
+            %   breaks at the same shifts -- verified by running it: its
+            %   Sconelog returns 2200.52 at -55 and inf at +240. So this
+            %   clamp is deliberate hardening beyond the reference, as the
+            %   L and M clamps already were, not a divergence from it.
+            %
+            %   For pigments genuinely outside this window use
+            %   PhotopigmentModel="Govardovskii2000", a lambda-max
+            %   parameterised nomogram, or the common template. Stockman &
+            %   Rider report only weak evidence for S shifts at all
+            %   (p. 828): observer lambda-max has a 1.5 nm standard
+            %   deviation, clustering near 417.4 and 420.1 nm.
             arguments
                 obj
-                v (1,1) double {mustBeFinite}
+                v (1,1) double {mustBeInRange(v, -40, 30)}
             end
             obj.setConeParameter('S', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();

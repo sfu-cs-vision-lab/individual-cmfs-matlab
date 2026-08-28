@@ -184,20 +184,37 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
                 IndividualCMF(StandardObserver=10).Lod, 'AbsTol', 0);
         end
 
-        function testLargeSConeShiftFallsBackToValidRange(testCase)
-            % A large but finite S shift can push the base [380, 500]
-            % search window entirely off the template's valid range, so
-            % naive endpoint-clamping produces lb >= ub and fminbnd
-            % errors. Peak search must fall back to the full valid
-            % range when the shifted window no longer overlaps it.
+        function testSConeShiftIsBoundedToTheEvaluableWindow(testCase)
+            % This used to set S_LambdaMaxShift = 500 and assert the peak
+            % search survived it. It did survive -- and returned garbage.
+            % The Stockman-Rider Fourier template is fitted over half a
+            % period (360-850 nm mapped to 0-pi), and a shift slides the
+            % query window along that arc; past it the series climbs
+            % again. Raw template at 830 nm: 1.2e-10 at shift -40 but
+            % 2.2e+03 at -55. The peak search never samples there, so
+            % normalization cannot catch it.
             obs = IndividualCMF();
-            obs.S_LambdaMaxShift = 500;  % well beyond physiological
-            obs.NormalizeOutput = true;
-            % Should not throw, and S(wl) should be a finite Nx1 vector.
-            wl = (380:1:780)';
-            S = obs.S(wl);
-            testCase.verifyTrue(all(isfinite(S)), ...
-                'Large S shift must produce finite S(wl)');
+            testCase.verifyError(@() setSshift(obs, 500), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() setSshift(obs, -55), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() setSshift(obs, 35), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=-50), ...
+                'MATLAB:validators:mustBeInRange');
+
+            % The endpoints are the same ones L and M already use, and
+            % everything inside stays normalized and finite.
+            wl = (360:0.1:830)';
+            for shift = [-40 -20 0 20 30]
+                inRange = IndividualCMF(S_LambdaMaxShift=shift);
+                inRange.ModelRangeWarning = false;
+                S = inRange.S(wl);
+                testCase.verifyTrue(all(isfinite(S)), ...
+                    sprintf('S shift %d must produce finite output', shift));
+                testCase.verifyLessThanOrEqual(max(S), 1 + 1e-5, ...
+                    sprintf('S shift %d must stay normalized', shift));
+            end
             testCase.verifyEqual(numel(S), numel(wl));
         end
 
@@ -220,9 +237,9 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
             % Setter rejected NaN/Inf; the constructor option needed the
             % same guard for parity.
             testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=Inf), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
             testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=NaN), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
         end
 
         function testSetGenotypeRejectsInvalidPosition(testCase)
@@ -240,18 +257,22 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testNonFiniteSConeShiftRejected(testCase)
-            % S_LambdaMaxShift is otherwise unbounded (L/M are clamped to
-            % a physiological window). Non-finite values still need to be
-            % rejected: they would propagate into the fminbnd peak-search
-            % bounds in computePeakForFormat and produce non-finite spectra.
+            % S_LambdaMaxShift is now clamped to [-40, 30] like L and M,
+            % and mustBeInRange rejects NaN and Inf along with everything
+            % else outside the window. Pinned separately because these
+            % would otherwise reach the fminbnd peak-search bounds in
+            % computePeakForFormat and produce non-finite spectra.
             obs = IndividualCMF();
+            % mustBeInRange subsumes mustBeFinite: NaN and Inf are both
+            % outside [-40, 30], so they raise the range identifier now.
             testCase.verifyError(@() setSshift(obs, NaN), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
             testCase.verifyError(@() setSshift(obs, Inf), ...
-                'MATLAB:validators:mustBeFinite');
-            % Sanity: large finite shifts still allowed.
-            testCase.verifyWarningFree(@() setSshift(obs, 50), ...
-                'Large finite S shifts must remain accepted');
+                'MATLAB:validators:mustBeInRange');
+            % Sanity: shifts inside the window are still accepted, and
+            % the endpoints themselves are inclusive.
+            testCase.verifyWarningFree(@() setSshift(obs, -40));
+            testCase.verifyWarningFree(@() setSshift(obs, 30));
         end
 
         function testNearSingularPrimariesRaiseClearError(testCase)
