@@ -74,14 +74,6 @@ classdef VanDeKraatsVanNorren2007LensTemplate < LensTemplate
         ShortName = "VanDeKraats2007"
     end
 
-    properties (Constant)
-        % SupportsAging  True; vdK&vN's component density coefficients
-        % depend on age via the quadratic d_i = d_{i,0} + alpha_i * age^2
-        % relationship (Eq. 7), so the spectral SHAPE shifts with age as
-        % the relative contributions of the five components evolve.
-        SupportsAging = true
-    end
-
     properties (Constant, Access = private)
         % All constants in this block derive from:
         %   van de Kraats & van Norren (2007). Optical density of the aging

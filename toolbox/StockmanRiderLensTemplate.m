@@ -34,14 +34,6 @@ classdef StockmanRiderLensTemplate < LensTemplate
         ShortName = "StockmanRider2023"
     end
 
-    properties (Constant)
-        % SupportsAging  False; the Stockman & Rider lens template is an
-        % age-invariant Fourier polynomial. Aging is handled externally by
-        % scaling the template via the observer's LensDensity rather than
-        % by changing the template SHAPE.
-        SupportsAging = false
-    end
-
     properties (Constant, Access = private)
         % Lens pigment Fourier coefficients. These coefficients define a
         % 9-term (8th-order) Fourier polynomial that describes the spectral
@@ -84,7 +76,7 @@ classdef StockmanRiderLensTemplate < LensTemplate
             %   silently accepts field size for interface compatibility; this
             %   template is field-size-invariant.
             %
-            %   This template does NOT support aging (SupportsAging == false).
+            %   This template is age-invariant.
             %   The age parameter is accepted for interface compatibility but is
             %   ignored. The returned shape is always that of the standard 32yo.
             %

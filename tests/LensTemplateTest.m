@@ -59,12 +59,6 @@ classdef LensTemplateTest < matlab.unittest.TestCase
             testCase.verifyEqual(template.computeDensityAt400(80), 1.7649, 'AbsTol', 1e-4);
         end
 
-        function testSR_DoesNotSupportAging(testCase)
-            % SupportsAging should be false
-            template = StockmanRiderLensTemplate();
-            testCase.verifyFalse(template.SupportsAging);
-        end
-
         function testSR_VectorWavelengths(testCase)
             % Verify template works with vector wavelengths
             template = StockmanRiderLensTemplate();

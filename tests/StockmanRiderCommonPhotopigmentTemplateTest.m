@@ -146,8 +146,10 @@ classdef StockmanRiderCommonPhotopigmentTemplateTest < matlab.unittest.TestCase
             testCase.verifyEqual(testCase.Template.getValidRange(), [360, 830]);
         end
 
-        function testSupportsFlags(testCase)
-            testCase.verifyTrue(testCase.Template.SupportsShift);
+        function testSupportsAnalyticalPeakIsFalse(testCase)
+            % The common template is pre-normalized to a peak of 1.0 but has
+            % no closed form for the peak location, so consumers must find
+            % it numerically.
             testCase.verifyFalse(testCase.Template.SupportsAnalyticalPeak);
         end
 

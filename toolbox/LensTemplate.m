@@ -14,9 +14,6 @@ classdef (Abstract) LensTemplate < handle
     %       Name      - Full descriptive name of the template model.
     %       ShortName - Short identifier for the template model.
     %
-    %   LensTemplate Abstract Constant Properties:
-    %       SupportsAging - True if the template SHAPE changes with age.
-    %
     %   LensTemplate Abstract Methods:
     %       computeTemplate      - Returns optical density spectrum normalized to 1.0 at 400nm.
     %       computeDensityAt400  - Returns the lens density at 400nm for given age.
@@ -43,17 +40,6 @@ classdef (Abstract) LensTemplate < handle
         ShortName
     end
 
-    properties (Abstract, Constant)
-        % SupportsAging  True if the template SHAPE changes with age.
-        %
-        %   For age-invariant templates the absorbance shape is fixed and only
-        %   the magnitude (density at 400nm) varies with age, handled
-        %   externally via the observer's LensDensity. For age-dependent
-        %   templates the shape itself depends on age. Concrete subclasses
-        %   declare this constant so callers don't dispatch on type.
-        SupportsAging (1,1) logical
-    end
-
     methods (Abstract)
         % computeTemplate  Returns optical density spectrum normalized to 1.0 at 400nm.
         %
@@ -66,12 +52,11 @@ classdef (Abstract) LensTemplate < handle
         %   Rayleigh-loss coefficients for <=3 deg vs >3 deg fields).
         %   Templates that do not use field size silently accept the option.
         %
-        %   For age-invariant templates (SupportsAging == false), the age
-        %   parameter is ignored and the shape is always that of the standard
-        %   32-year-old observer.
+        %   For age-invariant templates the age parameter is ignored and the
+        %   shape is always that of the standard 32-year-old observer.
         %
-        %   For age-dependent templates (SupportsAging == true), the shape
-        %   may change with age to model changes in lens chromophore composition.
+        %   For age-dependent templates the shape may change with age to model
+        %   changes in lens chromophore composition.
         %
         %   INPUTS:
         %       wavelengths - Wavelengths in nanometers (column vector)

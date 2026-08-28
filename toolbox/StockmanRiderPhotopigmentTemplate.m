@@ -76,10 +76,6 @@ classdef StockmanRiderPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 529.9
         BASE_LAMBDA_MAX_S = 416.9
 
-        % SupportsShift  True; Stockman-Rider templates are defined in
-        % log-wavelength space and accept lambda-max shifts.
-        SupportsShift = true
-
         % SupportsAnalyticalPeak  False; Stockman-Rider is an 8th-order
         % Fourier polynomial fit pre-normalized so the peak is approximately
         % 1.0 in linear units. The exact peak location and value have no

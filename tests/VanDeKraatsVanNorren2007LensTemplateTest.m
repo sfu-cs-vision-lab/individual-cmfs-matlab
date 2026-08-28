@@ -2,7 +2,7 @@ classdef VanDeKraatsVanNorren2007LensTemplateTest < matlab.unittest.TestCase
     % VANDEKRAATSVANNORREN2007LENSTEMPLATETEST  Unit tests for the vdK&vN 2007 lens template.
     %
     %   Tests verify:
-    %   - Class metadata (Name, ShortName, SupportsAging, inheritance).
+    %   - Class metadata (Name, ShortName, inheritance).
     %   - Template normalization (1.0 at 400 nm for any age).
     %   - Density at 400 nm matches Eq. 8 evaluated by hand at age 0, 32, 70.
     %   - Age scaling is quadratic (not linear).
@@ -28,11 +28,6 @@ classdef VanDeKraatsVanNorren2007LensTemplateTest < matlab.unittest.TestCase
             t = VanDeKraatsVanNorren2007LensTemplate();
             testCase.verifyEqual(t.Name, "van de Kraats & van Norren (2007)");
             testCase.verifyEqual(t.ShortName, "VanDeKraats2007");
-        end
-
-        function testSupportsAging(testCase)
-            t = VanDeKraatsVanNorren2007LensTemplate();
-            testCase.verifyTrue(t.SupportsAging);
         end
 
         function testInheritsFromLensTemplate(testCase)

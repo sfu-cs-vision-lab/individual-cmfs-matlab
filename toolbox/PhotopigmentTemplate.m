@@ -13,8 +13,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
     %       BASE_LAMBDA_MAX_L       - Base L-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_M       - Base M-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_S       - Base S-cone lambda-max in nm.
-    %       SupportsShift           - True if the template supports wavelength
-    %                                 shifts.
     %       SupportsAnalyticalPeak  - True if the template can return its peak
     %                                 absorbance analytically (closed form),
     %                                 false if peak finding is numerical.
@@ -55,14 +53,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
         BASE_LAMBDA_MAX_L (1,1) double
         BASE_LAMBDA_MAX_M (1,1) double
         BASE_LAMBDA_MAX_S (1,1) double
-
-        % SupportsShift  Whether the template supports wavelength shifts.
-        %
-        %   Some templates (StockmanRider, Govardovskii) support shifting the
-        %   absorbance curve along the wavelength axis to model individual
-        %   variation in cone lambda-max. Concrete subclasses declare this
-        %   constant directly so callers don't need to dispatch on type.
-        SupportsShift (1,1) logical
 
         % SupportsAnalyticalPeak  Whether the peak is available in closed form.
         %

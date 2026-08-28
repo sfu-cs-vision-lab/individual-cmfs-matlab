@@ -49,10 +49,6 @@ classdef GovardovskiiPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 530.3
         BASE_LAMBDA_MAX_S = 420.7
 
-        % SupportsShift  True; the Govardovskii template is parametric on
-        % lambda-max, so shifting the curve is intrinsic.
-        SupportsShift = true
-
         % SupportsAnalyticalPeak  True; the Govardovskii alpha-band template
         % places its peak at lambda-max by construction, and the peak value
         % is given directly by evaluating the parametric formula at

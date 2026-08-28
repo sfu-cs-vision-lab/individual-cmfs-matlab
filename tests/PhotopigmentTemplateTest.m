@@ -6,7 +6,6 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
     %   - computePeakAbsorbance
     %   - getLambdaMax
     %   - getValidRange
-    %   - SupportsShift
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
     %
@@ -155,22 +154,6 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
                 'StockmanRider valid range should be [360, 830]');
         end
 
-        %% SupportsShift Tests
-
-        function testSupportsShiftGov(testCase)
-            % Test SupportsShift for Govardovskii
-            tf = testCase.GovTemplate.SupportsShift;
-
-            testCase.verifyTrue(tf, 'Govardovskii should support shifts');
-        end
-
-        function testSupportsShiftSR(testCase)
-            % Test SupportsShift for StockmanRider
-            tf = testCase.SRTemplate.SupportsShift;
-
-            testCase.verifyTrue(tf, 'StockmanRider should support shifts');
-        end
-
         %% GovardovskiiPhotopigmentTemplate Specific Tests
 
         function testGovardovskiiPeakAbsorbanceAnalytical(testCase)
@@ -313,15 +296,6 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
 
             govRange = gov.getValidRange();
             testCase.verifyEqual(govRange, [380, 780]);
-        end
-
-        function testPhotopigmentTemplateSupportsShift(testCase)
-            % Test SupportsShift for both template types
-            sr = StockmanRiderPhotopigmentTemplate();
-            gov = GovardovskiiPhotopigmentTemplate();
-
-            testCase.verifyTrue(sr.SupportsShift);
-            testCase.verifyTrue(gov.SupportsShift);
         end
 
         %% IndividualCMF template-related behavior

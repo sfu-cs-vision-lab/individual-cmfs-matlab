@@ -51,10 +51,6 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 527.3
         BASE_LAMBDA_MAX_S = 418.5
 
-        % SupportsShift  True; the common template is defined in
-        % log-wavelength space and accepts lambda-max shifts.
-        SupportsShift = true
-
         % SupportsAnalyticalPeak  False; the common template is an 8th-order
         % Fourier polynomial pre-normalized so the peak is approximately 1.0
         % in linear units. The exact peak location has no closed form --

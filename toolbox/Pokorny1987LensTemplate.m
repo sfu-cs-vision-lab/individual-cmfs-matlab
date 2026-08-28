@@ -42,13 +42,6 @@ classdef Pokorny1987LensTemplate < LensTemplate
         ShortName = "Pokorny1987"
     end
 
-    properties (Constant)
-        % SupportsAging  True; the Pokorny 1987 lens template's spectral
-        % shape changes with age via the two-component (TL1 age-scaled,
-        % TL2 age-stable) decomposition.
-        SupportsAging = true
-    end
-
     properties (Constant, Access = private)
         % All constants in this block derive from:
         %   Source: Pokorny, J., Smith, V.C. & Lutze, M. (1987). Aging of the
