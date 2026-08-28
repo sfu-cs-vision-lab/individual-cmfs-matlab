@@ -547,13 +547,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             arguments
                 options.StandardObserver (1,1) double {mustBeMember(options.StandardObserver, [0, 2, 10])} = 0
-                options.Age (1,1) double {validators.mustBePositiveOrNaN} = NaN
-                options.FieldSize (1,1) double {validators.mustBePositiveOrNaN} = NaN
-                options.Lod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.Mod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.Sod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.MacularDensity (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.LensDensity (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
+                options.Age double {mustBeScalarOrEmpty, mustBePositive, mustBeFinite} = []
+                options.FieldSize double {mustBeScalarOrEmpty, mustBePositive, mustBeFinite} = []
+                options.Lod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.Mod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.Sod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.MacularDensity double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.LensDensity double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
                 options.L_LambdaMaxShift (1,1) double {mustBeInRange(options.L_LambdaMaxShift, -40, 10)} = 0
                 options.M_LambdaMaxShift (1,1) double {mustBeInRange(options.M_LambdaMaxShift, -20, 30)} = 0
                 options.S_LambdaMaxShift (1,1) double {mustBeFinite} = 0
@@ -3432,10 +3432,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 options
             end
-            if ~isnan(options.Age) || ~isnan(options.FieldSize)
+            if ~isempty(options.Age) || ~isempty(options.FieldSize)
                 error('IndividualCMF:Conflict', 'Cannot specify Age/FieldSize with StandardObserver.');
             end
-            if ~isnan(options.Lod) || ~isnan(options.Mod) || ~isnan(options.Sod) || ~isnan(options.MacularDensity) || ~isnan(options.LensDensity)
+            if ~isempty(options.Lod) || ~isempty(options.Mod) || ~isempty(options.Sod) || ~isempty(options.MacularDensity) || ~isempty(options.LensDensity)
                 error('IndividualCMF:Conflict', 'Cannot override biophysical parameters when StandardObserver is set.');
             end
             if options.L_LambdaMaxShift ~= 0 || options.M_LambdaMaxShift ~= 0 || options.S_LambdaMaxShift ~= 0 || options.L_OpsinTemplate ~= "Mean" || options.M_OpsinTemplate ~= "Mean"
@@ -3522,21 +3522,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 end
             end
 
-            if isnan(options.Age)
+            if isempty(options.Age)
                 obj.p_Parameters.Age = CIE170.STD_AGE;
             else
                 obj.p_Parameters.Age = options.Age;
             end
-            if isnan(options.FieldSize)
+            if isempty(options.FieldSize)
                 obj.p_Parameters.FieldSize = 10;
             else
                 obj.p_Parameters.FieldSize = options.FieldSize;
             end
 
             % Check if photopigment, macular, or lens densities are explicitly provided
-            hasPhotopigmentOverride = ~isnan(options.Lod) || ~isnan(options.Mod) || ~isnan(options.Sod);
-            hasMacularOverride = ~isnan(options.MacularDensity);
-            hasLensOverride = ~isnan(options.LensDensity);
+            hasPhotopigmentOverride = ~isempty(options.Lod) || ~isempty(options.Mod) || ~isempty(options.Sod);
+            hasMacularOverride = ~isempty(options.MacularDensity);
+            hasLensOverride = ~isempty(options.LensDensity);
 
             % Custom is entailed by passing a density value, never named
             % directly -- the same rule the algorithm setters enforce.
@@ -3578,11 +3578,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.recalcBiophysics();
 
             % Apply explicit density overrides (for Custom mode)
-            if ~isnan(options.Lod), obj.Lod = options.Lod; end
-            if ~isnan(options.Mod), obj.Mod = options.Mod; end
-            if ~isnan(options.Sod), obj.Sod = options.Sod; end
-            if ~isnan(options.MacularDensity), obj.MacularDensity = options.MacularDensity; end
-            if ~isnan(options.LensDensity), obj.LensDensity = options.LensDensity; end
+            if ~isempty(options.Lod), obj.Lod = options.Lod; end
+            if ~isempty(options.Mod), obj.Mod = options.Mod; end
+            if ~isempty(options.Sod), obj.Sod = options.Sod; end
+            if ~isempty(options.MacularDensity), obj.MacularDensity = options.MacularDensity; end
+            if ~isempty(options.LensDensity), obj.LensDensity = options.LensDensity; end
 
             obj.L_LambdaMaxShift = options.L_LambdaMaxShift;
             obj.M_LambdaMaxShift = options.M_LambdaMaxShift;

@@ -122,13 +122,17 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testConstructorRejectsInfAgeAndFieldSize(testCase)
-            % validators.mustBePositiveOrNaN previously accepted Inf
-            % (Inf > 0 is true). The constructor's NaN sentinel for
-            % "value not provided" stays valid; Inf does not.
+            % The constructor's "not supplied" sentinel is [], and the
+            % stdlib validators pass vacuously on empty. Inf must not slip
+            % through the way it did past the old custom OrNaN validator,
+            % where Inf > 0 read as positive.
             testCase.verifyError(@() IndividualCMF(Age=Inf), ...
-                'IndividualCMF:NotPositiveOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(FieldSize=Inf), ...
-                'IndividualCMF:NotPositiveOrNan');
+                'MATLAB:validators:mustBeFinite');
+
+            % And the sentinel itself still means "use the default".
+            testCase.verifyEqual(IndividualCMF(Age=[]).Age, CIE170.STD_AGE);
         end
 
         function testPhotopigmentParametersRejectsNonFiniteShift(testCase)
@@ -159,22 +163,25 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
 
         function testConstructorRejectsInfDensities(testCase)
             % Constructor options for Lod/Mod/Sod/MacularDensity/
-            % LensDensity accept NaN as a sentinel ("value not provided")
-            % but must reject Inf so the constructor matches the
-            % now-stricter property setters and downstream value objects.
+            % LensDensity use [] as the "value not provided" sentinel and
+            % must reject Inf so the constructor matches the property
+            % setters and downstream value objects.
             testCase.verifyError(@() IndividualCMF(Lod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(Mod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(Sod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(MacularDensity=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(LensDensity=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             % And negatives.
             testCase.verifyError(@() IndividualCMF(Lod=-0.1), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeNonnegative');
+            % The sentinel still means "use the field-size formula".
+            testCase.verifyEqual(IndividualCMF(StandardObserver=10, Lod=[]).Lod, ...
+                IndividualCMF(StandardObserver=10).Lod, 'AbsTol', 0);
         end
 
         function testLargeSConeShiftFallsBackToValidRange(testCase)
