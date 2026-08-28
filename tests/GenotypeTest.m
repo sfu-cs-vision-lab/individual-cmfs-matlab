@@ -470,5 +470,44 @@ classdef GenotypeTest < matlab.unittest.TestCase
                 'Hybrid genotype (exons 5) should switch template to M-in-L');
         end
 
+        % Parity constants: one home, and internally consistent
+
+        function testBasesSumsMatchTheShiftTable(testCase)
+            % M_BASES_SUM and L_BASES_SUM are hardcoded to match pycone.
+            % They must equal the summed magnitudes of their half of
+            % GENOTYPE_SHIFTS, or every genotype shift silently rescales.
+            % This makes an edit to the shift table fail loudly instead.
+            k = keys(Genotype.GENOTYPE_SHIFTS);
+            v = values(Genotype.GENOTYPE_SHIFTS);
+
+            mTotal = sum(abs(v(startsWith(k, "M_"))));
+            lTotal = sum(abs(v(startsWith(k, "L_"))));
+
+            testCase.verifyEqual(mTotal, Genotype.M_BASES_SUM, 'AbsTol', 0, ...
+                'M_BASES_SUM no longer matches the sum of M entries in GENOTYPE_SHIFTS');
+            testCase.verifyEqual(lTotal, Genotype.L_BASES_SUM, 'AbsTol', 0, ...
+                'L_BASES_SUM no longer matches the sum of L entries in GENOTYPE_SHIFTS');
+        end
+
+        function testTheLMGapHasASingleSource(testCase)
+            % 23.67 was declared in both Genotype and Nomograms, each with
+            % its own comment explaining it is a pycone convention rather
+            % than a published value. Nomograms owns it now; Genotype's
+            % constant is an alias, so the two cannot drift.
+            testCase.verifyEqual(Genotype.LSER_MLMAX_DIFF, ...
+                Nomograms.SR_LSER_M_LMAX_DIFF, 'AbsTol', 0);
+            testCase.verifyEqual(Nomograms.SR_LSER_M_LMAX_DIFF, 23.67, 'AbsTol', 0, ...
+                'The pycone parity gap must stay 23.67');
+        end
+
+        function testScaleStaticsMatchTheirDefinition(testCase)
+            testCase.verifyEqual(Genotype.mShift(), ...
+                Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.M_BASES_SUM, 'AbsTol', 0);
+            testCase.verifyEqual(Genotype.lShift(), ...
+                Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.L_BASES_SUM, 'AbsTol', 0);
+            % The asymmetry is intentional: 27 vs 31 bases.
+            testCase.verifyNotEqual(Genotype.mShift(), Genotype.lShift());
+        end
+
     end
 end
