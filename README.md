@@ -50,7 +50,7 @@ Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directl
 **Ergonomics**
 
 - Round-trippable parameter snapshots via `getParameters` / `setParameters`.
-- Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`), backed by a richer `CMFPlotter` class for standalone figures.
+- Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`). Each draws into `gca` by default and takes `Parent=` an axes or a tile, so multi-panel figures compose with MATLAB's own `tiledlayout` / `nexttile` rather than a toolbox-specific plotter.
 
 See [`tests/parity/README.md`](tests/parity/README.md) for the configurations covered and notes on where the two implementations differ.
 
@@ -142,12 +142,17 @@ A = obs.LMS(wl, OutputFormat="absorptance");
 % Compare two observers
 obs.compareTo(IndividualCMF(Age=70), Title="Effect of aging");
 
-% Plot wrappers (all accept Wavelength=, Title=, Parent= options;
+% Plot methods (all accept Wavelength=, Title=, Parent= options;
 % plotLMS/plotAbsorbance/plotAbsorptance also accept Cones= and Log=;
 % plotXYZ accepts Channels=)
 obs.plotLMS(Cones=["L" "M"]);            % L and M only, observer's OutputFormat
 obs.plotXYZ(Channels="Y");                % Y (luminous-efficiency) channel only
 obs.plotLMS(Log=true);                    % log10 y-axis
+
+% Multi-panel figures use MATLAB's own layout, via Parent=
+tiledlayout(1, 2);
+obs.plotLMS(Parent=nexttile());
+obs.plotXYZ(Parent=nexttile());
 
 % Build an array of observers across one parameter axis
 observers = IndividualCMF.across('Age', [25 50 75], ...
@@ -194,7 +199,6 @@ individual-cmfs-matlab/
 |   |-- CIE170.m                                 CIE 170-1:2006 / 170-2:2015 leaf-level constants
 |   |-- Nomograms.m                              Raw absorbance computations (Fourier series, alpha/beta bands)
 |   |-- NormalizationCache.m                     Per-(cone, format) peak cache with invalidation hooks
-|   |-- CMFPlotter.m                             Visualization layer used by IndividualCMF plot wrappers
 |   |-- +pipeline/                               Pure-function compute stages (PhotopigmentStage, PreReceptoralStage, OutputStage)
 |   |-- +enums/                                  Strategy / algorithm-mode enum types
 |   |-- +validators/                             Reusable mustBe* validators
