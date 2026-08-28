@@ -643,6 +643,68 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Raw peak must equal 1-10^(-OD), not 1');
         end
 
+
+        % Absorbance is never normalized -- pycone's convention
+
+        function testAbsorbanceIgnoresNormalizeOutput(testCase)
+            % pycone never renormalizes the absorbance stage:
+            % run_pycone.py's NORMALIZED_STAGES excludes it, and
+            % CMFcalc.absorptancefromabsorbance has no max division. The
+            % templates carry A(lambda_max) = 1 in their published
+            % coefficients, and that absolute scale is what multiplies the
+            % optical density in Beer-Lambert self-screening, so Lod / Mod
+            % / Sod mean "peak axial density". Dividing by a sampled peak
+            % would redefine them.
+            %
+            % Making the flag apply here broke all 38 parity
+            % configurations. This pins the contract so it cannot regress
+            % silently again.
+            % Govardovskii is fitted 380-780, so the wide sweep warns at
+            % the lower layer too. Range behaviour is asserted in its own
+            % tests; this one is about the normalization flag.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'Nomograms:WavelengthOutOfRange'));
+
+            wl = (360:0.5:830)';
+            for model = ["StockmanRider2023", "StockmanRider2023Common", ...
+                         "Govardovskii2000", "Govardovskii2000A2"]
+                obs = IndividualCMF(PhotopigmentModel=model);
+                obs.ModelRangeWarning = false;
+
+                normalized = obs.LMS(wl, OutputFormat="absorbance", NormalizeOutput=true);
+                raw = obs.LMS(wl, OutputFormat="absorbance", NormalizeOutput=false);
+
+                testCase.verifyEqual(normalized, raw, 'AbsTol', 0, ...
+                    model + ": NormalizeOutput must be inert for absorbance");
+            end
+        end
+
+        function testAbsorbancePeakIsDiagnosticNotADivisor(testCase)
+            % getPeak still reports the absorbance peak, and it is
+            % informative: it is how a user sees that the published
+            % Stockman-Rider L template peaks slightly below 1, and that
+            % the Govardovskii beta band carries the summed curve above it.
+            % Neither value is ever divided out.
+            obs = IndividualCMF();
+            obs.ModelRangeWarning = false;
+            wl = (360:0.01:830)';
+
+            srPeak = obs.getPeak('L', OutputFormat="absorbance");
+            testCase.verifyEqual(srPeak, 0.9949448501, 'AbsTol', 1e-9, ...
+                'The Stockman-Rider L template peaks just below 1 by construction');
+            testCase.verifyEqual(max(obs.L(wl, OutputFormat="absorbance")), srPeak, ...
+                'RelTol', 1e-6, 'The reported peak must be the curve''s actual maximum');
+
+            gov = IndividualCMF(PhotopigmentModel="Govardovskii2000A2");
+            gov.ModelRangeWarning = false;
+            govPeak = gov.getPeak('S', OutputFormat="absorbance");
+            testCase.verifyEqual(govPeak, 1.0349751181, 'AbsTol', 1e-9, ...
+                'The Govardovskii A2 beta band carries the S curve above 1');
+            testCase.verifyGreaterThan(max(gov.S(wl, OutputFormat="absorbance")), 1, ...
+                'And that overshoot survives into the output, undivided');
+        end
+
     end
 end
 

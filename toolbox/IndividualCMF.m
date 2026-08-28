@@ -44,7 +44,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       MacularDensityAlgorithm      - "CIE170", "MorelandAlexander", or "Custom" (string)
     %       PhotopigmentDensityAlgorithm - "CIE170", "PokornySmith", or "Custom" (string)
     %       OutputFormat                 - "energy", "quantal", "absorptance", or "absorbance" (string) Default: "energy"
-    %       NormalizeOutput              - Scale each cone peak to 1.0 (logical) Default: true
+    %       NormalizeOutput              - Scale each cone peak to 1.0; ignored
+    %                                      for OutputFormat="absorbance" (logical) Default: true
     %       LogOutput                    - Return log10 of output (logical) Default: false
     %       NormalizationMethod          - "Continuous" or "Sampled" (string) Default: "Continuous"
     %       NormalizationGrid            - Grid for Sampled mode, nm (vector) Default: 380:1:780
@@ -365,6 +366,23 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         OutputFormat (1,1) enums.OutputFormat = enums.OutputFormat.energy
 
         % If true (default), scales output so each cone peaks at 1.0.
+        %
+        %   Ignored for OutputFormat="absorbance". Absorbance is always the
+        %   raw photopigment template, matching pycone, which never
+        %   renormalizes that stage: the templates carry A(lambda_max) = 1
+        %   in their published constants, and that absolute scale is what
+        %   multiplies the optical density in Beer-Lambert self-screening,
+        %   so Lod / Mod / Sod mean "peak axial density". Re-dividing by a
+        %   sampled peak would silently redefine them. The other three
+        %   formats are relative sensitivities whose scale is arbitrary,
+        %   which is why normalizing them is meaningful.
+        %
+        %   The residuals this preserves are real: the Stockman-Rider L
+        %   template peaks at 0.9949448501 rather than exactly 1, a fit
+        %   artifact frozen into the published coefficients, and the
+        %   Govardovskii A2 S cone reaches 1.0349751181 because the beta
+        %   band rides on top of the unit alpha band. Read either with
+        %   getPeak(cone, OutputFormat="absorbance").
         NormalizeOutput (1,1) logical = true
 
         % If true, returns log10 of the requested output. Default false.
@@ -1541,7 +1559,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %                         "absorbance". Default: obj.OutputFormat.
             %       LogOutput       - Log10 the result. Default: obj.LogOutput.
             %       NormalizeOutput - Peak-normalize. Default:
-            %                         obj.NormalizeOutput.
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1570,7 +1589,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %                         "absorbance". Default: obj.OutputFormat.
             %       LogOutput       - Log10 the result. Default: obj.LogOutput.
             %       NormalizeOutput - Peak-normalize. Default:
-            %                         obj.NormalizeOutput.
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1599,7 +1619,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %                         "absorbance". Default: obj.OutputFormat.
             %       LogOutput       - Log10 the result. Default: obj.LogOutput.
             %       NormalizeOutput - Peak-normalize. Default:
-            %                         obj.NormalizeOutput.
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1634,10 +1655,18 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OUTPUTS:
             %       peak - The peak sensitivity value used as the normalization divisor
             %
+            %   For OutputFormat="absorbance" the returned value is
+            %   diagnostic only -- it is never applied as a divisor,
+            %   because absorbance is not normalized. It is how you see the
+            %   template's true maximum: 0.9949448501 for the
+            %   Stockman-Rider L cone, 1.0349751181 for the Govardovskii A2
+            %   S cone.
+            %
             %   EXAMPLE:
             %       obs = IndividualCMF();
             %       peak_L = obs.getPeak('L');
             %       peak_M_quantal = obs.getPeak('M', OutputFormat="quantal");
+            %       peak_abs = obs.getPeak('L', OutputFormat="absorbance");
             arguments
                 obj
                 coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
@@ -1797,7 +1826,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %                         "absorbance". Default: obj.OutputFormat.
             %       LogOutput       - Log10 the result. Default: obj.LogOutput.
             %       NormalizeOutput - Peak-normalize each cone. Default:
-            %                         obj.NormalizeOutput.
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             %
             %   OUTPUTS:
             %       LMS - Nx3 matrix [L, M, S] containing sensitivities.
