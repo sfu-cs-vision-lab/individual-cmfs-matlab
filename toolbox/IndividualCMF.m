@@ -1165,8 +1165,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.GenotypeState(key) = amino_acid;
 
             % Constants for scaling shifts (from Stockman & Rider)
-            M_scale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
-            L_scale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
+            M_scale = Genotype.mShift();
+            L_scale = Genotype.lShift();
 
             total = 0;
             sites = [116, 180, 230, 233, 277, 285, 309];
@@ -2142,12 +2142,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             LMS = obj.chromaticityBasisLMS(wl);
             Lw = kL * LMS(:,1);
             Mw = kM * LMS(:,2);
-            V  = Lw + Mw;
-            safeV = V;
-            % Outside the photopic range V can hit zero, which would
-            % produce 0/0 and NaN-propagate; mark explicitly.
-            safeV(safeV == 0) = NaN;
-            mb = [Lw ./ safeV, LMS(:,3) ./ safeV];
+            mb = IndividualCMF.projectiveNormalize([Lw, LMS(:,3)], Lw + Mw);
         end
 
         function lm = lmChromaticity(obj, wl)
@@ -2193,10 +2188,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
 
             LMS = obj.chromaticityBasisLMS(wl);
-            total = sum(LMS, 2);
-            safe = total;
-            safe(safe == 0) = NaN;
-            lm = [LMS(:,1) ./ safe, LMS(:,2) ./ safe];
+            lm = IndividualCMF.projectiveNormalize(LMS(:,1:2), sum(LMS, 2));
         end
 
         function xy = xyChromaticity(obj, wl, options)
@@ -2239,15 +2231,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
             end
 
-            if isempty(options.TransformationMatrix)
-                XYZ = obj.XYZ(wl);
-            else
-                XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
-            end
-            total = sum(XYZ, 2);
-            safe = total;
-            safe(safe == 0) = NaN;
-            xy = [XYZ(:,1) ./ safe, XYZ(:,2) ./ safe];
+            % XYZ's own TransformationMatrix default is already [], so
+            % the empty case needs no branch.
+            XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
+            xy = IndividualCMF.projectiveNormalize(XYZ(:,1:2), sum(XYZ, 2));
         end
     end
 
@@ -3754,8 +3741,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % genotype path uses in Genotype.computeShift. The two
             % directions use different bases-sums (27 vs 31); the asymmetry
             % is intentional and follows pycone.
-            mScale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
-            lScale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
+            mScale = Genotype.mShift();
+            lScale = Genotype.lShift();
             mThreshold = (Genotype.GENOTYPE_SHIFTS("M_277_Tyr") ...
                 + Genotype.GENOTYPE_SHIFTS("M_285_Thr")) * mScale;
             lThreshold = (Genotype.GENOTYPE_SHIFTS("L_277_Phe") ...
@@ -4089,6 +4076,28 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static, Access = private)
+        function out = projectiveNormalize(num, denom)
+            % PROJECTIVENORMALIZE  Divide columns by a denominator, NaN at zero.
+            %
+            %   Chromaticity coordinates are a projective normalization, so
+            %   every one of them divides by a sum that can reach zero
+            %   outside the photopic range. Mark those samples NaN
+            %   explicitly rather than letting 0/0 decide.
+            %
+            %   INPUTS:
+            %       num - Numerator columns (Nx2 double)
+            %       denom - Shared denominator (Nx1 double)
+            %
+            %   OUTPUTS:
+            %       out - num ./ denom, NaN where denom was zero (Nx2 double)
+            arguments
+                num (:,:) double
+                denom (:,1) double
+            end
+            denom(denom == 0) = NaN;
+            out = num ./ denom;
+        end
+
         function val = applyDomainFloor(val, outOfDomain, logOutput)
             % APPLYDOMAINFLOOR  Report no sensitivity outside the active domain.
             %
