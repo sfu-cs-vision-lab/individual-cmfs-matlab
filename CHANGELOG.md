@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0-beta.7]
+
+An interface-breaking release: five phases of simplification, collapsing duplicated internals and bringing the API into line with what each model supports. Fourteen changes alter existing call sites. The migrations are listed first; the reasoning is in the sections below.
+
+Values on explicitly supplied wavelength grids are unchanged except for the two Govardovskii fixes noted under Fixed. pycone parity holds at 38/38 configurations.
+
+### Migration
+
+| Was | Now |
+| --- | --- |
+| `CMFPlotter` | Removed. Call the `plot*` methods with `Parent=<TiledChartLayout>`. |
+| `plotDiagnostics(Plotter=p)` | `plotDiagnostics(Parent=t)` where `t = tiledlayout(...)` |
+| `NormalizationMethod=<struct>` | `NormalizationMethod=<enum>` plus `NormalizationGrid=<vector>` |
+| `NormalizationConfig` | Removed; folded into the two options above. |
+| `evaluate(..., Format="array")` | `obs.LMS(wl)` or another named method |
+| `evaluate(..., Format="struct")` | `table2struct(obs.evaluate(wl), ToScalar=true)` |
+| `evaluate(Data="chromaticity")` | `Data="lmChromaticity"`, returning `(l, m)`; the third column is `1 - l - m` |
+| `ObserverParameters.standard2Deg()` | `IndividualCMF(StandardObserver=2).getParameters()` |
+| `ObserverParameters.standard10Deg()` | `IndividualCMF(StandardObserver=10).getParameters()` |
+| `ObserverParameters.fromGenotype("L_180_Ala")` | `IndividualCMF(Genotype=struct('L_180','Ala')).getParameters()` |
+| `obs.LensDensityAlgorithm = "Custom"` | `obs.LensDensity = obs.LensDensity` (assign the value, and `Custom` follows) |
+| `obs.WavelengthWarning` | `obs.ModelRangeWarning` |
+| `obs.LMS()` and friends, no argument | Still valid, but now returns 471 samples rather than 401 |
+| `IndividualCMF(StandardObserver=N, LensModel=...)` | Build with `Age=` and `FieldSize=` instead |
+
+### Removed
+- `CMFPlotter`. The class reimplemented subplot management, color assignment, and axis styling that MATLAB's `tiledlayout` has shipped since R2019b. Every `plot*` method now takes `Parent=<TiledChartLayout>` and composes with any layout you build yourself, including nested ones. Net 1,931 lines deleted.
+- `ObserverParameters.standard2Deg`, `.standard10Deg`, and `.fromGenotype`. All three were thin wrappers over an `IndividualCMF` construction followed by `getParameters()`, and `fromGenotype` had a latent defect (see Fixed).
+- `NormalizationConfig`, and the struct form of `NormalizationMethod`.
+- The `SupportsShift` and `SupportsAging` template capability flags, and `getValidRange()`. Nothing read any of them.
+- `evaluate`'s `Format` argument. It always returns a table.
+- The analytical-peak mechanism for photopigment templates. Both Stockman-Rider templates claimed an analytical peak of exactly `1.0` against a measured `0.9944520`, so every consumer of the "exact" value was reading a worse number than the search would have found.
+
+### Changed
+- **BREAKING** `evaluate` returns a table and delegates to the named methods rather than reimplementing them, so `evaluate` and `obs.LMS` can no longer drift apart.
+- **BREAKING** `NormalizationMethod` is an enum, with the wavelength grid supplied separately as `NormalizationGrid`. The four struct-shaped error paths collapse to `mustBeNonempty` and `mustBeFinite`; an invalid method name now raises `MATLAB:validation:UnableToConvert` from the enum conversion.
+- **BREAKING** `<X>DensityAlgorithm = "Custom"` errors with `IndividualCMF:CustomIsNotAssignable`, from the constructor as well as the setters. `Custom` is a state you observe after assigning a density, not one you request. Assigning `[]` to a density reverts to the model-computed value.
+- **BREAKING** `obs.LMS()`, `obs.RGB()`, `obs.Luminance()`, `obs.MacLeodBoynton()`, `obs.lmChromaticity()`, and `obs.evaluate()` called with no argument return 471 samples on the default grid, not 401. `L`, `M`, `S`, `XYZ`, `xyChromaticity`, and the plot methods already used the default grid and are unchanged.
+- **BREAKING** `WavelengthWarning` is renamed `ModelRangeWarning`, since it now governs age-range warnings as well as wavelength ones.
+- **BREAKING** `IndividualCMF(StandardObserver=N, ...)` errors if given a non-default `LensModel` or `MacularModel`, or any `*DensityAlgorithm` option. A standard observer is defined by the CIE 170-1:2006 filter models; accepting a substitute and still calling the result standard was the API promising something it did not deliver.
+- **BREAKING** `IndividualCMF(LensModel="Pokorny1987", Age=)` errors outside 20-80 years with `IndividualCMF:AgeOutsideModelDomain`. That is the range Pokorny, Smith & Lutze (1987) fitted; outside it the linear aging term is extrapolation.
+- **BREAKING** `S_LambdaMaxShift` is bounded to `[-40, 30]`, the range `L_LambdaMaxShift` and `M_LambdaMaxShift` already used. See Fixed for why an unbounded shift was not merely inaccurate.
+- **BREAKING** The `IndividualCMF` constructor takes `[]` rather than `NaN` as its "not supplied" sentinel, and uses stdlib validators in place of two custom ones. Density arguments given `NaN` or `Inf` now raise `MATLAB:validators:mustBeNonnegative` and similar, rather than the toolbox's own identifiers.
+- Templates declare `ValidRange` and `Domain` as properties, and both are enforced in `computeRawSensitivity`, which every sensitivity path routes through.
+- `L`, `M`, and `S` accept the same per-call overrides `LMS` does.
+- Photopigment, lens, and macular templates resolve through a `REGISTRY` on their base class, so adding a template no longer means editing a dispatch list in `IndividualCMF`.
+- `plotDiagnostics` builds its own `tiledlayout` rather than requiring a plotter.
+- `exampleDefaults` gained a documented `reset` action; it sets `groot` defaults that outlive the example.
+
+### Fixed
+- **BREAKING** Govardovskii absorptance normalizes to the maximum of the alpha+beta curve rather than to the value at lambda-max. The beta band displaces the true peak away from lambda-max, so the old divisor was not the maximum and normalized output exceeded 1. Output shifts by up to 0.24% (A2) and 1.3e-05 (A1) for `OutputFormat="absorptance"` with `NormalizeOutput=true`. Absorbance, quantal, energy, and `Sampled` mode are unchanged, as are all Stockman-Rider models.
+- **BREAKING** The Govardovskii alpha-band `a` coefficient is stored as the three constants of the paper's Eq. 2 (`0.8795`, `0.0459`, `300`, `11940`) rather than as a pre-divided pair. A1 output shifts by up to 1.14e-03 relative on the long-wave limb; peak values move by under 5.3e-07. A2 is unaffected. `tests/data/govardovskii_reference.csv` is regenerated from `tests/parity/regen_govardovskii.m`, a transcription of the published equations that never calls `Nomograms`.
+- Neither Govardovskii fix is covered by pycone parity, which has no Govardovskii configuration.
+- The out-of-domain floor was applied in one of the five callers of `computeRawSensitivity`. `obs.LMS(300)` correctly returned 0 while `obs.RGB(300)` returned 4.201e+153, and a `NormalizationGrid` reaching outside the domain drove `L(550)` to 3.301e-14 instead of 0.9565. The floor now lives in the shared function.
+- `setParameters` validated an incoming lens model against the *old* age, so a single call that moved both could be rejected on a combination it was not being asked to produce. Age and field size are now written first.
+- `copyElement` silently substituted a default template when copying an observer that used a non-default one.
+- `ObserverParameters.fromGenotype` ignored an unrecognised genotype position, so a typo returned standard-observer numbers while the caller believed a variant had been applied. The replacement path errors. An unrecognised amino acid at a valid position still contributes no shift, as before.
+- The Stockman-Rider common photopigment template warned on every absorbance call.
+- `LMS`/`L`/`M`/`S` return 0, and `getLensDensitySpectrum` returns NaN, below 400 nm for `Pokorny1987` observers and below 360 nm for Stockman-Rider observers. Both previously returned flat-extrapolated or divergent values; the Stockman-Rider Fourier templates diverge outside their fitted half-period rather than decaying.
+
+### Notes
+- `S_LambdaMaxShift` was previously unbounded on the stated grounds that S is left open for cross-species work. Outside roughly `[-50, +30]` the Stockman-Rider template stops being evaluable: it is an 8th-order Fourier series fitted over half a period (log 360 to log 850 nm mapped to 0 to pi), and past that arc it climbs again. The peak search tracks the shifted peak near 362 nm and never samples the far end, so normalization does not catch it. At a -55 nm shift the raw template returns 2.2e+03 at 830 nm and normalized "sensitivity" reached 149.8. The more dangerous case is -50, which returns 5.3e-04 where truth is ~1e-12 -- small enough to read as a genuine long-wavelength tail. pycone applies the same formula with no bound and breaks identically (`Sconelog` returns 2200.52 at -55 and `inf` at +240), so the bound is deliberate hardening beyond the reference, not a divergence from it.
+
 ## [0.1.0-beta.6]
 
 ### Added
