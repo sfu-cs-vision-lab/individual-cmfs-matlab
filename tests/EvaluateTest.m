@@ -306,13 +306,13 @@ classdef EvaluateTest < matlab.unittest.TestCase
         end
 
         function testChromaticityEntryPointsAgree(testCase)
-            % Cross-API parity for the chromaticity quantity. All four
+            % Cross-API parity for the chromaticity quantity. All three
             % paths must produce the same lm coordinates:
             %   1) obs.evaluate(wl, Data='chromaticity')[:, 1:2]
             %   2) obs.lmChromaticity(wl)
-            %   3) CMFPlotter().plotChromaticity(obs).XData/YData
-            %   4) MacLeodBoynton(wl) is a different convention, so it's
-            %      excluded from this lm-specific parity check.
+            %   3) obs.plotChromaticity(wl) XData/YData
+            %   MacLeodBoynton(wl) is a different convention, so it is
+            %   excluded from this lm-specific parity check.
             obs = IndividualCMF(StandardObserver=2);
             wl = (400:5:700)';
 
@@ -322,19 +322,15 @@ classdef EvaluateTest < matlab.unittest.TestCase
             testCase.verifyEqual(evalChrom(:,1:2), lmDirect, 'AbsTol', 1e-12, ...
                 'evaluate chromaticity columns 1:2 must match lmChromaticity');
 
-            % Plotter delegates to lmChromaticity now; verify YData parity
-            % via a hidden figure.
+            % The plot path delegates to lmChromaticity; verify the drawn
+            % data agrees, via a hidden figure.
             fig = figure('Visible', 'off');
-            cleanup = onCleanup(@() close(fig));
-            plotter = CMFPlotter(Visible=false);
-            cleanupP = onCleanup(@() close(plotter.Figure));
-            p = plotter.plotChromaticity(obs, Wavelength=wl);
-            xdata = p(1).XData(:);
-            ydata = p(1).YData(:);
-            testCase.verifyEqual(xdata, lmDirect(:,1), 'AbsTol', 1e-12, ...
-                'plotter X must match lmChromaticity column 1');
-            testCase.verifyEqual(ydata, lmDirect(:,2), 'AbsTol', 1e-12, ...
-                'plotter Y must match lmChromaticity column 2');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            p = obs.plotChromaticity(Wavelength=wl, Parent=axes(fig));
+            testCase.verifyEqual(p(1).XData(:), lmDirect(:,1), 'AbsTol', 1e-12, ...
+                'plotChromaticity X must match lmChromaticity column 1');
+            testCase.verifyEqual(p(1).YData(:), lmDirect(:,2), 'AbsTol', 1e-12, ...
+                'plotChromaticity Y must match lmChromaticity column 2');
         end
 
         %% Test Invalid Inputs

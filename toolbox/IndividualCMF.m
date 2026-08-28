@@ -101,7 +101,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       plot, plotLMS, plotXYZ, plotRGBCMFs, plotChromaticity,
     %       plotAbsorbance, plotAbsorptance, plotQuantalEnergy, plotLens,
     %       plotMacular, plotDiagnostics, compareTo - Plotting and
-    %                                    comparison wrappers over CMFPlotter.
+    %                                    comparison. All draw into gca by
+    %                                    default; pass Parent=nexttile()
+    %                                    to compose a tiled figure.
     %
     %   Behavior:
     %     Setting LensDensity, MacularDensity, or any of Lod/Mod/Sod auto-
@@ -142,7 +144,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       obs2.setParameters(params);
     %
     %   See also Genotype, ObserverParameters, PhotopigmentTemplate,
-    %       LensTemplate, MacularTemplate, CMFPlotter.
+    %       LensTemplate, MacularTemplate.
     %
     %   Primary reference: Stockman, A. & Rider, A.T. (2023). Formulae for
     %   generating standard and individual human cone spectral sensitivities.
@@ -479,6 +481,16 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         % filters, Age, and FieldSize. Read/written directly by the
         % corresponding public Dependent property accessors.
         p_Parameters (1,1) ObserverParameters
+    end
+
+    properties (Constant)
+        % Default line colors, one row per cone in L, M, S order.
+        %   Public so callers can reference the toolbox palette when
+        %   building their own axes, and so the per-call ConeColors
+        %   override on every plot method has a documented default.
+        CONE_COLORS = [0.8 0.0 0.0
+                       0.0 0.6 0.0
+                       0.0 0.0 0.8]
     end
 
     properties (Constant, Access = private)
@@ -2182,11 +2194,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
     end
 
-    % Visualization shortcuts
-    % Thin wrappers that delegate to CMFPlotter. All plotting methods:
-    %   - Return [p, ax] for post-creation customization
-    %   - Support lazy instantiation (auto-create CMFPlotter if not provided)
-    %   - Apply consistent default styling
+    % Visualization. Every method draws into gca unless Parent= is given,
+    % returns [p, ax] for post-creation customization, and restores the
+    % caller's hold state. For multi-panel figures use MATLAB's
+    % tiledlayout/nexttile and pass Parent=nexttile().
     %
     % For custom line styling, modify returned handles:
     %   [p, ax] = obs.plotLMS();
@@ -2211,7 +2222,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: auto-generated based on Data (string)
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
             %       Log - For absorbance: plot log scale. Default: false (logical)
-            %       Plotter - Existing plotter instance (lazy instantiation) (CMFPlotter)
+            %       Compare - Overlay another observer (IndividualCMF)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
+            %       Parent - Target axes. Default: gca (axes)
             %
             %   Examples:
             %       obs.plot()                              % LMS cone fundamentals
@@ -2227,6 +2240,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Compare = []
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
@@ -2246,24 +2260,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                         [p, ax] = obj.compareTo(options.Compare, ...
                             Wavelength=wl, Title=titleStr, Parent=options.Parent);
                     case "RGB"
-                        ax = obj.resolvePlotAxes(options.Parent);
+                        [ax, wasHeld] = obj.beginLinePlot(options.Parent);
                         RGBref  = obj.RGB(wl);
                         RGBcomp = options.Compare.RGB(wl);
-                        wasHeld = ishold(ax);
-                        cla(ax);
-
-                        ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-                        ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-                        hold(ax, 'on');
+                        names = ["R", "G", "B"];
                         p = gobjects(6, 1);
-                        p(1) = plot(ax, wl, RGBref(:,1),  '-',  'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'R');
-                        p(2) = plot(ax, wl, RGBref(:,2),  '-',  'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'G');
-                        p(3) = plot(ax, wl, RGBref(:,3),  '-',  'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'B');
-                        p(4) = plot(ax, wl, RGBcomp(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', "R'");
-                        p(5) = plot(ax, wl, RGBcomp(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', "G'");
-                        p(6) = plot(ax, wl, RGBcomp(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', "B'");
-                        if ~wasHeld, hold(ax, 'off'); end
-                        obj.finalizeLinePlot(ax, p, titleStr, "Tristimulus Value");
+                        for k = 1:3
+                            p(k) = plot(ax, wl, RGBref(:,k), '-', ...
+                                'Color', options.ConeColors(k,:), ...
+                                'LineWidth', 2, 'DisplayName', names(k));
+                            p(k+3) = plot(ax, wl, RGBcomp(:,k), '--', ...
+                                'Color', options.ConeColors(k,:), ...
+                                'LineWidth', 2, 'DisplayName', names(k) + "'");
+                        end
+                        obj.finalizeLinePlot(ax, p, titleStr, "Tristimulus Value", wasHeld);
                     otherwise
                         error('IndividualCMF:UnsupportedComparison', ...
                             'Comparison not supported for Data="%s". Use "LMS" or "RGB".', options.Data);
@@ -2272,24 +2282,26 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 switch options.Data
                     case "LMS"
                         [p, ax] = obj.plotLMS(Wavelength=wl, Title=titleStr, ...
-                            Parent=options.Parent);
+                            ConeColors=options.ConeColors, Parent=options.Parent);
                     case "RGB"
                         [p, ax] = obj.plotRGBCMFs(Wavelength=wl, Title=titleStr, ...
-                            Parent=options.Parent);
+                            ConeColors=options.ConeColors, Parent=options.Parent);
                     case "chromaticity"
                         [p, ax] = obj.plotChromaticity(Wavelength=wl, Title=titleStr, ...
                             Parent=options.Parent);
                     case "absorbance"
                         [p, ax] = obj.plotAbsorbance(Wavelength=wl, Title=titleStr, ...
-                            Log=options.Log, Parent=options.Parent);
+                            Log=options.Log, ConeColors=options.ConeColors, ...
+                            Parent=options.Parent);
                     case "absorptance"
                         [p, ax] = obj.plotAbsorptance(Wavelength=wl, Title=titleStr, ...
-                            Log=options.Log, Parent=options.Parent);
+                            Log=options.Log, ConeColors=options.ConeColors, ...
+                            Parent=options.Parent);
                 end
             end
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotChromaticity(obj, options)
@@ -2309,13 +2321,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             chrom = obj.lmChromaticity(wl);
 
-            cla(ax);
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
             p = plot(ax, chrom(:,1), chrom(:,2), 'k-', 'LineWidth', 2, ...
                 'DisplayName', 'Spectral locus');
 
@@ -2323,10 +2332,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             ylabel(ax, 'm');
             title(ax, options.Title);
             grid(ax, 'on');
+            if ~wasHeld
+                hold(ax, 'off');
+            end
+            % axis equal must come after the hold restore: beginLinePlot
+            % reset DataAspectRatioMode to auto, and this is what sets it.
             axis(ax, 'equal');
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotLMS(obj, options)
@@ -2344,6 +2358,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
             %       Log - Plot log10 sensitivity. Default: false (logical)
             %       Cones - Subset of cones to plot. Default: ["L" "M" "S"] (string array)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
@@ -2351,43 +2366,34 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Cones (1,:) string {mustBeMember(options.Cones, ["L", "M", "S"])} = ["L", "M", "S"]
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             LMS = obj.LMS(wl, LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            od = [obj.Lod, obj.Mod, obj.Sod];
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            if obj.Lod > 0 && any(options.Cones == "L")
-                p(1) = plot(ax, wl, LMS(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'L');
+            for k = 1:3
+                if od(k) > 0 && any(options.Cones == names(k))
+                    p(k) = plot(ax, wl, LMS(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if obj.Mod > 0 && any(options.Cones == "M")
-                p(2) = plot(ax, wl, LMS(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'M');
-            end
-            if obj.Sod > 0 && any(options.Cones == "S")
-                p(3) = plot(ax, wl, LMS(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'S');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
             if options.Log
                 yLab = "Log_{10} Sensitivity";
             else
                 yLab = "Sensitivity";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotXYZ(obj, options)
@@ -2405,6 +2411,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
             %       Channels - Subset of channels to plot. Default: ["X" "Y" "Z"] (string array)
             %       TransformationMatrix - 3x3 LMS->XYZ matrix override (double)
+            %       ChannelColors - 3x3 [X; Y; Z] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
@@ -2412,38 +2419,28 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
                 options.Channels (1,:) string {mustBeMember(options.Channels, ["X", "Y", "Z"])} = ["X", "Y", "Z"]
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
+                options.ChannelColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["X", "Y", "Z"];
             p = gobjects(3, 1);
-            if any(options.Channels == "X")
-                p(1) = plot(ax, wl, XYZ(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'X');
+            for k = 1:3
+                if any(options.Channels == names(k))
+                    p(k) = plot(ax, wl, XYZ(:,k), '-', ...
+                        'Color', options.ChannelColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if any(options.Channels == "Y")
-                p(2) = plot(ax, wl, XYZ(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'Y');
-            end
-            if any(options.Channels == "Z")
-                p(3) = plot(ax, wl, XYZ(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'Z');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value");
+            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotRGBCMFs(obj, options)
@@ -2455,39 +2452,36 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "RGB CMFs" (string)
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       ConeColors - 3x3 [R; G; B] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "RGB CMFs"
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             RGB = obj.RGB(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["R", "G", "B"];
             p = gobjects(3, 1);
-            p(1) = plot(ax, wl, RGB(:,1), '-', 'Color', [0.8 0 0], ...
-                'LineWidth', 2, 'DisplayName', 'R');
-            p(2) = plot(ax, wl, RGB(:,2), '-', 'Color', [0 0.6 0], ...
-                'LineWidth', 2, 'DisplayName', 'G');
-            p(3) = plot(ax, wl, RGB(:,3), '-', 'Color', [0 0 0.8], ...
-                'LineWidth', 2, 'DisplayName', 'B');
+            for k = 1:3
+                p(k) = plot(ax, wl, RGB(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), ...
+                    'LineWidth', 2, 'DisplayName', names(k));
+            end
+            % RGB CMFs go negative outside the primary gamut; the zero line
+            % marks where.
             plot(ax, wl, zeros(size(wl)), 'k--', 'LineWidth', 0.5, ...
                 'HandleVisibility', 'off');
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value");
+            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotAbsorbance(obj, options)
@@ -2500,43 +2494,38 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: "Photopigment Absorbance" (string)
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
             %       Log - Plot log10 absorbance. Default: false (logical)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Photopigment Absorbance"
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
                 options.Log (1,1) logical = false
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorbance", LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            p(1) = plot(ax, wl, A(:,1), '-', 'Color', [0.8 0 0], ...
-                'LineWidth', 2, 'DisplayName', 'L');
-            p(2) = plot(ax, wl, A(:,2), '-', 'Color', [0 0.6 0], ...
-                'LineWidth', 2, 'DisplayName', 'M');
-            p(3) = plot(ax, wl, A(:,3), '-', 'Color', [0 0 0.8], ...
-                'LineWidth', 2, 'DisplayName', 'S');
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, A(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), ...
+                    'LineWidth', 2, 'DisplayName', names(k));
+            end
 
             if options.Log
                 yLab = "Log_{10} absorbance";
             else
                 yLab = "Absorbance";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotAbsorptance(obj, options)
@@ -2552,49 +2541,41 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: "Retinal Absorptance" (string)
             %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
             %       Log - Plot log10 absorptance. Default: false (logical)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Retinal Absorptance"
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
                 options.Log (1,1) logical = false
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorptance", LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            od = [obj.Lod, obj.Mod, obj.Sod];
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            if obj.Lod > 0
-                p(1) = plot(ax, wl, A(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'L');
+            for k = 1:3
+                if od(k) > 0
+                    p(k) = plot(ax, wl, A(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if obj.Mod > 0
-                p(2) = plot(ax, wl, A(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'M');
-            end
-            if obj.Sod > 0
-                p(3) = plot(ax, wl, A(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'S');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
             if options.Log
                 yLab = "Log_{10} absorptance";
             else
                 yLab = "Absorptance";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotQuantalEnergy(obj, options)
@@ -2612,33 +2593,30 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 options.Title (1,1) string = "Quantal vs Energy"
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             Q = obj.LMS(wl, OutputFormat="quantal");
             E = obj.LMS(wl, OutputFormat="energy");
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(6, 1);
-            p(1) = plot(ax, wl, Q(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L (quantal)');
-            p(2) = plot(ax, wl, Q(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M (quantal)');
-            p(3) = plot(ax, wl, Q(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S (quantal)');
-            p(4) = plot(ax, wl, E(:,1), '-',  'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L (energy)');
-            p(5) = plot(ax, wl, E(:,2), '-',  'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M (energy)');
-            p(6) = plot(ax, wl, E(:,3), '-',  'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S (energy)');
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, Q(:,k), '--', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + " (quantal)");
+                p(k+3) = plot(ax, wl, E(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + " (energy)");
+            end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity");
+            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = compareTo(obj, otherObs, options)
@@ -2657,33 +2635,30 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 otherObs (1,1) IndividualCMF
                 options.Title (1,1) string = "Observer Comparison"
                 options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             LMSref  = obj.LMS(wl);
             LMScomp = otherObs.LMS(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(6, 1);
-            p(1) = plot(ax, wl, LMSref(:,1), '-', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L');
-            p(2) = plot(ax, wl, LMSref(:,2), '-', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M');
-            p(3) = plot(ax, wl, LMSref(:,3), '-', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S');
-            p(4) = plot(ax, wl, LMScomp(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', "L'");
-            p(5) = plot(ax, wl, LMScomp(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', "M'");
-            p(6) = plot(ax, wl, LMScomp(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', "S'");
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, LMSref(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k));
+                p(k+3) = plot(ax, wl, LMScomp(:,k), '--', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + "'");
+            end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity");
+            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotLens(obj, options)
@@ -2705,16 +2680,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             lens = obj.getLensDensitySpectrum(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Lens Density"; end
                 p = plot(ax, wl, lens, '-', 'Color', [0 0 0], ...
@@ -2726,18 +2695,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 end
                 if options.Title == "", options.Title = "Lens Density Comparison"; end
                 lensComp = options.Compare.getLensDensitySpectrum(wl);
+                % Reference/comparison pair, not cone colours -- these two
+                % only need to be distinguishable, so they do not use
+                % CONE_COLORS and take no ConeColors override.
                 p = gobjects(2, 1);
                 p(1) = plot(ax, wl, lens, '-', 'Color', [0 0 0.8], ...
                     'LineWidth', 2, 'DisplayName', 'Reference');
                 p(2) = plot(ax, wl, lensComp, '--', 'Color', [0.8 0 0], ...
                     'LineWidth', 2, 'DisplayName', 'Comparison');
             end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density");
+            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotMacular(obj, options)
@@ -2762,23 +2733,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             % macularTemplate peaks at CIE170.STD_2DEG_MACULAR_DENSITY
             % (~0.350 OD); rescale to the observer's MacularDensity so the
             % plotted curve peaks at obs.MacularDensity, not at
-            % 0.35 * obs.MacularDensity. Matches CMFPlotter.plotMacular
-            % and the manual rescale in Example12.
+            % 0.35 * obs.MacularDensity. Matches the manual rescale in
+            % Example12.
             macTemplate = PreReceptoralFilter.macularTemplate(wl);
             macScale = obj.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
             mac = macTemplate * macScale;
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Macular Pigment Density"; end
                 p = plot(ax, wl, mac, '-', 'Color', [0 0 0], ...
@@ -2791,47 +2756,84 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 if options.Title == "", options.Title = "Macular Pigment Comparison"; end
                 macCompScale = options.Compare.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
                 macComp = macTemplate * macCompScale;
+                % Reference/comparison pair, not cone colours -- these two
+                % only need to be distinguishable, so they do not use
+                % CONE_COLORS and take no ConeColors override.
                 p = gobjects(2, 1);
                 p(1) = plot(ax, wl, mac, '-', 'Color', [0 0 0.8], ...
                     'LineWidth', 2, 'DisplayName', 'Reference');
                 p(2) = plot(ax, wl, macComp, '--', 'Color', [0.8 0 0], ...
                     'LineWidth', 2, 'DisplayName', 'Comparison');
             end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density");
+            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotDiagnostics(obj, options)
-            % PLOTDIAGNOSTICS  Generates a diagnostic plot of the computational pipeline.
-            %   Plots Absorbance -> Absorptance -> Corneal Sensitivity side-by-side.
+            % PLOTDIAGNOSTICS  Plot the three computational pipeline stages side by side.
+            %   Absorbance -> relative retinal absorptance -> corneal sensitivity.
+            %
+            %   obj.plotDiagnostics() creates a 1x3 tiled layout in the
+            %   current figure. Pass Parent=<TiledChartLayout> to draw into
+            %   a layout you already own, for example a row of a larger panel.
             %
             %   obj.plotDiagnostics() plots without returning handles.
-            %   p = obj.plotDiagnostics() returns cell array of line handles {p1, p2, p3}.
-            %   [p, ax] = obj.plotDiagnostics() also returns axes array [ax1; ax2; ax3].
+            %   p = obj.plotDiagnostics() returns a 3x1 cell of line handles.
+            %   [p, ax] = obj.plotDiagnostics() also returns the 3x1 axes array.
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Wavelength - Wavelengths in nm. Default: (380:1:780)' (vector)
-            %       Plotter - Existing plotter instance (must have 3+ tiles) (CMFPlotter)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
+            %       Parent - Target TiledChartLayout. Default: a new 1x3 layout
             arguments
                 obj
                 options.Wavelength (:,1) double = (380:1:780)'
-                options.Plotter CMFPlotter = CMFPlotter(1, 3, ...
-                    Parent=gcf, ...
-                    Title="IndividualCMF Diagnostics")
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
+                options.Parent = []
             end
 
-            [p, ax] = options.Plotter.plotDiagnosticsPanel(obj, Wavelength=options.Wavelength);
+            if isempty(options.Parent)
+                layout = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
+                title(layout, "IndividualCMF Diagnostics");
+            else
+                layout = options.Parent;
+            end
 
-            if nargout > 0
-                varargout{1} = p;
+            wl = options.Wavelength;
+            names = ["L", "M", "S"];
+
+            % Each stage is drawn in linear units, so LogOutput is forced
+            % false regardless of the observer's persistent setting.
+            stages = { ...
+                struct(Format="absorbance",  Normalize=false, ...
+                       Title="1. Pigment Absorbance",  YLabel="Absorbance"), ...
+                struct(Format="absorptance", Normalize=true, ...
+                       Title="2. Retinal Absorptance", YLabel="Absorptance"), ...
+                struct(Format="energy",      Normalize=true, ...
+                       Title="3. Corneal Sensitivity", YLabel="Sensitivity")};
+
+            ax = gobjects(3, 1);
+            p  = cell(3, 1);
+            for s = 1:3
+                cfg = stages{s};
+                LMS = obj.LMS(wl, OutputFormat=cfg.Format, ...
+                    LogOutput=false, NormalizeOutput=cfg.Normalize);
+
+                [ax(s), wasHeld] = obj.beginLinePlot(nexttile(layout));
+                p{s} = gobjects(3, 1);
+                for k = 1:3
+                    p{s}(k) = plot(ax(s), wl, LMS(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
+                obj.finalizeLinePlot(ax(s), p{s}, cfg.Title, cfg.YLabel, wasHeld);
             end
-            if nargout > 1
-                varargout{2} = ax;
-            end
+
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
     end
 
@@ -3140,33 +3142,46 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   NormalizeOutput state.
             %
             %   Used by Luminance, MacLeodBoynton, lmChromaticity, and the
-            %   evaluate(Data='chromaticity') path. CMFPlotter.plotChromaticity
+            %   evaluate(Data='chromaticity') path. plotChromaticity
             %   delegates to obs.lmChromaticity, so it picks up this basis
             %   transitively.
             LMS = obj.LMS(wl, OutputFormat="energy", ...
                 NormalizeOutput=true, LogOutput=false);
         end
 
-        function ax = resolvePlotAxes(~, parent)
-            % RESOLVEPLOTAXES  Pick a target axes for a shortcut plot method.
+        function [ax, wasHeld] = beginLinePlot(~, parent)
+            % BEGINLINEPLOT  Resolve and reset the target axes for a plot method.
             %
-            %   Returns parent if non-empty, otherwise gca. Used by the
-            %   plot* shortcut methods to default to the current axes
-            %   instead of creating a new figure -- this keeps the plot
-            %   inline when called from a Live Script section.
+            %   Returns the axes (parent if supplied, else gca) and the
+            %   caller's prior hold state. Defaulting to gca instead of
+            %   creating a figure keeps the plot inline when called from a
+            %   Live Script section.
+            %
+            %   Clears the axes and resets the four limit and aspect modes
+            %   so a previous section's axis equal or explicit limits do
+            %   not leak in, then turns hold on for multi-line drawing.
+            %   finalizeLinePlot restores the hold state.
             if isempty(parent)
                 ax = gca;
             else
                 ax = parent;
             end
+            wasHeld = ishold(ax);
+            cla(ax);
+            ax.XLimMode = 'auto';
+            ax.YLimMode = 'auto';
+            ax.DataAspectRatioMode = 'auto';
+            ax.PlotBoxAspectRatioMode = 'auto';
+            hold(ax, 'on');
         end
 
-        function finalizeLinePlot(~, ax, p, titleStr, yLabelStr)
-            % FINALIZELINEPLOT  Apply shared styling to a line plot.
+        function finalizeLinePlot(~, ax, p, titleStr, yLabelStr, wasHeld)
+            % FINALIZELINEPLOT  Apply shared styling and restore hold state.
             %
             %   Sets x/y labels, title, grid, and a 'best'-located legend
             %   over the supplied line handles. Drops gobjects placeholders
             %   (absent-cone slots) so the legend only lists drawn lines.
+            %   Restores the hold state captured by beginLinePlot.
             valid = isgraphics(p);
             xlabel(ax, 'Wavelength (nm)');
             ylabel(ax, yLabelStr);
@@ -3176,6 +3191,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             grid(ax, 'on');
             if any(valid)
                 legend(ax, p(valid), 'Location', 'bestoutside', 'Box', 'off');
+            end
+            if ~wasHeld
+                hold(ax, 'off');
             end
         end
 
