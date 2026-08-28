@@ -554,6 +554,101 @@ classdef DensityAlgorithmTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Auto");
         end
 
+        % A formula mode must survive repeated recomputation
+        %
+        % These pin the behaviour p_IsInternalUpdate exists to protect: when
+        % a formula recomputes a density, the write must not re-tag the
+        % algorithm mode the user selected. Without that suppression the
+        % mode flips to Custom and the quantity silently stops tracking its
+        % inputs. CIE170 is included because it recovers by coincidence --
+        % after three sequential cone writes the values match the standard
+        % table again -- so testing only the standard observer would miss
+        % the other three cases entirely.
+
+        function testPokornySmithSurvivesRepeatedFieldSizeChanges(testCase)
+            obs = IndividualCMF(Age=32, FieldSize=4);
+            obs.PhotopigmentDensityAlgorithm = "PokornySmith";
+
+            densities = zeros(3, 1);
+            sizes = [4 6 8];
+            for k = 1:numel(sizes)
+                obs.FieldSize = sizes(k);
+                testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), ...
+                    "PokornySmith", ...
+                    sprintf('Mode must survive the FieldSize=%d recompute', sizes(k)));
+                densities(k) = obs.Lod;
+                testCase.verifyEqual(obs.Lod, ...
+                    PhotopigmentParameters.densitiesAtFieldSize(sizes(k)), ...
+                    'AbsTol', 1e-12, 'Lod must track the PokornySmith formula');
+            end
+
+            testCase.verifyTrue(all(diff(densities) < 0), ...
+                'Cone optical density falls with field size under PokornySmith');
+        end
+
+        function testMorelandAlexanderSurvivesRepeatedFieldSizeChanges(testCase)
+            % At 2 deg the Moreland-Alexander formula gives 0.3500202572
+            % against the CIE table's 0.3500000000 -- the tightest near-miss
+            % in the toolbox, and the one most likely to fool a future edit
+            % into thinking the two modes agree.
+            testCase.assertNotEqual( ...
+                PreReceptoralFilter.macularDensityAtFieldSize(2), ...
+                PreReceptoralFilter.macularDensityCIEStandard(2));
+
+            obs = IndividualCMF(Age=32, FieldSize=4);
+            obs.MacularDensityAlgorithm = "MorelandAlexander";
+
+            for fs = [2 4 10]
+                obs.FieldSize = fs;
+                testCase.verifyEqual(string(obs.MacularDensityAlgorithm), ...
+                    "MorelandAlexander", ...
+                    sprintf('Mode must survive the FieldSize=%d recompute', fs));
+                testCase.verifyEqual(obs.MacularDensity, ...
+                    PreReceptoralFilter.macularDensityAtFieldSize(fs), ...
+                    'AbsTol', 1e-12, ...
+                    'MacularDensity must track the Moreland-Alexander formula');
+            end
+        end
+
+        function testAutoLensTracksRepeatedAgeChanges(testCase)
+            % Auto must recompute on every Age change, not just the first.
+            obs = IndividualCMF(LensModel="VanDeKraats2007", Age=30);
+            obs.ModelRangeWarning = false;
+
+            densities = zeros(3, 1);
+            ages = [30 50 70];
+            for k = 1:numel(ages)
+                obs.Age = ages(k);
+                testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Auto", ...
+                    sprintf('Mode must survive the Age=%d recompute', ages(k)));
+                densities(k) = obs.LensDensity;
+            end
+
+            testCase.verifyTrue(all(diff(densities) > 0), ...
+                'Lens density rises with age; a frozen value would not');
+            testCase.verifyEqual(densities(3), ...
+                IndividualCMF(LensModel="VanDeKraats2007", Age=70).LensDensity, ...
+                'AbsTol', 1e-12, ...
+                'The final value must match a freshly built observer');
+        end
+
+        function testCIE170SurvivesRepeatedFieldSizeChanges(testCase)
+            % Included deliberately: this is the case that recovers by
+            % coincidence, so it is the one a shallow test would pass on
+            % while the three modes above were broken.
+            obs = IndividualCMF(StandardObserver=10);
+            for fs = [2 10 2]
+                obs.FieldSize = fs;
+                testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), ...
+                    "CIE170");
+                testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "CIE170");
+                [stdLod, stdMod, stdSod] = ...
+                    PhotopigmentParameters.densitiesCIEStandard(fs);
+                testCase.verifyEqual([obs.Lod obs.Mod obs.Sod], ...
+                    [stdLod stdMod stdSod], 'AbsTol', 1e-12);
+            end
+        end
+
     end
 end
 
