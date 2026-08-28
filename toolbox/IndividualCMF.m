@@ -2922,6 +2922,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
+            % Outside the active domain no template has an admissible
+            % value, so every format reports zero here rather than a
+            % diverged or extrapolated number. This lives in
+            % computeRawSensitivity, not in its callers: RGB, the sampled
+            % peak in NormalizationCache, and the fminbnd peak objective
+            % all reach the stages through this method, and guarding only
+            % computeSensitivityCore left those three returning values as
+            % large as 4.2e+153.
+            dom = obj.activeDomain();
+            outOfDomain = (wl < dom(1)) | (wl > dom(2));
+
             % Stage 1: photopigment absorbance. Kept behind a method
             % because it assembles the shift and the template options --
             % getTemplateOptions carries the L/M magnitude switch, and
@@ -2929,7 +2940,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             logAbs = obj.computePigmentAbsorbance(wl, coneType);
 
             if outputFormat == "absorbance"
-                val = 10.^(logAbs);
+                val = IndividualCMF.applyDomainFloor(10.^(logAbs), outOfDomain, false);
                 return;
             end
 
@@ -2940,7 +2951,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 logAbs, obj.getConeOD(coneType), true);
 
             if outputFormat == "absorptance"
-                val = absorptance;
+                val = IndividualCMF.applyDomainFloor(absorptance, outOfDomain, false);
                 return;
             end
 
@@ -2955,12 +2966,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 FieldSize=obj.p_Parameters.FieldSize);
 
             if outputFormat == "quantal"
-                val = quantal;
+                val = IndividualCMF.applyDomainFloor(quantal, outOfDomain, false);
                 return;
             end
 
             % Stage 4: quantal -> energy (S&R 2023 Eq. 8).
             val = pipeline.OutputStage.quantalToEnergy(quantal, wl);
+            val = IndividualCMF.applyDomainFloor(val, outOfDomain, false);
         end
 
         function peak = computeAnalyticalAbsorptancePeak(obj, coneType)

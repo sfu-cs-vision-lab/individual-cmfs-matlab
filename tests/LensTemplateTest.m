@@ -269,5 +269,58 @@ classdef LensTemplateTest < matlab.unittest.TestCase
                     [name ' Domain must be ordered']);
             end
         end
+        % The domain floor must hold on every path, not just the one
+        % computeSensitivityCore takes
+
+        function testEveryPathThroughComputeRawSensitivityIsFloored(testCase)
+            % Task 4.9 put the floor on computeSensitivityCore alone.
+            % computeRawSensitivity has five callers, and the other four --
+            % RGB, the sampled peak, the fminbnd peak objective, and the
+            % tests -- were unguarded, so obs.RGB(300) returned 4.2e+153
+            % while obs.LMS(300) correctly returned 0. This pins all of
+            % them, because the floor is repeated per output format and
+            % repetition nothing checks is what caused the miss.
+            obs = IndividualCMF();
+            obs.ModelRangeWarning = false;
+            below = [300 320 350 359]';
+
+            testCase.verifyEqual(obs.LMS(below), zeros(numel(below), 3), 'AbsTol', 0);
+            testCase.verifyEqual(obs.RGB(below), zeros(numel(below), 3), 'AbsTol', 0, ...
+                'RGB reaches the stages through computeRawSensitivity directly');
+            testCase.verifyEqual(obs.XYZ(below), zeros(numel(below), 3), 'AbsTol', 0);
+            testCase.verifyEqual(obs.Luminance(below), zeros(numel(below), 1), 'AbsTol', 0);
+
+            % Every raw output format, since the floor is applied at four
+            % separate exits of computeRawSensitivity.
+            for fmt = ["energy" "quantal" "absorptance" "absorbance"]
+                testCase.verifyEqual(obs.LMS(below, OutputFormat=fmt), ...
+                    zeros(numel(below), 3), 'AbsTol', 0, ...
+                    "OutputFormat=" + fmt + " must be floored out of domain");
+            end
+        end
+
+        function testSampledNormalizationIgnoresOutOfDomainSamples(testCase)
+            % A normalization grid reaching into the UV must not poison
+            % in-domain queries. Before the floor moved into
+            % computeRawSensitivity, a 320-830 grid drove the L peak to
+            % 1.36e+16 and made L(550) return 3.3e-14 instead of 0.9565.
+            % The reference is a Sampled observer whose grid stays inside
+            % the domain. Sampled and Continuous legitimately differ by
+            % ~1e-5, so Continuous is the wrong thing to compare against.
+            inDomain = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=(360:1:830)');
+            expected = inDomain.L(550);
+
+            for lo = [300 320 330]
+                obs = IndividualCMF(NormalizationMethod="Sampled", ...
+                    NormalizationGrid=(lo:1:830)');
+                obs.ModelRangeWarning = false;
+                testCase.verifyEqual(obs.L(550), expected, 'RelTol', 1e-9, ...
+                    sprintf('Extending the grid to %d nm must not move an in-domain answer', lo));
+                testCase.verifyLessThan(obs.getPeak('L'), 1e4, ...
+                    sprintf('The sampled peak from %d nm must stay physical', lo));
+            end
+        end
+
     end
 end
