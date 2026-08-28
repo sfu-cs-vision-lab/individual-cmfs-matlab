@@ -812,9 +812,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj.revertPhotopigmentDensities();
                 return
             end
-            obj.p_Parameters.LCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.LCone.LambdaMaxShift);
+            obj.setConeParameter('L', "OpticalDensity", v);
             if ~obj.p_IsInternalUpdate
                 obj.updatePhotopigmentAlgorithmFromValues();
             end
@@ -839,9 +837,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj.revertPhotopigmentDensities();
                 return
             end
-            obj.p_Parameters.MCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.MCone.LambdaMaxShift);
+            obj.setConeParameter('M', "OpticalDensity", v);
             if ~obj.p_IsInternalUpdate
                 obj.updatePhotopigmentAlgorithmFromValues();
             end
@@ -866,9 +862,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj.revertPhotopigmentDensities();
                 return
             end
-            obj.p_Parameters.SCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.SCone.LambdaMaxShift);
+            obj.setConeParameter('S', "OpticalDensity", v);
             if ~obj.p_IsInternalUpdate
                 obj.updatePhotopigmentAlgorithmFromValues();
             end
@@ -920,9 +914,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) double {mustBeInRange(v, -40, 10)}
             end
-            obj.p_Parameters.LCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.LCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('L', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -937,9 +929,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) double {mustBeInRange(v, -20, 30)}
             end
-            obj.p_Parameters.MCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.MCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('M', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -959,9 +949,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) double {mustBeFinite}
             end
-            obj.p_Parameters.SCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.SCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('S', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -3968,6 +3956,37 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 false, "", obj.isStandardFieldSize(), "CIE170", "MorelandAlexander");
             obj.updateMacularDensity();
             obj.invalidateNormalizationCache();
+        end
+
+        function setConeParameter(obj, cone, field, v)
+            % SETCONEPARAMETER  Rewrite one field of one cone's parameters.
+            %
+            %   PhotopigmentParameters is a value class, so updating one
+            %   field means reconstructing it with the other carried over.
+            %
+            %   INPUTS:
+            %       cone - 'L', 'M', or 'S' (char)
+            %       field - "OpticalDensity" or "LambdaMaxShift" (string)
+            %       v - The new value (scalar double)
+            arguments
+                obj
+                cone (1,1) char {mustBeMember(cone, {'L','M','S'})}
+                field (1,1) string {mustBeMember(field, ...
+                    ["OpticalDensity", "LambdaMaxShift"])}
+                v (1,1) double
+            end
+            prop = cone + "Cone";
+            current = obj.p_Parameters.(prop);
+            opticalDensity = current.OpticalDensity;
+            lambdaMaxShift = current.LambdaMaxShift;
+            if field == "OpticalDensity"
+                opticalDensity = v;
+            else
+                lambdaMaxShift = v;
+            end
+            obj.p_Parameters.(prop) = PhotopigmentParameters( ...
+                OpticalDensity=opticalDensity, ...
+                LambdaMaxShift=lambdaMaxShift);
         end
 
         function revertPhotopigmentDensities(obj)
