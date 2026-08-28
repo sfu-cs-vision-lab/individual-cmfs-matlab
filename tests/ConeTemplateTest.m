@@ -368,25 +368,6 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
 
         %% computePeakAbsorbance Tests
 
-        function testComputePeakAbsorbance(testCase)
-            % computePeakAbsorbance should return positive value close to 1
-            gov = GovardovskiiPhotopigmentTemplate();
-            sr = StockmanRiderPhotopigmentTemplate();
-            options = struct();
-
-            gov_peak = gov.computePeakAbsorbance('L', 0, options);
-            sr_peak = sr.computePeakAbsorbance('L', 0, options);
-
-            testCase.verifyGreaterThan(gov_peak, 0, ...
-                'Govardovskii peak absorbance should be positive');
-            testCase.verifyGreaterThan(sr_peak, 0, ...
-                'StockmanRider peak absorbance should be positive');
-
-            % For normalized templates, peak should be close to 1
-            testCase.verifyEqual(gov_peak, 1.0, 'AbsTol', 0.01, ...
-                'Govardovskii peak absorbance should be ~1.0');
-        end
-
         %% L-cone Template Shift Warning Tests
 
         function testMeanTemplateShiftWarning(testCase)

@@ -30,8 +30,8 @@ classdef ClassBehaviorTest < matlab.unittest.TestCase
     methods(Test)
 
         function testCacheCallbackMethodsAreNotPublic(testCase)
-            % Regression guard: computeRawSensitivity, computePeakForFormat,
-            % and computeAnalyticalAbsorptancePeak exist solely to support
+            % Regression guard: computeRawSensitivity and
+            % computePeakForFormat exist solely to support
             % NormalizationCache and white-box tests in NormalizationTest.
             % They must not be callable from arbitrary external code,
             % otherwise they leak into the public API surface. This test
@@ -41,8 +41,6 @@ classdef ClassBehaviorTest < matlab.unittest.TestCase
             testCase.verifyError(@() obs.computeRawSensitivity(550, 'L', "energy"), ...
                 'MATLAB:class:MethodRestricted');
             testCase.verifyError(@() obs.computePeakForFormat('L', "energy"), ...
-                'MATLAB:class:MethodRestricted');
-            testCase.verifyError(@() obs.computeAnalyticalAbsorptancePeak('L'), ...
                 'MATLAB:class:MethodRestricted');
         end
 

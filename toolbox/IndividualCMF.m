@@ -3014,40 +3014,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             val = IndividualCMF.applyDomainFloor(val, outOfDomain, false);
         end
 
-        function peak = computeAnalyticalAbsorptancePeak(obj, coneType)
-            arguments
-                obj
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
-            end
-
-            % This method should only be called for Govardovskii
-            assert(obj.templateSupportsAnalyticalPeak(), ...
-                'computeAnalyticalAbsorptancePeak should only be used with Govardovskii');
-
-            shift = obj.getConeShift(coneType);
-            od = obj.getConeOD(coneType);
-            opts = obj.getTemplateOptions();
-
-            % Absent cone (gene-deletion dichromacy): the cone column is
-            % identically zero, so any peak value would work as the
-            % cache's denominator (everything gets divided into zero).
-            % Return 1 explicitly to avoid 0/0 = NaN from the relative
-            % formula when od = 0 -- the cache's "peak == 0 -> 1"
-            % guard would otherwise not fire because NaN ~= 0.
-            if od == 0
-                peak = 1;
-                return;
-            end
-
-            peakAbsorbance = obj.p_PhotopigmentTemplate.computePeakAbsorbance(coneType, shift, opts);
-            % Relative retinal absorptance peak: matches the helper-norm
-            % convention applied by the stage-2 call in
-            % computeRawSensitivity. For an
-            % absorbance template whose peak is exactly 1 (Govardovskii
-            % alpha-band), this reduces to (1-10^(-od))/(1-10^(-od)) = 1.
-            peak = (1 - 10^(-od * peakAbsorbance)) / (1 - 10^(-od));
-        end
-
         function peak = computePeakForFormat(obj, coneType, outputFormat)
             % COMPUTEPEAKFORFORMAT  Compute peak value for normalization.
             %
@@ -3059,12 +3025,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
                 outputFormat (1,1) string {mustBeMember(outputFormat, ["absorbance", "absorptance", "quantal", "energy"])}
-            end
-
-            % For Govardovskii absorptance: use analytical peak
-            if outputFormat == "absorptance" && obj.templateSupportsAnalyticalPeak()
-                peak = obj.computeAnalyticalAbsorptancePeak(coneType);
-                return;
             end
 
             % For everything else: use fminbnd. The base bounds bracket
@@ -3827,14 +3787,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             if obj.p_Parameters.LCone.LambdaMaxShift <= lThreshold
                 effL = enums.LOpsinTemplate.MinL;
             end
-        end
-
-        function usesAnalyticalPeak = templateSupportsAnalyticalPeak(obj)
-            % TEMPLATESUPPORTSANALYTICALPEAK  Whether the active photopigment
-            % template can return its peak in closed form. Delegates to the
-            % template's SupportsAnalyticalPeak constant property -- new
-            % PhotopigmentTemplate subclasses declare their own truth.
-            usesAnalyticalPeak = obj.p_PhotopigmentTemplate.SupportsAnalyticalPeak;
         end
 
         function val = computeSensitivityCore(obj, nm, cone_type, fmt, normalizeOutput, logOutput)

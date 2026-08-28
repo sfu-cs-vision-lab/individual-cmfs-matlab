@@ -184,63 +184,6 @@ classdef StockmanRiderPhotopigmentTemplateTest < matlab.unittest.TestCase
 
         %% computePeakAbsorbance Tests
 
-        function testComputePeakAbsorbanceLMean(testCase)
-            % Test peak absorbance for L Mean template
-            options = struct('L_Template', "Mean");
-            peakAbs = testCase.Template.computePeakAbsorbance('L', 0, options);
-
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
-        end
-
-        function testComputePeakAbsorbanceLSerine(testCase)
-            % Test peak absorbance for L Serine template
-            options = struct('L_Template', "Serine");
-            peakAbs = testCase.Template.computePeakAbsorbance('L', 0, options);
-
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
-        end
-
-        function testComputePeakAbsorbanceLAlanine(testCase)
-            % Test peak absorbance for L Alanine template
-            options = struct('L_Template', "Alanine");
-            peakAbs = testCase.Template.computePeakAbsorbance('L', 0, options);
-
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
-        end
-
-        function testComputePeakAbsorbanceM(testCase)
-            % Test peak absorbance for M cone
-            options = struct('M_Template', "Standard");
-            peakAbs = testCase.Template.computePeakAbsorbance('M', 0, options);
-
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
-        end
-
-        function testComputePeakAbsorbanceS(testCase)
-            % Test peak absorbance for S cone
-            options = struct();
-            peakAbs = testCase.Template.computePeakAbsorbance('S', 0, options);
-
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
-        end
-
-        function testComputePeakAbsorbanceWithShift(testCase)
-            % Test peak absorbance with shift
-            options = struct('L_Template', "Serine");
-
-            peakAbs_base = testCase.Template.computePeakAbsorbance('L', 0, options);
-            peakAbs_shifted = testCase.Template.computePeakAbsorbance('L', 5, options);
-
-            % Both should be close to 1.0 (normalized templates)
-            testCase.verifyEqual(peakAbs_base, 1.0, 'AbsTol', 0.1);
-            testCase.verifyEqual(peakAbs_shifted, 1.0, 'AbsTol', 0.1);
-        end
-
         %% Boundary Condition Tests
 
         function testLargePositiveShift(testCase)

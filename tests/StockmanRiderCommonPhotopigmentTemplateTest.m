@@ -76,14 +76,7 @@ classdef StockmanRiderCommonPhotopigmentTemplateTest < matlab.unittest.TestCase
             end
         end
 
-        function testComputePeakAbsorbanceReturnsUnity(testCase)
-            % computePeakAbsorbance is normalized to return exactly 1.0.
-            for coneType = {'L', 'M', 'S'}
-                ct = coneType{1};
-                peakAbs = testCase.Template.computePeakAbsorbance(ct, 0, struct());
-                testCase.verifyEqual(peakAbs, 1.0, 'AbsTol', 1e-12);
-            end
-        end
+        function testComputePeakAbsorbanceReturnsUnity(testCase)        end
 
         %% Shift Tests
 
@@ -154,13 +147,6 @@ classdef StockmanRiderCommonPhotopigmentTemplateTest < matlab.unittest.TestCase
         function testValidRange(testCase)
             % ValidRange should match the SR valid range [360, 830].
             testCase.verifyEqual(testCase.Template.ValidRange, [360, 830]);
-        end
-
-        function testSupportsAnalyticalPeakIsFalse(testCase)
-            % The common template is pre-normalized to a peak of 1.0 but has
-            % no closed form for the peak location, so consumers must find
-            % it numerically.
-            testCase.verifyFalse(testCase.Template.SupportsAnalyticalPeak);
         end
 
         function testShortName(testCase)

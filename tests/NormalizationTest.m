@@ -477,61 +477,6 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Govardovskii absorptance peak should be close to 1.0');
         end
 
-        %% --- Analytical Peak Absorbance Tests ---
-
-        function testStockmanRiderPeakAbsorbanceIsOne(testCase)
-            % Stockman-Rider templates are pre-normalized to peak at 1.0
-            % due to the 's' renormalization factor in the Fourier coefficients.
-            template = StockmanRiderPhotopigmentTemplate();
-
-            for coneType = ['L', 'M', 'S']
-                peakAbs = template.computePeakAbsorbance(coneType, 0, struct());
-                testCase.verifyEqual(peakAbs, 1.0, ...
-                    sprintf('%s-cone peak absorbance should be exactly 1.0', coneType));
-            end
-        end
-
-        function testGovardovskiiPeakAbsorbanceNearOne(testCase)
-            % Govardovskii peaks near 1.0 at lambda-max.
-            % The alpha-band peaks at 1.0 by construction, but beta-band
-            % contribution may cause slight deviation.
-            template = GovardovskiiPhotopigmentTemplate();
-
-            for coneType = ['L', 'M', 'S']
-                peakAbs = template.computePeakAbsorbance(coneType, 0, struct());
-
-                % Should be very close to 1.0
-                testCase.verifyEqual(peakAbs, 1.0, 'RelTol', 0.01, ...
-                    sprintf('%s-cone peak absorbance should be near 1.0', coneType));
-            end
-        end
-
-        function testAnalyticalAbsorptancePeakFormula(testCase)
-            % Verify the relative retinal absorptance peak formula for
-            % Govardovskii. Under the helper-norm convention, the
-            % analytical peak is (1-10^(-OD*peakA)) / (1-10^(-OD)). The
-            % Govardovskii alpha-band absorbance peaks very close to but
-            % not exactly 1.0 (within ~0.15% of the analytical maximum),
-            % so the relative absorptance peak is very close to 1 but
-            % can deviate by a similarly small amount. The contract this
-            % test pins is the formula itself, not that the peak equals
-            % 1 exactly.
-            obs = IndividualCMF();
-            obs.PhotopigmentModel = "Govardovskii2000";
-
-            for coneType = ['L', 'M', 'S']
-                peak = obs.computeAnalyticalAbsorptancePeak(coneType);
-
-                % Peak must be positive and within ~1% of 1.0 (matches
-                % the existing peakAbsorbance-near-1 contract enforced
-                % by testGovardovskiiPeakAbsorbanceNormalized).
-                testCase.verifyGreaterThan(peak, 0, ...
-                    sprintf('%s analytical peak must be positive', coneType));
-                testCase.verifyEqual(peak, 1.0, 'RelTol', 0.01, ...
-                    sprintf('%s analytical peak should be near 1.0 under the relative formula', coneType));
-            end
-        end
-
         function testGovardovskiiAbsentConePeakIsFinite(testCase)
             % When a Govardovskii observer has a zeroed cone (gene-
             % deletion dichromacy), the analytical absorptance peak
@@ -703,6 +648,76 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'The Govardovskii A2 beta band carries the S curve above 1');
             testCase.verifyGreaterThan(max(gov.S(wl, OutputFormat="absorbance")), 1, ...
                 'And that overshoot survives into the output, undivided');
+        end
+
+
+        % Template peak absorbance -- the real values
+
+        function testTemplatePeakAbsorbanceMatchesTheCurve(testCase)
+            % Replaces a family of tests that asserted computePeakAbsorbance
+            % returned 1.0. That method returned a hardcoded 1.0 for both
+            % Stockman-Rider templates while the L(ser) polynomial actually
+            % peaks at 0.9944520 -- so those tests checked a constant, not a
+            % peak, and the one number they pinned was wrong. getPeak reads
+            % the normalization cache, which finds the true maximum.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    {'IndividualCMF:WavelengthOutOfRange', ...
+                     'Nomograms:WavelengthOutOfRange'}));
+            wl = (360:0.01:830)';
+
+            cases = { ...
+                "StockmanRider2023",       'L', 0.9949448501; ...
+                "StockmanRider2023",       'M', 1.0000000000; ...
+                "Govardovskii2000A2",      'S', 1.0349751181};
+
+            for k = 1:size(cases, 1)
+                obs = IndividualCMF(PhotopigmentModel=cases{k,1});
+                obs.ModelRangeWarning = false;
+                cone = cases{k,2};
+
+                reported = obs.getPeak(cone, OutputFormat="absorbance");
+                testCase.verifyEqual(reported, cases{k,3}, 'AbsTol', 1e-9, ...
+                    sprintf('%s %s absorbance peak', cases{k,1}, cone));
+
+                % And the reported peak must be the curve's real maximum,
+                % which is the property the deleted method never had.
+                actual = max(obs.(cone)(wl, OutputFormat="absorbance"));
+                testCase.verifyEqual(reported, actual, 'RelTol', 1e-6, ...
+                    sprintf('%s %s: reported peak must equal the curve max', ...
+                    cases{k,1}, cone));
+            end
+        end
+
+        function testGovardovskiiAbsorptanceNormalizesToOne(testCase)
+            % The point of removing the analytical shortcut. The Govardovskii
+            % template returns alpha + beta, whose maximum sits away from
+            % lambda-max -- 416.749 nm against 420.7 for A2 -- so anchoring
+            % the divisor at lambda-max let normalized absorptance reach
+            % 1.0024. Every format must now honour NormalizeOutput's promise.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    {'IndividualCMF:WavelengthOutOfRange', ...
+                     'Nomograms:WavelengthOutOfRange'}));
+
+            % A fine grid: the old bound passed only because a 5 nm grid
+            % stepped over the excursion.
+            wl = (380:0.05:780)';
+            for model = ["Govardovskii2000", "Govardovskii2000A2"]
+                for shift = [0 -20 -40]
+                    obs = IndividualCMF(PhotopigmentModel=model, S_LambdaMaxShift=shift);
+                    obs.ModelRangeWarning = false;
+                    for fmt = ["absorptance", "quantal", "energy"]
+                        % 1e-6 is the numerical peak search's own tolerance,
+                        % not slack: fminbnd locates the maximum to about
+                        % that precision, so a bound tighter than its
+                        % convergence would be testing fminbnd, not us.
+                        testCase.verifyLessThanOrEqual( ...
+                            max(obs.LMS(wl, OutputFormat=fmt), [], 'all'), 1 + 1e-6, ...
+                            sprintf('%s shift %d %s must not exceed 1', model, shift, fmt));
+                    end
+                end
+            end
         end
 
     end

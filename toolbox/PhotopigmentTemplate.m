@@ -13,13 +13,11 @@ classdef (Abstract) PhotopigmentTemplate < handle
     %       BASE_LAMBDA_MAX_L       - Base L-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_M       - Base M-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_S       - Base S-cone lambda-max in nm.
-    %       SupportsAnalyticalPeak  - True if the template can return its peak
     %                                 absorbance analytically (closed form),
     %                                 false if peak finding is numerical.
     %
     %   PhotopigmentTemplate Abstract Methods:
     %       computeAbsorbance       - Compute log10 absorbance spectrum.
-    %       computePeakAbsorbance   - Compute analytical peak absorbance.
     %
     %   PhotopigmentTemplate Concrete Methods:
     %       getLambdaMax  - Get lambda-max for a cone type with shift.
@@ -53,13 +51,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
         BASE_LAMBDA_MAX_M (1,1) double
         BASE_LAMBDA_MAX_S (1,1) double
 
-        % SupportsAnalyticalPeak  Whether the peak is available in closed form.
-        %
-        %   True if the template's peak absorbance has a closed-form
-        %   expression that computePeakAbsorbance can evaluate without
-        %   numerical search; false if the consumer must locate the peak
-        %   numerically (e.g. fminbnd on a wavelength grid).
-        SupportsAnalyticalPeak (1,1) logical
 
         % ValidRange  [min_nm, max_nm] over which the template was fitted.
         %
@@ -136,16 +127,6 @@ classdef (Abstract) PhotopigmentTemplate < handle
         %       logAbs - Log10 absorbance spectrum (vector)
         logAbs = computeAbsorbance(obj, wl, coneType, shift, options)
 
-        % computePeakAbsorbance  Compute analytical peak absorbance value.
-        %
-        %   INPUTS:
-        %       coneType - Cone type: 'L', 'M', or 'S' (char)
-        %       shift - Wavelength shift in nm (double)
-        %       options - Template-specific options (struct)
-        %
-        %   OUTPUTS:
-        %       peakAbs - Peak absorbance value (linear scale) (double)
-        peakAbs = computePeakAbsorbance(obj, coneType, shift, options)
 
     end
 

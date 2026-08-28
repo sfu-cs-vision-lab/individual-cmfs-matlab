@@ -51,13 +51,6 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 527.3
         BASE_LAMBDA_MAX_S = 418.5
 
-        % SupportsAnalyticalPeak  False; the common template is an 8th-order
-        % Fourier polynomial pre-normalized so the peak is approximately 1.0
-        % in linear units. The exact peak location has no closed form --
-        % consumers must locate it numerically (e.g. fminbnd over the active
-        % wavelength grid).
-        SupportsAnalyticalPeak = false
-
         % ValidRange  Matches the Stockman & Rider valid range (360-830 nm),
         % the same SR_VALID_RANGE used by the per-cone templates.
         ValidRange = [360, 830]
@@ -102,30 +95,6 @@ classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
             end
 
             logAbs = Nomograms.stockmanRiderCommon(wl, coneType, shift);
-        end
-
-        function peakAbs = computePeakAbsorbance(obj, coneType, shift, options)
-            % COMPUTEPEAKABSORBANCE  Return peak absorbance value.
-            %
-            %   The common template's trailing 's' coefficient normalizes the
-            %   linear absorbance so it peaks at approximately 1.0 at
-            %   lambda-max, as with the per-cone Stockman-Rider templates.
-            %
-            %   INPUTS:
-            %       coneType - Cone type: 'L', 'M', or 'S' (unused) (char)
-            %       shift - Wavelength shift in nm (unused) (double)
-            %       options - Unused for the common template (struct)
-            %
-            %   OUTPUTS:
-            %       peakAbs - Peak absorbance value (always 1.0) (double)
-            arguments
-                obj %#ok<INUSA>
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})} %#ok<INUSA>
-                shift (1,1) double %#ok<INUSA>
-                options (1,1) struct = struct() %#ok<INUSA>
-            end
-
-            peakAbs = 1.0;
         end
 
     end

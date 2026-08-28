@@ -53,13 +53,32 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
                 M_LambdaMaxShift=shift_M, ...
                 S_LambdaMaxShift=shift_S);
 
-            % 2. Configure output to match golden data
+            % 2. Configure output to match golden data.
+            %    The fixture records the legacy at-lambda-max convention:
+            %    each column equals exactly 1 at its nominal lambda-max
+            %    (560/530/430 nm), not at the curve's true maximum. The
+            %    toolbox normalizes to the true maximum, which for the
+            %    alpha+beta sum sits slightly elsewhere, so the two differ
+            %    by ~1.9e-07 (L) to 8.1e-06 (S).
+            %
+            %    Rather than loosen the tolerance by five orders of
+            %    magnitude, take the raw output and apply the fixture's own
+            %    convention here. That keeps AbsTol 1e-10 and keeps this
+            %    file an independent record of the legacy implementation
+            %    rather than a copy of current toolbox output.
             obs.OutputFormat = "absorptance";
-            obs.NormalizeOutput = true;
+            obs.NormalizeOutput = false;
 
-            % 3. Evaluate and Verify
+            % 3. Evaluate, normalize the legacy way, and verify.
             wl = testCase.LegacyData.nm;
-            new_LMS = obs.LMS(wl);
+            raw = obs.LMS(wl);
+
+            lambdaMaxNm = [560, 530, 430];
+            new_LMS = zeros(size(raw));
+            for cone = 1:3
+                anchor = raw(wl == lambdaMaxNm(cone), cone);
+                new_LMS(:, cone) = raw(:, cone) / anchor;
+            end
 
             legacy_matrix = [testCase.LegacyData.L_absorptance, ...
                 testCase.LegacyData.M_absorptance, ...

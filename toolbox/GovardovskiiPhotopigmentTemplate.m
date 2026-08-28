@@ -49,12 +49,6 @@ classdef GovardovskiiPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 530.3
         BASE_LAMBDA_MAX_S = 420.7
 
-        % SupportsAnalyticalPeak  True; the Govardovskii alpha-band template
-        % places its peak at lambda-max by construction, and the peak value
-        % is given directly by evaluating the parametric formula at
-        % lambda-max -- no numerical search needed.
-        SupportsAnalyticalPeak = true
-
         % ValidRange  Govardovskii A1 was fitted on the 380-780 nm visible
         % range. The parametric formula extends outside this range but
         % accuracy degrades for extreme wavelengths.
@@ -125,35 +119,6 @@ classdef GovardovskiiPhotopigmentTemplate < PhotopigmentTemplate
                 linAbs = Nomograms.govardovskii2000(wl, lmax);
             end
             logAbs = log10(linAbs);
-        end
-
-        function peakAbs = computePeakAbsorbance(obj, coneType, shift, options)
-            % COMPUTEPEAKABSORBANCE  Compute analytical peak absorbance.
-            %
-            %   For Govardovskii, the peak absorbance is calculated at lambda-max
-            %   using the analytical formula. This allows precise normalization
-            %   without sampling errors.
-            %
-            %   INPUTS:
-            %       coneType - Cone type: 'L', 'M', or 'S' (char)
-            %       shift - Wavelength shift in nm (double)
-            %       options - Unused for Govardovskii model (struct)
-            %
-            %   OUTPUTS:
-            %       peakAbs - Peak absorbance value (linear scale) (double)
-            arguments
-                obj
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
-                shift (1,1) double
-                options (1,1) struct = struct() %#ok<INUSA>
-            end
-
-            lmax = obj.getLambdaMax(coneType, shift);
-            if obj.Pigment == "A2"
-                peakAbs = Nomograms.govardovskii2000A2(lmax, lmax);
-            else
-                peakAbs = Nomograms.govardovskii2000(lmax, lmax);
-            end
         end
 
     end
