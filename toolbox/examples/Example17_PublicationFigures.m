@@ -35,8 +35,10 @@ obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 %%
 %[text] ## Two-observer comparison (inline)
 %[text] `compareTo` overlays a second observer in dashed lines. Same gca pattern as `plotLMS`.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
+obs_comp.WavelengthWarning = false;
 obs_ref.compareTo(obs_comp, ...
     Title="CIE 10 deg (solid) vs Age 60 VanDeKraats2007 (dashed)");
 %%
@@ -46,6 +48,7 @@ wl = (390:1:700)';
 ages = [25, 40, 55, 70];
 agecol = parula(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", FieldSize=10);
+[age_observers.WavelengthWarning] = deal(false);
 %%
 %[text] ### Lens density spectrum vs age
 figure;

@@ -82,10 +82,11 @@ classdef EvaluateTest < matlab.unittest.TestCase
         end
 
         function testDefaultWavelengths(testCase)
+            % evaluate shares the one toolbox-wide default rather than
+            % carrying its own, so it cannot drift from LMS.
             [result, wl] = IndividualCMF().evaluate();
-            testCase.verifyEqual(wl(1), 380);
-            testCase.verifyEqual(wl(end), 780);
-            testCase.verifyEqual(height(result), 401);
+            testCase.verifyEqual(wl, IndividualCMF.DEFAULT_WL);
+            testCase.verifyEqual(height(result), numel(IndividualCMF.DEFAULT_WL));
         end
 
         function testSingleWavelength(testCase)

@@ -68,7 +68,9 @@ table([xyTargetStd(1); xyMixStd(1)], [xyTargetStd(2); xyMixStd(2)], ...
 %%
 %[text] ## Step 5: a stronger observer difference
 %[text] The Ser180Ala polymorphism is the most common L-cone variant. The Euclidean $\\Delta xy = \\sqrt{(\\Delta x)^2 + (\\Delta y)^2}$ we just measured is small -- around 0.003. A 70-year-old with strong lens yellowing produces a much larger displacement.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 obsAged = IndividualCMF(LensModel="VanDeKraats2007", Age=70, FieldSize=2);
+obsAged.WavelengthWarning = false;
 XYZCmfsAged = obsAged.XYZ(wl);
 XYZTargetAged  = sum(spdTarget  .* XYZCmfsAged, 1)';
 XYZMixtureAged = sum(spdMixture .* XYZCmfsAged, 1)';

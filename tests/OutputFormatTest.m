@@ -229,5 +229,111 @@ classdef OutputFormatTest < matlab.unittest.TestCase
             % chromaticity values. This is expected because the spectral shape differs.
         end
 
+        % One wavelength default across every method
+
+        function testEveryMethodSharesOneWavelengthDefault(testCase)
+            obs = IndividualCMF();
+            n = numel(IndividualCMF.DEFAULT_WL);
+
+            testCase.verifyNumElements(obs.L(), n);
+            testCase.verifyNumElements(obs.M(), n);
+            testCase.verifyNumElements(obs.S(), n);
+            testCase.verifySize(obs.LMS(), [n 3]);
+            testCase.verifySize(obs.XYZ(), [n 3]);
+            testCase.verifySize(obs.RGB(), [n 3]);
+            testCase.verifyNumElements(obs.Luminance(), n);
+            testCase.verifySize(obs.lmChromaticity(), [n 2]);
+            testCase.verifySize(obs.xyChromaticity(), [n 2]);
+            testCase.verifySize(obs.MacLeodBoynton(), [n 2]);
+            testCase.verifyEqual(height(obs.evaluate()), n);
+            testCase.verifyNumElements(obs.getLensDensitySpectrum(), n);
+            testCase.verifyNumElements(obs.getMacularDensitySpectrum(), n);
+        end
+
+        function testPerConeMatchesTheLMSColumn(testCase)
+            % obs.L() and obs.LMS()(:,1) are the same quantity and must be
+            % subtractable. They were 471 and 401 samples before this task.
+            obs = IndividualCMF();
+            LMS = obs.LMS();
+            testCase.verifyEqual(obs.L(), LMS(:,1), 'AbsTol', 0);
+            testCase.verifyEqual(obs.M(), LMS(:,2), 'AbsTol', 0);
+            testCase.verifyEqual(obs.S(), LMS(:,3), 'AbsTol', 0);
+        end
+
+        function testChromaticitySiblingsAgreeOnLength(testCase)
+            % lmChromaticity used the Govardovskii range and xyChromaticity
+            % the Stockman-Rider one, for the same observer.
+            obs = IndividualCMF();
+            testCase.verifyEqual(height(obs.lmChromaticity()), ...
+                height(obs.xyChromaticity()));
+            testCase.verifyEqual(numel(obs.Luminance()), height(obs.XYZ()), ...
+                'Luminance is a row of the XYZ matrix and must match it');
+        end
+
+        function testDefaultMatchesTheDefaultTemplateValidity(testCase)
+            % The default grid must be exactly where the default
+            % photopigment model is defined, so nothing is truncated
+            % silently.
+            testCase.verifyEqual( ...
+                [IndividualCMF.DEFAULT_WL(1), IndividualCMF.DEFAULT_WL(end)], ...
+                Nomograms.SR_VALID_RANGE, 'AbsTol', 0);
+        end
+
+        function testPlotMethodsShareTheSameDefault(testCase)
+            obs = IndividualCMF();
+            fig = figure(Visible="off");
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            p = obs.plotLMS(Parent=axes(fig));
+            testCase.verifyNumElements(p(1).XData, numel(IndividualCMF.DEFAULT_WL));
+        end
+
+        function testDefaultIsWarningFreeUnderTheDefaultModel(testCase)
+            % Stockman-Rider is valid over 360-830, so a no-argument call
+            % must not warn. Govardovskii observers warn once by design.
+            Nomograms.resetWarnings();
+            obs = IndividualCMF();
+            testCase.verifyWarningFree(@() obs.LMS(), ...
+                'The default grid must be warning-free under the default model');
+            testCase.verifyWarningFree(@() obs.getLensDensitySpectrum());
+            testCase.verifyWarningFree(@() obs.getMacularDensitySpectrum());
+        end
+
+        function testFilterSpectraAreWellBehavedOnTheDefaultGrid(testCase)
+            % Pin the numerics on the wider default: no Inf, no negative
+            % density, no polynomial oscillation in the tails.
+            wl = IndividualCMF.DEFAULT_WL;
+            % Domain floor per lens model. Only Pokorny has one inside the
+            % default grid, and 360-399 nm is exactly where it would
+            % otherwise flat-extrapolate.
+            floors = dictionary( ...
+                ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"], ...
+                [360, 400, 0]);
+
+            for model = ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"]
+                obs = IndividualCMF(LensModel=model, Age=45);
+                obs.WavelengthWarning = false;
+                s = obs.getLensDensitySpectrum();
+
+                % Pokorny has no value below 400 nm and reports NaN there
+                % (Task 4.9). Everything it does report must be sound.
+                defined = ~isnan(s);
+                testCase.verifyTrue(all(isfinite(s(defined))), ...
+                    model + " lens: non-finite value");
+                testCase.verifyGreaterThanOrEqual(s(defined), 0, ...
+                    model + " lens: negative density");
+
+                testCase.verifyEqual(isnan(s), wl < floors(model), ...
+                    model + " lens: NaN must appear exactly outside the domain");
+            end
+
+            m = IndividualCMF().getMacularDensitySpectrum();
+            testCase.verifyTrue(all(isfinite(m)));
+            testCase.verifyGreaterThanOrEqual(m, 0);
+            % Macular pigment absorbs roughly 380-540 nm and must be flat
+            % zero well outside it, not ringing.
+            testCase.verifyEqual(m(wl > 620), zeros(sum(wl > 620), 1), ...
+                'AbsTol', 1e-12);
+        end
+
     end
 end

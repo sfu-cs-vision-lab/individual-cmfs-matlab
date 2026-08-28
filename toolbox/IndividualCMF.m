@@ -394,6 +394,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   An empty grid is rejected: a descending or negatively-stepped
         %   colon expression produces one, and max() over it would silently
         %   break normalization rather than error.
+        %   Deliberately NOT DEFAULT_WL: 380-780 nm is the grid the pycone
+        %   reference normalizes over, and "Sampled" exists to match it.
+        %   Widening this would make the default Sampled mode less faithful
+        %   to the reference, which is the opposite of its purpose.
         NormalizationGrid double {mustBeVector, mustBeNonempty, ...
             validators.mustBeWavelengthVector} = (380:1:780)'
     end
@@ -481,13 +485,31 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         CONE_COLORS = [0.8 0.0 0.0
                        0.0 0.6 0.0
                        0.0 0.0 0.8]
+
+        % DEFAULT_WL  The wavelength grid every method defaults to.
+        %
+        %   360-830 nm at 1 nm. This is Nomograms.SR_VALID_RANGE, the
+        %   validity range of the default Stockman-Rider photopigment
+        %   model, so a no-argument call covers exactly where the default
+        %   model is defined and truncates nothing silently.
+        %
+        %   Numeric and plot methods share this default deliberately:
+        %   obs.L() and obs.LMS()(:,1) must be the same length, and
+        %   obs.lmChromaticity() and obs.xyChromaticity() must agree.
+        %
+        %   The Govardovskii templates are fitted only over 380-780
+        %   (Nomograms.GOV_VALID_RANGE), so a Govardovskii observer using
+        %   this default emits IndividualCMF:WavelengthOutOfRange once.
+        %   That is intended -- the model reporting that it is
+        %   extrapolating. Set obs.WavelengthWarning = false to silence it.
+        %
+        %   Not a published tabulation range: CIE 170-1:2006 tabulates
+        %   390-830 (see tests/data/cvrl/NOTES.md) and the golden parity
+        %   fixtures use 390-780. Template validity is the justification;
+        %   the 830 upper bound agreeing with CIE is incidental.
+        DEFAULT_WL = (360:1:830)'
     end
 
-    properties (Constant, Access = private)
-        DEFAULT_WL = (360:1:830)';
-
-    end
-    
     methods
         function obj = IndividualCMF(options)
             % INDIVIDUALCMF  Construct a new IndividualCMF observer.
@@ -1499,7 +1521,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   (protanope).
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
             end
             val = obj.calculateSensitivity(wl, 'L');
         end
@@ -1511,7 +1533,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   (deuteranope).
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
             end
             val = obj.calculateSensitivity(wl, 'M');
         end
@@ -1523,7 +1545,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   (tritanope).
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
             end
             val = obj.calculateSensitivity(wl, 'S');
         end
@@ -1573,7 +1595,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   array, call the named method directly: obs.LMS(wl).
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Data - Quantity to return (string). One of "LMS", "L",
@@ -1590,7 +1612,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       writetable(obs.evaluate((400:10:700)'), "cmfs.csv");
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.Data (1,1) string {mustBeMember(options.Data, ...
                     ["LMS", "L", "M", "S", "RGB", "XYZ", "Luminance", ...
                      "lmChromaticity", "xyChromaticity", "MacLeodBoynton"])} = "LMS"
@@ -1627,14 +1649,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   matrix is singular with one cone absent).
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       RGB - Nx3 matrix [R, G, B] containing tristimulus values.
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % RGB CMFs require inverting a 3x3 LMS-at-primaries matrix.
@@ -1706,7 +1728,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   to query in a different mode without mutating the observer.
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       OutputFormat    - "energy" | "quantal" | "absorptance" |
@@ -1724,7 +1746,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
                 options.LogOutput (1,1) logical = obj.LogOutput
                 options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
@@ -1748,13 +1770,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   automatically when the observer's Age changes.
             %
             %   INPUTS:
-            %       wavelengths - Wavelengths in nanometers (vector)
+            %       wavelengths - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       spectrum - Lens optical density at each wavelength (vector)
             arguments
                 obj
-                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
+                    IndividualCMF.DEFAULT_WL
             end
 
             obj.validateWavelengths(wavelengths);
@@ -1786,13 +1809,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   changes (unless MacularDensityAlgorithm is "Custom").
             %
             %   INPUTS:
-            %       wavelengths - Wavelengths in nanometers (vector)
+            %       wavelengths - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       spectrum - Macular optical density at each wavelength (vector)
             arguments
                 obj
-                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
+                    IndividualCMF.DEFAULT_WL
             end
 
             obj.validateWavelengths(wavelengths);
@@ -1825,7 +1849,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %         parameters deviate from the standard (unless a custom matrix is provided).
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       TransformationMatrix - A custom matrix M to convert (3,3 double)
@@ -1838,7 +1862,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (360:1:830)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
             end
 
@@ -1943,7 +1967,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  V*(lambda) unchanged (S not in V*)
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       lum - Photopic luminance V*(lambda) (Nx1 column).
@@ -1967,7 +1991,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       doi:10.1016/j.cobeha.2019.06.005
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % Field-size dispatch mirrors XYZ(): the 2-deg matrix is
@@ -2013,7 +2037,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  s_MB = 0
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       mb - Nx2 matrix with columns [l_MB, s_MB].
@@ -2038,7 +2062,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Behavioral Sciences, 30, 87-93.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % Row 2 = y_bar coefficients; column 1 = L contribution,
@@ -2085,7 +2109,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  l + m = 1 (S contribution removed)
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       lm - Nx2 matrix with columns [l, m].
@@ -2101,7 +2125,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Behavioral Sciences, 30, 87-93.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             LMS = obj.chromaticityBasisLMS(wl);
@@ -2127,7 +2151,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   Name-Value argument to override (forwarded to XYZ).
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (360:1:830)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       TransformationMatrix - Forwarded to XYZ (3x3 double).
@@ -2147,7 +2171,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Vienna: CIE.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (360:1:830)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
             end
 
@@ -2189,7 +2213,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %                         "absorbance"    - Photopigment absorbance
             %                         "absorptance"   - Relative retinal absorptance (see OutputFormat docs)
             %       Title - Custom title. Default: auto-generated based on Data (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - For absorbance: plot log scale. Default: false (logical)
             %       Compare - Overlay another observer (IndividualCMF)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
@@ -2206,7 +2230,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Data (1,1) string {mustBeMember(options.Data, ...
                     ["LMS", "RGB", "chromaticity", "absorbance", "absorptance"])} = "LMS"
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Compare = []
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
@@ -2281,12 +2305,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Chromaticity Diagram" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Chromaticity Diagram"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
@@ -2324,7 +2348,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "LMS Cone Fundamentals" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 sensitivity. Default: false (logical)
             %       Cones - Subset of cones to plot. Default: ["L" "M" "S"] (string array)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
@@ -2332,7 +2356,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             arguments
                 obj
                 options.Title (1,1) string = "LMS Cone Fundamentals"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Cones (1,:) string {mustBeMember(options.Cones, ["L", "M", "S"])} = ["L", "M", "S"]
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
@@ -2377,7 +2401,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "CIE XYZ CMFs" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Channels - Subset of channels to plot. Default: ["X" "Y" "Z"] (string array)
             %       TransformationMatrix - 3x3 LMS->XYZ matrix override (double)
             %       ChannelColors - 3x3 [X; Y; Z] line colors. Default: CONE_COLORS
@@ -2385,7 +2409,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             arguments
                 obj
                 options.Title (1,1) string = "CIE XYZ CMFs"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Channels (1,:) string {mustBeMember(options.Channels, ["X", "Y", "Z"])} = ["X", "Y", "Z"]
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
                 options.ChannelColors (3,3) double = IndividualCMF.CONE_COLORS
@@ -2420,13 +2444,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "RGB CMFs" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       ConeColors - 3x3 [R; G; B] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "RGB CMFs"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
@@ -2461,14 +2485,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Photopigment Absorbance" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 absorbance. Default: false (logical)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Photopigment Absorbance"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
@@ -2508,14 +2532,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Retinal Absorptance" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 absorptance. Default: false (logical)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Retinal Absorptance"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
@@ -2556,12 +2580,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Quantal vs Energy" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Quantal vs Energy"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
@@ -2597,13 +2621,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Observer Comparison" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 otherObs (1,1) IndividualCMF
                 options.Title (1,1) string = "Observer Comparison"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
@@ -2639,13 +2663,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Compare - Comparison observer. Default: [] (IndividualCMF)
             %       Title - Custom title (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Compare = []
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
@@ -2692,13 +2716,13 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Compare - Comparison observer. Default: [] (IndividualCMF)
             %       Title - Custom title (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Compare = []
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
@@ -2754,12 +2778,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   [p, ax] = obj.plotDiagnostics() also returns the 3x1 axes array.
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
-            %       Wavelength - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target TiledChartLayout. Default: a new 1x3 layout
             arguments
                 obj
-                options.Wavelength (:,1) double = (380:1:780)'
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
