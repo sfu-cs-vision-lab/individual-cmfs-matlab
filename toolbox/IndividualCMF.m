@@ -477,7 +477,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         p_PhotopigmentDensityAlgorithm (1,1) enums.PhotopigmentDensityAlgorithm = ObserverParameters.DEFAULT_PHOTOPIGMENT_DENSITY_ALGORITHM
         p_LensDensityAlgorithm (1,1) enums.LensDensityAlgorithm = ObserverParameters.DEFAULT_LENS_DENSITY_ALGORITHM
         p_LensDensity = CIE170.STD_LENS_DENSITY_400
-        p_IsInternalUpdate = false
         p_PhotopigmentTemplate
         % Instance of LensTemplate subclass
         p_LensTemplate
@@ -813,9 +812,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
             obj.setConeParameter('L', "OpticalDensity", v);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
-            end
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -838,9 +835,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
             obj.setConeParameter('M', "OpticalDensity", v);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
-            end
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -863,9 +858,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
             obj.setConeParameter('S', "OpticalDensity", v);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
-            end
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -887,18 +880,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
             obj.p_Parameters.Macular = PreReceptoralFilter(Type="macular", Density=v);
-            if ~obj.p_IsInternalUpdate
-                % Tag the assigned value: CIE170 if it matches the standard
-                % table for the current field size (2 or 10 deg only), Custom
-                % otherwise. Non-standard field sizes can never be CIE170 --
-                % there is no published table to match against.
-                fieldSize = obj.p_Parameters.FieldSize;
-                if (fieldSize == 2 || fieldSize == 10) && ...
-                        v == PreReceptoralFilter.macularDensityCIEStandard(fieldSize)
-                    obj.p_MacularDensityAlgorithm = "CIE170";
-                else
-                    obj.p_MacularDensityAlgorithm = "Custom";
-                end
+
+            % Tag the assigned value: CIE170 if it matches the standard
+            % table for the current field size (2 or 10 deg only), Custom
+            % otherwise. Non-standard field sizes can never be CIE170 --
+            % there is no published table to match against.
+            fieldSize = obj.p_Parameters.FieldSize;
+            if (fieldSize == 2 || fieldSize == 10) && ...
+                    v == PreReceptoralFilter.macularDensityCIEStandard(fieldSize)
+                obj.p_MacularDensityAlgorithm = "CIE170";
+            else
+                obj.p_MacularDensityAlgorithm = "Custom";
             end
             obj.invalidateNormalizationCache();
         end
@@ -1082,9 +1074,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % set.LensDensity  Set lens optical density at 400 nm.
             %   Direct assignment auto-engages LensDensityAlgorithm="Custom"
             %   so the value is preserved across subsequent Age, FieldSize,
-            %   or LensModel changes. Internal recalculations from
-            %   recalcLensFromAge bypass the mode switch via the
-            %   p_IsInternalUpdate flag.
+            %   or LensModel changes. recalcLensFromAge writes p_LensDensity
+            %   directly, so a formula recompute never engages Custom.
             %
             %   Assigning [] is the inverse: it clears Custom mode and
             %   recomputes from the Age in force at that moment.
@@ -1099,9 +1090,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
             obj.p_LensDensity = v;
-            if ~obj.p_IsInternalUpdate
-                obj.p_LensDensityAlgorithm = "Custom";
-            end
+            obj.p_LensDensityAlgorithm = "Custom";
             obj.invalidateNormalizationCache();
         end
 
@@ -3852,11 +3841,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.recalcLensFromAge();
         end
 
-        function setInternalUpdateFalse(obj)
-            % SETINTERNALUPDATEFALSE  Helper to reset the internal update flag.
-            obj.p_IsInternalUpdate = false;
-        end
-
         function revertMacularDensity(obj)
             % REVERTMACULARDENSITY  Leave Custom mode and recompute macular density.
             %   Re-derives the algorithm the same way the constructor does
@@ -3918,36 +3902,45 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function updateMacularDensity(obj)
             % UPDATEMACULARDENSITY  Update macular density based on MacularDensityAlgorithm.
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-
+            % Writes backing storage rather than the public property: a
+            % formula recompute must not re-tag the algorithm mode the way
+            % a user assignment does.
             fieldSize = obj.p_Parameters.FieldSize;
             switch obj.MacularDensityAlgorithm
                 case "Custom"
                     % Preserve user values
                     return
                 case "CIE170"
-                    obj.MacularDensity = PreReceptoralFilter.macularDensityCIEStandard(fieldSize);
+                    v = PreReceptoralFilter.macularDensityCIEStandard(fieldSize);
                 case "MorelandAlexander"
-                    obj.MacularDensity = PreReceptoralFilter.macularDensityAtFieldSize(fieldSize);
+                    v = PreReceptoralFilter.macularDensityAtFieldSize(fieldSize);
             end
+            obj.p_Parameters.Macular = PreReceptoralFilter(Type="macular", Density=v);
+            obj.invalidateNormalizationCache();
         end
 
         function updatePhotopigmentDensities(obj)
             % UPDATEPHOTOPIGMENTDENSITIES  Update photopigment densities based on PhotopigmentDensityAlgorithm.
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-
+            % Writes backing storage rather than the public properties, so
+            % the recompute does not re-tag the algorithm mode. One cache
+            % invalidation at the end replaces the three the old
+            % multi-assignment triggered.
             fieldSize = obj.p_Parameters.FieldSize;
             switch obj.PhotopigmentDensityAlgorithm
                 case "Custom"
                     % Preserve user values
                     return
                 case "CIE170"
-                    [obj.Lod, obj.Mod, obj.Sod] = PhotopigmentParameters.densitiesCIEStandard(fieldSize);
+                    [newLod, newMod, newSod] = ...
+                        PhotopigmentParameters.densitiesCIEStandard(fieldSize);
                 case "PokornySmith"
-                    [obj.Lod, obj.Mod, obj.Sod] = PhotopigmentParameters.densitiesAtFieldSize(fieldSize);
+                    [newLod, newMod, newSod] = ...
+                        PhotopigmentParameters.densitiesAtFieldSize(fieldSize);
             end
+            obj.setConeParameter('L', "OpticalDensity", newLod);
+            obj.setConeParameter('M', "OpticalDensity", newMod);
+            obj.setConeParameter('S', "OpticalDensity", newSod);
+            obj.invalidateNormalizationCache();
         end
 
         function updatePhotopigmentAlgorithmFromValues(obj)
@@ -4004,10 +3997,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return
             end
 
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-            obj.LensDensity = obj.p_LensTemplate.computeDensityAt400( ...
+            % Writes backing storage rather than the public property, so
+            % the recompute does not tag the mode Custom and freeze the
+            % value against later Age changes. validateAgeForLensModel
+            % above has already refused any age the model cannot evaluate,
+            % which is what stands in for set.LensDensity's validators on
+            % this path.
+            obj.p_LensDensity = obj.p_LensTemplate.computeDensityAt400( ...
                 obj.p_Parameters.Age, FieldSize=obj.p_Parameters.FieldSize);
+            obj.invalidateNormalizationCache();
         end
     end
 

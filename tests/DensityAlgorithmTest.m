@@ -556,7 +556,8 @@ classdef DensityAlgorithmTest < matlab.unittest.TestCase
 
         % A formula mode must survive repeated recomputation
         %
-        % These pin the behaviour p_IsInternalUpdate exists to protect: when
+        % These pin the behaviour the removed p_IsInternalUpdate flag used
+        % to protect, and that writing backing storage now protects: when
         % a formula recomputes a density, the write must not re-tag the
         % algorithm mode the user selected. Without that suppression the
         % mode flips to Custom and the quantity silently stops tracking its
