@@ -174,5 +174,39 @@ classdef ClassBehaviorTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(obs.LensModel), "StockmanRider2023");
         end
 
+        function testCopyIsIndependentOfItsSource(testCase)
+            % copyElement no longer reconstructs GenotypeState or
+            % p_Parameters by hand. Both are value types, so the shallow
+            % copy already separates them -- this proves it rather than
+            % trusting the class documentation.
+            obs = IndividualCMF();
+            obs.setGenotype('L', 180, 'Ser');
+            originalShift = obs.L_LambdaMaxShift;
+            originalAge = obs.Age;
+
+            cp = copy(obs);
+            cp.setGenotype('L', 180, 'Ala');
+            cp.Age = 65;
+            cp.Lod = 0.6;
+
+            testCase.verifyEqual(obs.L_LambdaMaxShift, originalShift, 'AbsTol', 0, ...
+                'Mutating the copy must not reach back into the original');
+            testCase.verifyEqual(obs.Age, originalAge, ...
+                'Age lives in p_Parameters, a value type');
+            testCase.verifyNotEqual(cp.L_LambdaMaxShift, obs.L_LambdaMaxShift);
+            testCase.verifyNotEqual(cp.Lod, obs.Lod);
+        end
+
+        function testCopyOfAGenotypeFreeObserverAcceptsGenotypes(testCase)
+            % The removed else-branch replaced GenotypeState with a bare
+            % dictionary() when the source had no entries. MATLAB types a
+            % bare dictionary on first insert, so this always worked --
+            % pinned here so the behaviour stays covered either way.
+            cp = copy(IndividualCMF());
+            cp.setGenotype('M', 180, 'Ser');
+            testCase.verifyEqual(cp.M_LambdaMaxShift, 2.63, 'AbsTol', 1e-12, ...
+                'setGenotype on a copied genotype-free observer must apply the shift');
+        end
+
     end
 end

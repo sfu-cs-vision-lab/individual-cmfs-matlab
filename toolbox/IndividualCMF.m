@@ -3123,7 +3123,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % COPYELEMENT  Create a deep copy of the IndividualCMF object.
             %   Overrides matlab.mixin.Copyable to properly copy internal state.
             %   - Creates a NEW NormalizationCache instance linked to the copy
-            %   - Deep copies the GenotypeState dictionary
+            %   - Re-creates the three templates, which are handle classes
+            %   - Re-attaches the PostSet listeners
+            %
+            %   GenotypeState (a dictionary) and p_Parameters (an
+            %   ObserverParameters) are value types, so the shallow copy
+            %   already gave the copy its own independent instances.
 
             % Shallow copy via parent class
             cpObj = copyElement@matlab.mixin.Copyable(obj);
@@ -3131,13 +3136,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % Create a NEW NormalizationCache instance linked to the copy
             cpObj.p_NormalizationCache = NormalizationCache(cpObj);
             cpObj.p_NormalizationCache.setConfig(cpObj.NormalizationMethod, cpObj.NormalizationGrid);
-
-            % Deep copy the GenotypeState dictionary
-            if ~isempty(obj.GenotypeState) && numEntries(obj.GenotypeState) > 0
-                cpObj.GenotypeState = dictionary(keys(obj.GenotypeState), values(obj.GenotypeState));
-            else
-                cpObj.GenotypeState = dictionary;
-            end
 
             % Templates are handle classes, so re-create rather than share.
             % create() errors on an unregistered ShortName instead of
@@ -3147,18 +3145,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             cpObj.p_MacularTemplate = MacularTemplate.create(obj.p_MacularTemplate.ShortName);
             cpObj.p_PhotopigmentTemplate = PhotopigmentTemplate.create( ...
                 obj.p_PhotopigmentTemplate.ShortName);
-
-            % Deep copy the ObserverParameters snapshot. Although ObserverParameters
-            % is a value class, we explicitly reconstruct it to ensure complete
-            % independence between the original and copied observer.
-            cpObj.p_Parameters = ObserverParameters( ...
-                LCone=obj.p_Parameters.LCone, ...
-                MCone=obj.p_Parameters.MCone, ...
-                SCone=obj.p_Parameters.SCone, ...
-                Lens=obj.p_Parameters.Lens, ...
-                Macular=obj.p_Parameters.Macular, ...
-                Age=obj.p_Parameters.Age, ...
-                FieldSize=obj.p_Parameters.FieldSize);
 
             % Re-add listeners (listeners are not copied by shallow copy)
             addlistener(cpObj, 'OutputFormat',   'PostSet', @(s,e) cpObj.invalidateNormalizationCache());
