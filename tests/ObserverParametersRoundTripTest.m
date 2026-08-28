@@ -290,5 +290,32 @@ classdef ObserverParametersRoundTripTest < matlab.unittest.TestCase
             testCase.verifyEqual(dst.LensDensity, 1.9, 'RelTol', 1e-11);
         end
 
+        function testSnapshotAppliesRegardlessOfTheReceiverState(testCase)
+            % setParameters assigned LensModel before Age, so the incoming
+            % model was validated against the RECEIVER's age. A valid
+            % Pokorny-at-50 snapshot failed to apply to a receiver sitting
+            % at age 90, with AgeOutsideModelDomain, though both states
+            % were legal on their own.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'IndividualCMF:AgeOutOfRange'));
+
+            snapshot = IndividualCMF(LensModel="Pokorny1987", Age=50).getParameters();
+
+            receiver = IndividualCMF(LensModel="VanDeKraats2007", Age=90);
+            receiver.setParameters(snapshot);
+            testCase.verifyEqual(receiver.Age, 50);
+            testCase.verifyEqual(string(receiver.LensModel), "Pokorny1987");
+
+            % And the reverse direction: a receiver too young for the
+            % incoming model must not block a snapshot that is fine.
+            receiver2 = IndividualCMF(LensModel="VanDeKraats2007", Age=5);
+            receiver2.setParameters(snapshot);
+            testCase.verifyEqual(receiver2.Age, 50);
+            testCase.verifyEqual(receiver2.LensDensity, ...
+                IndividualCMF(LensModel="Pokorny1987", Age=50).LensDensity, ...
+                'RelTol', 1e-11);
+        end
+
     end
 end

@@ -1477,15 +1477,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             % Apply model selections. In Custom mode these are no-ops for
             % density; the lens template still swaps for spectrum shape.
+            % Age and FieldSize first: assigning LensModel runs
+            % validateAgeForLensModel, and against the receiver's stale age
+            % a perfectly valid snapshot could be refused -- a Pokorny-at-50
+            % snapshot applied to a receiver sitting at age 90 errored with
+            % AgeOutsideModelDomain even though both states were legal.
+            % These are direct writes to the value object, so they carry no
+            % side effects of their own.
+            obj.p_Parameters.Age = params.Age;
+            obj.p_Parameters.FieldSize = params.FieldSize;
+
             obj.PhotopigmentModel = params.PhotopigmentModel;
             obj.LensModel = params.LensModel;
             obj.MacularModel = params.MacularModel;
             obj.p_L_Template = params.L_OpsinTemplate;
             obj.p_M_Template = params.M_OpsinTemplate;
-
-            % Apply physiological parameters
-            obj.p_Parameters.Age = params.Age;
-            obj.p_Parameters.FieldSize = params.FieldSize;
 
             % Apply cone parameters
             obj.p_Parameters.LCone = PhotopigmentParameters( ...
