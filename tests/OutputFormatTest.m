@@ -335,5 +335,51 @@ classdef OutputFormatTest < matlab.unittest.TestCase
                 'AbsTol', 1e-12);
         end
 
+        % Per-cone methods share LMS's per-call override surface
+
+        function testPerConeMethodsAcceptTheSameOverridesAsLMS(testCase)
+            obs = IndividualCMF();
+            wl = (400:10:700)';
+            for fmt = ["energy" "quantal" "absorptance" "absorbance"]
+                LMS = obs.LMS(wl, OutputFormat=fmt);
+                testCase.verifyEqual(obs.L(wl, OutputFormat=fmt), LMS(:,1), ...
+                    'AbsTol', 0, "L must match the LMS column for " + fmt);
+                testCase.verifyEqual(obs.M(wl, OutputFormat=fmt), LMS(:,2), ...
+                    'AbsTol', 0, "M must match the LMS column for " + fmt);
+                testCase.verifyEqual(obs.S(wl, OutputFormat=fmt), LMS(:,3), ...
+                    'AbsTol', 0, "S must match the LMS column for " + fmt);
+            end
+        end
+
+        function testPerConeLogAndNormalizeOverrides(testCase)
+            obs = IndividualCMF();
+            wl = (400:10:700)';
+
+            LMS = obs.LMS(wl, LogOutput=true);
+            testCase.verifyEqual(obs.L(wl, LogOutput=true), LMS(:,1), 'AbsTol', 0);
+
+            LMS = obs.LMS(wl, NormalizeOutput=false);
+            testCase.verifyEqual(obs.S(wl, NormalizeOutput=false), LMS(:,3), 'AbsTol', 0);
+        end
+
+        function testPerConeOverridesDoNotMutateTheObserver(testCase)
+            obs = IndividualCMF();
+            formatBefore = obs.OutputFormat;
+            obs.L((400:10:700)', OutputFormat="quantal", LogOutput=true, ...
+                NormalizeOutput=false);
+            testCase.verifyEqual(obs.OutputFormat, formatBefore);
+            testCase.verifyFalse(obs.LogOutput);
+            testCase.verifyTrue(obs.NormalizeOutput);
+        end
+
+        function testPerConeOverridesPreserveInputOrientation(testCase)
+            % L/M/S return a row for a row input; the overrides must not
+            % quietly reshape that.
+            obs = IndividualCMF();
+            wlRow = 400:10:700;
+            testCase.verifyTrue(isrow(obs.L(wlRow, OutputFormat="quantal")));
+            testCase.verifyTrue(iscolumn(obs.L(wlRow', OutputFormat="quantal")));
+        end
+
     end
 end

@@ -1514,40 +1514,91 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.invalidateNormalizationCache();
         end
 
-        function val = L(obj, wl)
+        function val = L(obj, wl, options)
             % L  Calculate L-cone sensitivity.
-            %   val = obj.L(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.L(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Lod == 0
             %   (protanope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput.
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'L');
+            val = obj.computeSensitivityCore(wl, 'L', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
-        function val = M(obj, wl)
+        function val = M(obj, wl, options)
             % M  Calculate M-cone sensitivity.
-            %   val = obj.M(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.M(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Mod == 0
             %   (deuteranope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput.
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'M');
+            val = obj.computeSensitivityCore(wl, 'M', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
-        function val = S(obj, wl)
+        function val = S(obj, wl, options)
             % S  Calculate S-cone sensitivity.
-            %   val = obj.S(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.S(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Sod == 0
             %   (tritanope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput.
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'S');
+            val = obj.computeSensitivityCore(wl, 'S', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
         function peak = getPeak(obj, coneType, options)
@@ -3405,15 +3456,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
 
         % Internal sensitivity calculator (must bind to L/M/S properties)
-        function val = calculateSensitivity(obj, nm, cone_type)
-            arguments
-                obj
-                nm double {mustBeNumeric}
-                cone_type (1,1) char
-            end
-            val = obj.computeSensitivityCore(nm, cone_type, obj.OutputFormat, obj.NormalizeOutput, obj.LogOutput);
-        end
-
         function applyStandardObserver(obj, options)
             % APPLYSTANDARDOBSERVER  Configure for strict CIE 170-1:2006 Standard Observer.
             %   Forces: Age=32, Shifts=0, Templates="Mean", Lens=Standard, Algorithms="CIE170".
