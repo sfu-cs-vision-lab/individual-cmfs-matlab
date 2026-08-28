@@ -235,6 +235,13 @@
                     </Category>
                 </Info>
             </File>
+            <File Location="TemplateRegistryTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
             <File Location="TestUtilities.m">
                 <Info>
                     <Category UUID="FileClassCategory">

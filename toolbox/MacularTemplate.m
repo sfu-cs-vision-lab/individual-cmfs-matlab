@@ -43,6 +43,44 @@ classdef (Abstract) MacularTemplate < handle
         ShortName
     end
 
+    properties (Constant)
+        % REGISTRY  Maps enums.MacularModel member names to constructors.
+        %
+        %   One entry today; the registry is what makes a second macular
+        %   shape a one-line change rather than an IndividualCMF edit.
+        %   TemplateRegistryTest keeps these keys and the enum members in
+        %   agreement.
+        REGISTRY = dictionary( ...
+            "StockmanRider2023", ...
+            {@() StockmanRider2023MacularTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the macular template for a model name.
+            %
+            %   t = MacularTemplate.create("StockmanRider2023") returns a new
+            %   StockmanRider2023MacularTemplate. Accepts an
+            %   enums.MacularModel directly.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.MacularModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A MacularTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(MacularTemplate.REGISTRY, model)
+                error("MacularTemplate:UnknownModel", ...
+                    "No macular template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(MacularTemplate.REGISTRY)', ", "));
+            end
+            ctor = MacularTemplate.REGISTRY{model};
+            t = ctor();
+        end
+    end
+
     methods (Abstract)
         % computeTemplate  Returns OD spectrum normalized to 1.0 at 460 nm.
         %

@@ -36,6 +36,9 @@ classdef ObserverParameters
     %       produces identical LMS output.
     %
     %   ObserverParameters Constant Properties:
+    %       DEFAULT_PHOTOPIGMENT_MODEL            - Default photopigment template model.
+    %       DEFAULT_LENS_MODEL                    - Default lens template model.
+    %       DEFAULT_MACULAR_MODEL                 - Default macular template model.
     %       DEFAULT_L_OPSIN_TEMPLATE              - Default L-cone opsin template variant.
     %       DEFAULT_M_OPSIN_TEMPLATE              - Default M-cone opsin template variant.
     %       DEFAULT_MACULAR_DENSITY_ALGORITHM     - Default macular density algorithm.
@@ -95,6 +98,9 @@ classdef ObserverParameters
         % the property defaults below, the constructor argument defaults,
         % and IndividualCMF's private-field defaults all reference them.
         % Keeps the two classes from drifting out of sync silently.
+        DEFAULT_PHOTOPIGMENT_MODEL = enums.PhotopigmentModel.StockmanRider2023
+        DEFAULT_LENS_MODEL = enums.LensModel.StockmanRider2023
+        DEFAULT_MACULAR_MODEL = enums.MacularModel.StockmanRider2023
         DEFAULT_L_OPSIN_TEMPLATE = enums.LOpsinTemplate.Mean
         DEFAULT_M_OPSIN_TEMPLATE = enums.MOpsinTemplate.Mean
         DEFAULT_MACULAR_DENSITY_ALGORITHM = enums.MacularDensityAlgorithm.CIE170

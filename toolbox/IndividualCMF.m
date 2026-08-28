@@ -545,16 +545,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Genotype = []
             end
 
-            % Initialize template first (needed for cache computations). The default
-            % template uses Stockman & Rider (2023) Fourier series templates, which
-            % are the most accurate representation of human cone fundamentals.
-            obj.p_PhotopigmentTemplate = StockmanRiderPhotopigmentTemplate();
-
-            % Initialize lens template (needed for pre-receptoral filtering).
-            obj.p_LensTemplate = StockmanRiderLensTemplate();
-
-            % Initialize macular template (needed for pre-receptoral filtering).
-            obj.p_MacularTemplate = StockmanRider2023MacularTemplate();
+            % Initialize templates first (needed for cache computations).
+            % The defaults are the Stockman & Rider (2023) models, the most
+            % accurate representation of human cone fundamentals; each is
+            % resolved through its base-class registry so no template class
+            % name appears in this file.
+            obj.p_PhotopigmentTemplate = PhotopigmentTemplate.create( ...
+                string(ObserverParameters.DEFAULT_PHOTOPIGMENT_MODEL));
+            obj.p_LensTemplate = LensTemplate.create( ...
+                string(ObserverParameters.DEFAULT_LENS_MODEL));
+            obj.p_MacularTemplate = MacularTemplate.create( ...
+                string(ObserverParameters.DEFAULT_MACULAR_MODEL));
 
             % Initialize p_Parameters with defaults. Configuration methods (applyStandardObserver,
             % applyManualConfig) will update these values. All property getters read from
@@ -949,23 +950,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.PhotopigmentModel
             end
-            % Instantiate the appropriate photopigment template based on
-            % the requested model. StockmanRider2023 uses Fourier series
-            % templates from Stockman & Rider (2023). Govardovskii2000
-            % and Govardovskii2000A2 use the parametric A1 and A2 visual
-            % pigment templates from Govardovskii et al. (2000).
-            switch v
-                case enums.PhotopigmentModel.StockmanRider2023
-                    obj.p_PhotopigmentTemplate = StockmanRiderPhotopigmentTemplate();
-                case enums.PhotopigmentModel.Govardovskii2000
-                    obj.p_PhotopigmentTemplate = GovardovskiiPhotopigmentTemplate();
-                case enums.PhotopigmentModel.Govardovskii2000A2
-                    obj.p_PhotopigmentTemplate = ...
-                        GovardovskiiPhotopigmentTemplate(Pigment="A2");
-                case enums.PhotopigmentModel.StockmanRider2023Common
-                    obj.p_PhotopigmentTemplate = ...
-                        StockmanRiderCommonPhotopigmentTemplate();
-            end
+            obj.p_PhotopigmentTemplate = PhotopigmentTemplate.create(string(v));
             obj.p_WavelengthWarningIssued = false;
             obj.invalidateNormalizationCache();
         end
@@ -994,14 +979,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.LensModel
             end
-            switch v
-                case enums.LensModel.StockmanRider2023
-                    obj.p_LensTemplate = StockmanRiderLensTemplate();
-                case enums.LensModel.Pokorny1987
-                    obj.p_LensTemplate = Pokorny1987LensTemplate();
-                case enums.LensModel.VanDeKraats2007
-                    obj.p_LensTemplate = VanDeKraatsVanNorren2007LensTemplate();
-            end
+            obj.p_LensTemplate = LensTemplate.create(string(v));
             obj.recalcLensFromAge();
             obj.invalidateNormalizationCache();
         end
@@ -1026,10 +1004,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.MacularModel
             end
-            switch v
-                case enums.MacularModel.StockmanRider2023
-                    obj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-            end
+            obj.p_MacularTemplate = MacularTemplate.create(string(v));
             obj.invalidateNormalizationCache();
         end
 

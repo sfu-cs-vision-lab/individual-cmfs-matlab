@@ -69,6 +69,50 @@ classdef (Abstract) PhotopigmentTemplate < handle
         ValidRange (1,2) double
     end
 
+    properties (Constant)
+        % REGISTRY  Maps enums.PhotopigmentModel member names to constructors.
+        %
+        %   Govardovskii2000 and Govardovskii2000A2 share a class and are
+        %   distinguished by the Pigment constructor argument, which is why
+        %   the values are thunks rather than bare class handles.
+        %
+        %   TemplateRegistryTest keeps these keys and the enum members in
+        %   agreement.
+        REGISTRY = dictionary( ...
+            ["StockmanRider2023", "Govardovskii2000", ...
+             "Govardovskii2000A2", "StockmanRider2023Common"], ...
+            {@() StockmanRiderPhotopigmentTemplate(), ...
+             @() GovardovskiiPhotopigmentTemplate(), ...
+             @() GovardovskiiPhotopigmentTemplate(Pigment="A2"), ...
+             @() StockmanRiderCommonPhotopigmentTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the photopigment template for a model name.
+            %
+            %   t = PhotopigmentTemplate.create("Govardovskii2000A2") returns
+            %   a GovardovskiiPhotopigmentTemplate configured for the A2
+            %   chromophore. Accepts an enums.PhotopigmentModel directly.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.PhotopigmentModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A PhotopigmentTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(PhotopigmentTemplate.REGISTRY, model)
+                error("PhotopigmentTemplate:UnknownModel", ...
+                    "No photopigment template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(PhotopigmentTemplate.REGISTRY)', ", "));
+            end
+            ctor = PhotopigmentTemplate.REGISTRY{model};
+            t = ctor();
+        end
+    end
+
     methods (Abstract)
         % computeAbsorbance  Compute log10 absorbance spectrum.
         %

@@ -40,6 +40,50 @@ classdef (Abstract) LensTemplate < handle
         ShortName
     end
 
+    properties (Constant)
+        % REGISTRY  Maps enums.LensModel member names to constructors.
+        %
+        %   Keys are the member names of enums.LensModel; values are
+        %   zero-argument thunks returning a LensTemplate instance. To add a
+        %   lens model: create the subclass, add the enum member, and add one
+        %   line here. Nothing in IndividualCMF changes.
+        %
+        %   TemplateRegistryTest asserts that these keys and the enum members
+        %   stay in agreement, so a half-registered model fails a test rather
+        %   than silently resolving to a default.
+        REGISTRY = dictionary( ...
+            ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"], ...
+            {@() StockmanRiderLensTemplate(), ...
+             @() Pokorny1987LensTemplate(), ...
+             @() VanDeKraatsVanNorren2007LensTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the lens template for a model name.
+            %
+            %   t = LensTemplate.create("Pokorny1987") returns a new
+            %   Pokorny1987LensTemplate. Accepts an enums.LensModel directly;
+            %   MATLAB converts it to its member name.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.LensModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A LensTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(LensTemplate.REGISTRY, model)
+                error("LensTemplate:UnknownModel", ...
+                    "No lens template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(LensTemplate.REGISTRY)', ", "));
+            end
+            ctor = LensTemplate.REGISTRY{model};
+            t = ctor();
+        end
+    end
+
     methods (Abstract)
         % computeTemplate  Returns optical density spectrum normalized to 1.0 at 400nm.
         %
