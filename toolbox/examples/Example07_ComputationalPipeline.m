@@ -3,7 +3,7 @@
 %[text] 1. **Photopigment absorbance** (linear, 0-1) -- intrinsic absorbance of the visual pigment, determined by the opsin protein. Pass `LogOutput=true` if you want $\\log_{10}$ values.
 %[text] 2. **Retinal absorptance** -- `OutputFormat="absorptance"` returns the *relative* retinal absorptance `(1 - 10^(-OD*A)) / (1 - 10^(-OD))`, which peaks near 1 by construction for both Stockman-Rider and Govardovskii templates. The raw physical fraction `1 - 10^(-OD*A)` (which peaks near `1 - 10^(-OD)` ~ 0.58 for typical OD) is available through `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`.
 %[text] 3. **Corneal quantal** (linear) -- sensitivity at the cornea, in photon units, after lens and macular filtering
-%[text] 4. **Corneal energy** (linear) -- same as quantal, converted to energy units via E = hc/lambda \
+%[text] 4. **Corneal energy** (linear) -- same as quantal, converted to energy units by dividing by the per-photon energy E = hc/lambda, i.e. multiplying by lambda \
 %[text] Each stage is exposed via the `OutputFormat` property. 
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
@@ -22,7 +22,7 @@ quantal     = obs_q.L(wl);
 energy      = obs_e.L(wl);
 %%
 %[text] ## Visualizing the four stages
-%[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. Note the y-axis units differ -- only the *shape* is meaningful in this view.
+%[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. All four observers use the default `NormalizeOutput=true`, so every panel peaks at 1.0 and the panels compare *shape* across stages. The very different absolute scales -- absorbance near 0.995, raw absorptance near 0.58, then smaller again after filtering -- are shown unnormalized in [Example 08](matlab:edit('Example08_OutputFormats.m')).
 tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
@@ -31,7 +31,7 @@ title('Stage 1: Photopigment absorbance (linear)'); xlim([390 700])
 nexttile
 plot(wl, absorptance, 'r-')
 ylabel('Absorptance')
-title('Stage 2: Retinal absorptance (fraction)'); xlim([390 700])
+title('Stage 2: Relative retinal absorptance'); xlim([390 700])
 nexttile
 plot(wl, quantal, 'r-')
 ylabel('Sensitivity')
@@ -62,8 +62,8 @@ table(obs.Lod, obs.Mod, obs.Sod, ...
       'VariableNames', {'L_OD', 'M_OD', 'S_OD'})
 %%
 %[text] ## Self-screening at different optical densities
-%[text] Sweeping OD from 0.2 to 1.0 in the raw form $1 - 10^{-\\text{OD}\\cdot A}$ shows two coupled effects: as OD increases, the peak amplitude rises (more pigment absorbs more light) and the curve broadens (the tails saturate sooner). The toolbox's `absorbance` is already linear in [0, 1], so we just normalise it to its peak before sweeping OD. Raw values plotted -- not renormalised -- so the amplitude story is visible.
-abs_linear = absorbance / max(absorbance);
+%[text] Sweeping OD from 0.2 to 1.0 in the raw form $1 - 10^{-\\text{OD}\\cdot A}$ shows two coupled effects: as OD increases, the peak amplitude rises (more pigment absorbs more light) and the curve broadens -- the near-peak region saturates against the 1-10^(-OD) ceiling while the tails, still in the linear regime, keep growing. The toolbox's `absorbance` is already on a near-unit scale (the Stockman-Rider L template peaks at 0.9949), so it is used directly here rather than re-divided by its own peak -- that division would quietly redefine what the OD labels mean. Raw values plotted -- not renormalised -- so the amplitude story is visible.
+abs_linear = absorbance;
 od_values = [0.2, 0.5, 1.0];
 odcol = lines(numel(od_values));
 absp_first = pipeline.PhotopigmentStage.absorptanceFromAbsorbance(abs_linear, od_values(1), Normalize=false);
@@ -124,7 +124,7 @@ table(max(obs.L(wl)), max(obs_raw.L(wl)), ...
 %%
 %[text] ## Key takeaways
 %[text] - Four pipeline stages: `absorbance` -> `absorptance` -> `quantal` -> `energy`
-%[text] - `OutputFormat` selects the stage returned by `L/M/S/LMS/RGB`
+%[text] - `OutputFormat` selects the stage returned by `L/M/S/LMS`. `RGB` is not affected: it always computes from energy-format, normalized fundamentals
 %[text] - Self-screening (OD) broadens the curve; pre-receptoral filtering attenuates short wavelengths; energy conversion shifts the peak slightly to the **right** (longer wavelengths) because multiplying by lambda weights longer wavelengths more
 %[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` expose the filter spectra
 %[text] - `obs.plotDiagnostics()` gives a turn-key pipeline figure
