@@ -7,7 +7,7 @@
 exampleDefaults();
 %%
 %[text] ## Standard observer V*(lambda)
-%[text] For both standard observers, $V^{*}(\\lambda)$ peaks near 1.0 at 555 nm. The L:M weighting is nearly field-size invariant (0.6899/0.3483 against 0.6928/0.3497), but the curves are not: below 500 nm they diverge by up to about 66% in relative terms, where the 10 deg observer carries far less macular pigment. The linear axis here hides that flank.
+%[text] For both standard observers, $V^{*}(\\lambda)$ peaks near 1.0 at 555 nm. The L:M weighting is nearly field-size invariant (0.6899/0.3483 against 0.6928/0.3497), but the curves are not: below 500 nm they diverge by up to about 66% in relative terms, where the 10 deg observer carries far less macular pigment. The gap itself is plain on the linear axis -- 0.052 at 457 nm on a curve peaking at 1.0 -- but the axis understates how large it is proportionally.
 wl = (380:1:780)';
 obs2  = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
@@ -38,7 +38,7 @@ legend('L-Serine', 'L-Alanine', 'Location', 'bestoutside')
 xlim([500 700])
 %%
 %[text] ## Age effect via lens yellowing
-%[text] As the lens yellows with age, short-wavelength light is increasingly absorbed before reaching the photoreceptors. With the `VanDeKraats2007` lens model, $V^{*}(\\lambda)$ drops on the short-wavelength flank for older observers while the long-wavelength side is essentially unchanged.
+%[text] As the lens yellows with age, short-wavelength light is increasingly absorbed before reaching the photoreceptors. With the `VanDeKraats2007` lens model, $V^{*}(\\lambda)$ drops on the short-wavelength flank for older observers while the long-wavelength side moves less, though not by nothing -- it rises 7 to 11 percent between ages 25 and 75 as renormalization lifts what the lens did not attenuate, and the V* peak itself walks from 551 to 558 nm.
 ages = [25, 50, 75];
 agecol = lines(numel(ages));
 %[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
@@ -78,20 +78,31 @@ legend('Standard 10-deg', 'Protanope (b M-bar)', 'Deuteranope (a L-bar)', ...
 xlim([380 780])
 %%
 %[text] ## MacLeod-Boynton chromaticity
-%[text] MacLeod-Boynton chromaticity belongs with $V^{*}(\\lambda)$ because its denominator *is* $V^{*}(\\lambda)$: $l_{MB} = aL/(aL + bM)$ and $s_{MB} = S/(aL + bM)$ use the same $(a, b)$ luminance coefficients. The result isolates the L-vs-M opponent axis from the S-cone axis, and is widely used in color vision deficiency and post-receptoral processing research. `l_{MB}` is bounded in $[0, 1]$. `s_{MB}` has no upper bound -- its scale depends on an S normalization convention that this toolbox does not apply -- and it climbs toward short wavelengths, reaching its maximum near 417 nm on this grid rather than at the S-cone lambda-max, because the luminance denominator collapses faster than $\\bar{s}$ does. Most published MB diagrams rescale $s$ (often so its maximum is 1), so this one will look taller on the $s$ axis than the textbook version.
+%[text] MacLeod-Boynton chromaticity belongs with $V^{*}(\\lambda)$ because its denominator *is* $V^{*}(\\lambda)$: $l_{MB} = aL/(aL + bM)$ and $s_{MB} = S/(aL + bM)$ use the same $(a, b)$ luminance coefficients. The result isolates the L-vs-M opponent axis from the S-cone axis, and is widely used in color vision deficiency and post-receptoral processing research. `l_{MB}` is bounded in $[0, 1]$. `s_{MB}` has no upper bound -- its scale depends on an S normalization convention that this toolbox does not apply -- and it climbs toward short wavelengths, reaching its maximum near 417 nm on this grid rather than at the S-cone lambda-max, because the luminance denominator collapses faster than $\\bar{s}$ does. Most published MB diagrams rescale $s$ so its maximum is 1, and both versions are drawn below. Rescaling is a linear change, so the two panels have the same shape and differ only in what the $s$ axis reads -- the point of showing both is that this toolbox hands you the upper one. The long-wavelength arm lies flat against the axis either way: $s$ is of order $10^{-5}$ from 550 nm out, against a maximum of 18, which is a real property of the diagram rather than a scaling artefact. That arm is where the $l_{MB}$ axis does its work, spreading 550 to 700 nm across $l_{MB}$ from 0.66 to 0.97 at essentially constant $s$.
 wl_mb = (390:1:700)';
 mb = obs10.MacLeodBoynton(wl_mb);
 l_mb = mb(:,1); s_mb = mb(:,2);
 mark_wls = [400, 450, 500, 550, 600, 650, 700];
+tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+nexttile
 plot(l_mb, s_mb, '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl_mb == mwl);
-    plot(l_mb(j), s_mb(j), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 10)
-    text(l_mb(j)+0.01, s_mb(j)+0.02, sprintf('%d', mwl), 'FontSize', 9)
+    plot(l_mb(j), s_mb(j), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 8)
 end
 hold off
-xlabel('l_{MB} = a L / (a L + b M)'); ylabel('s_{MB} = S / (a L + b M)')
-title('MacLeod-Boynton diagram')
+xlabel('l_{MB}'); ylabel('s_{MB} (unscaled)')
+title('As the toolbox returns it: s runs to 18')
+nexttile
+plot(l_mb, s_mb / max(s_mb), '-', 'Color', IndividualCMF.neutralColor()); hold on
+for mwl = mark_wls
+    j = find(wl_mb == mwl);
+    plot(l_mb(j), s_mb(j)/max(s_mb), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 8)
+    text(l_mb(j)+0.012, s_mb(j)/max(s_mb)+0.03, sprintf('%d', mwl), 'FontSize', 9)
+end
+hold off
+xlabel('l_{MB} = a L / (a L + b M)'); ylabel('s_{MB} / max(s_{MB})')
+title('Rescaled to max(s) = 1: the published convention, same shape')
 %%
 %[text] ## Photometric calculations
 %[text] Once you have $V^{*}(\\lambda)$ for an observer, you can compute photometric quantities for an arbitrary spectral power distribution (SPD). For a radiant flux spectrum $\\Phi_e(\\lambda)$ in watts per nanometer, the luminous **flux** is:
@@ -111,7 +122,8 @@ table(Phi_v, Km, Phi_v / Km, ...
 %[text] - $V^{*}(\\lambda)$ is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ matrix; the `Luminance` method exposes it
 %[text] - It always uses energy-normalized LMS regardless of the observer's `OutputFormat`
 %[text] - Genotype and lens aging produce visible individual differences in $V^{*}(\\lambda)$
-%[text] - For dichromats, $V^{*}(\\lambda)$ reduces to the residual cone's contribution -- in this unrenormalized formulation a protanope retains only the $bM$ term (peak $\\approx 0.35$) and a deuteranope only $aL$ (peak $\\approx 0.69$). Real dichromat luminous efficiency is conventionally renormalized, and the loss is concentrated at long wavelengths rather than a uniform dimming \
+%[text] - For dichromats, $V^{*}(\\lambda)$ reduces to the residual cone's contribution -- in this unrenormalized formulation a protanope retains only the $bM$ term (peak $\\approx 0.35$) and a deuteranope only $aL$ (peak $\\approx 0.69$). Real dichromat luminous efficiency is conventionally renormalized, which changes the picture: a renormalized protanope loses at long wavelengths (0.13 of standard at 650 nm) but a renormalized deuteranope slightly *gains* there (1.39 at 650 nm), so this is a reshaping rather than a uniform dimming \
+%[text] - Dichromacy in depth -- how zero optical density models it, and what the other derived quantities do -- is [Example 13](matlab:edit('Example13_Dichromacy.m')), which carries no luminance content of its own \\
 %[text] **Next:** [Example 12: Observer Comparison](matlab:edit('Example12_ObserverComparison.m')) -- visual and quantitative observer-vs-observer comparison.
 %[text]
 
