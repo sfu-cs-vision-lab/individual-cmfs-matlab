@@ -4,11 +4,11 @@
 exampleDefaults();
 %%
 %[text] ## Create an observer
-%[text] `IndividualCMF` with no arguments returns the **CIE 2006 10 deg standard observer**.
+%[text] `IndividualCMF` with no arguments returns the **CIE 2006 10 deg standard observer** -- specifically the Stockman & Rider (2023) continuous model of it, not the CIE tabulation. The two agree to about 2% of peak (largest deviations 0.014 for L near 580 nm, 0.019 for S near 435 nm), so if you validate against a downloaded CVRL table expect small mid-curve differences rather than an exact match.
 obs = IndividualCMF()
 %%
 %[text] ## Define wavelengths
-%[text] `IndividualCMF` methods accept a scalar or any vector, row or column; results come back with one row per wavelength. These examples use column vectors by convention.
+%[text] `IndividualCMF` methods accept a scalar or any vector, row or column. `LMS` always returns one row per wavelength (Nx3); the single-cone methods `L`, `M` and `S` return output shaped like their input, so a row in gives a row out. These examples use column vectors by convention.
 wl = (380:1:780)';
 size(wl)
 %%
@@ -36,7 +36,7 @@ table([peakL; peakM; peakS], wl([iL; iM; iS]), ...
     'RowNames', {'L', 'M', 'S'})
 %%
 %[text] ## Log-scale view
-%[text] `plotLMS(Log=true)` switches to a $\\log_{10}$ y-axis without mutating the observer; the tails become visible.
+%[text] `plotLMS(Log=true)` plots $\\log_{10}$ sensitivity on a linear axis without mutating the observer -- which is why the limits below are negative -- and the tails become visible.
 obs.plotLMS(Log=true, Title="Cone fundamentals on a log scale", Wavelength=wl);
 xlim([380 780]); ylim([-5 0.2])
 %%
