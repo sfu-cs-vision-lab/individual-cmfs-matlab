@@ -23,7 +23,9 @@ energy      = obs_e.L(wl);
 %%
 %[text] ## Visualizing the four stages
 %[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. Note the y-axis units differ -- only the *shape* is meaningful in this view.
-tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+f = gcf;
+f.Position(3:4) = [800 900];
+tiledlayout(f, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
 xlabel('Wavelength (nm)'); ylabel('Absorbance (linear)')

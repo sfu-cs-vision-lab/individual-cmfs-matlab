@@ -98,7 +98,7 @@ absGovRef = Nomograms.govardovskii2000(wl_common, 547.3);
 plot(wl_common, absCommon, 'm-'); hold on
 plot(wl_common, absGovRef, 'k--'); hold off
 xlabel('Wavelength (nm)'); ylabel('Absorbance')
-title('S-R common template (M+20 nm) vs Govardovskii at lambda_{max} = 547.3 nm')
+title('S-R common (M +20 nm) vs Govardovskii at 547.3 nm')
 legend('S-R common (shifted)', 'Govardovskii (2000)', 'Location', 'bestoutside')
 xlim([360 780])
 %%
