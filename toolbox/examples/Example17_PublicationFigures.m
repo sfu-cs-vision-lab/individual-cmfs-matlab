@@ -17,7 +17,7 @@ exampleDefaults();
 %[text] | Axes | 1 pt |
 %[text] | Cone colors | `IndividualCMF.CONE_COLORS` rows L, M, S; override per call with `ConeColors=` |
 %[text] | Vector export | PDF / SVG / EPS preferred (via `exportgraphics`) |
-%[text] | Raster export | `-r300` minimum |
+%[text] | Raster export | `Resolution=300` minimum |
 %[text] | Single-column width | 3\.25-3.5 in (83-89 mm) |
 %[text] | Double-column width | 6\.5-7 in (165-178 mm) |
 %[text:table]
@@ -92,7 +92,7 @@ title('S-cone amplitude')
 legend('Location', 'bestoutside'); xlim([390 520])
 %%
 %[text] ### L-cone vs age
-%[text] Also unnormalized. L keeps most of its amplitude but not all -- about 12% is lost between 25 and 70, against 17% for M (not plotted; its curve sits almost on top of L's) and 61% for S. "Only S ages" would be the wrong reading.
+%[text] Also unnormalized. L keeps most of its amplitude but not all -- about 12% is lost between 25 and 70, against 17% for M and 61% for S. M is left out of the six panels for space, not because it is uninteresting -- unnormalized it peaks 24 nm short of L and reaches only 92% of L's height, so it would be a clearly separate curve. Its loss simply tells the same story as L's. "Only S ages" would be the wrong reading.
 plot(wl, age_observers(1).L(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -106,7 +106,7 @@ title('L-cone amplitude')
 legend('Location', 'bestoutside'); xlim([500 650])
 %%
 %[text] ### V*(lambda) shift across ages
-%[text] Zoomed to 500-620 nm: the peak moves about 5.7 nm toward longer wavelengths between 25 and 70, which is invisible across the full visible range. These curves stay peak-normalized -- the shift is the point here, not the amplitude.
+%[text] Zoomed to 500-620 nm: the peak moves about 5.7 nm toward longer wavelengths between 25 and 70, which is invisible across the full visible range. These curves keep the default normalization -- the shift is the point here, not the amplitude. (V* is a weighted sum of two normalized cones, so its own maximum lands slightly above 1, near 1.01.)
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -130,9 +130,9 @@ for i = 2:numel(ages)
         'DisplayName', sprintf('Age %d', ages(i)))
 end
 hold off
-xlabel('l'); ylabel('m')
-title('Spectral locus (lm chromaticity)')
-legend('Location', 'bestoutside'); axis equal; xlim([0 0.25]); ylim([0 0.25])
+xlabel('l = L / (L + M + S)'); ylabel('m = M / (L + M + S)')
+title('Spectral locus (lm chromaticity), short-wave arm')
+legend('Location', 'bestoutside'); axis equal; xlim([0 0.30]); ylim([0 0.45])
 %%
 %[text] ### Composite figure for publication
 %[text] The same six panels assembled into a single 2x3 figure, sized to the tile grid at 400 x 320 px per tile; left at the default figure size a 2x3 grid comes out cramped and tall. Exported via `exportgraphics` (see "Exporting for publication" below) it scales to a clean publication-quality summary.
@@ -175,7 +175,7 @@ for i = 1:numel(ages)
     plot(wl, age_observers(i).Luminance(wl), 'Color', agecol(i,:))
 end
 hold off
-xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)'); title('Photopic luminance'); xlim([390 700])
+xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)'); title('Photopic luminance'); xlim([500 620])
 nexttile
 hold on
 for i = 1:numel(ages)
@@ -183,7 +183,7 @@ for i = 1:numel(ages)
     plot(chrom(:,1), chrom(:,2), 'Color', agecol(i,:))
 end
 hold off
-xlabel('l'); ylabel('m'); title('Spectral locus'); axis equal; xlim([0 0.25]); ylim([0 0.25])
+xlabel('l'); ylabel('m'); title('Spectral locus (short-wave arm)'); axis equal; xlim([0 0.30]); ylim([0 0.45])
 sgtitle('Aging effects (VanDeKraats2007 lens, ages 25-70)', 'FontWeight', 'bold')
 %%
 %[text] ## Genetic-variants figure
@@ -227,14 +227,6 @@ pdf_path = fullfile(tempdir, 'cone_fundamentals.pdf');
 exportgraphics(gcf, pdf_path, 'ContentType', 'vector');
 disp(['Exported: ' pdf_path])
 %%
-%[text] ## Key takeaways
-%[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
-%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to the tile grid: pick a per-tile size and multiply by the column and row counts. The composites here use 400 x 320 and 500 x 375 px per tile, both close to square. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
-%[text] - A section that follows a standalone figure must open its own `figure` before drawing. `gcf` is still the previous section's figure, so a bare `plot` lands in one of its tiles and silently replaces that panel.
-%[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering
-%[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
-%[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
-%[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern publication-export call -- PDF / SVG / EPS preferred over raster \
 %%
 %[text] ## Four-panel observer figure
 %[text] A 2x2 composite: cone fundamentals, RGB CMFs, lens density, and macular density for one observer. Each plot method receives its own tile through `Parent=`, so no wrapper class is involved.
@@ -250,6 +242,17 @@ obs4.plotMacular(Parent=nexttile(t4), Wavelength=wl4, Title="Macular density");
 %[text] Export at publication resolution. `exportgraphics` picks the format from the file extension and produces vector output for PDF and EPS.
 exportgraphics(gcf, fullfile(tempdir, "observer_panel.pdf"), ContentType="vector");
 exportgraphics(gcf, fullfile(tempdir, "observer_panel.png"), Resolution=300);
+%%
+%[text] ## Key takeaways
+%[text] - **Pass `NormalizeOutput=false` whenever the figure is about amplitude.** The default normalization pins every curve to 1.0, which silently hides the effect -- here it would have concealed a 61% S-cone loss across the age range
+%[text] - Every plot method takes `Parent=`, so `nexttile` composes them into any layout; that is the mechanism behind all three composites above
+%[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
+%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to the tile grid: pick a per-tile size and multiply by the column and row counts. The three composites here use 400 x 320, 500 x 420 and 500 x 375 px per tile -- ordinary landscape ratios, chosen so no panel ends up tall and narrow. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
+%[text] - A section that follows a standalone figure must open its own `figure` before drawing. `gcf` is still the previous section's figure, so a bare `plot` lands in one of its tiles and silently replaces that panel.
+%[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering. One caveat: parula ends in a pale yellow, so on a white ground the oldest observer -- usually the one the figure is about -- draws the faintest line. `flipud(parula(n))` or a truncated map puts the contrast where the interest is
+%[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
+%[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
+%[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern publication-export call -- PDF / SVG / EPS preferred over raster \
 %[text] **Next:** [Example 18: Observer Metamerism](matlab:edit('Example18_ObserverMetamerism.m')) -- how a metameric pair for the standard observer breaks for an individual observer.
 
 %[appendix]{"version":"1.0"}
