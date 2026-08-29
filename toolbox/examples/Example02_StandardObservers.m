@@ -1,34 +1,37 @@
 %[text] # Example 02: CIE 2006 Standard Observers
-%[text] **CIE 170-1:2006** / **CIE 170-2:2015** define the physiologically-based cone fundamentals used here, replacing the older CIE 1931 and 1964 colorimetric functions. This example covers the 2 deg and 10 deg standard observers, when to use each, and how `Type` / `StandardObserver` track standards compliance.
+%[text] **CIE 170-1:2006** / **CIE 170-2:2015** define the physiologically-based cone fundamentals used here, a physiologically grounded alternative to the older CIE 1931 and 1964 colorimetric functions (which CIE 015 still standardizes and industrial colorimetry still runs on). This example covers the 2 deg and 10 deg standard observers, when to use each, and how `Type` / `StandardObserver` track standards compliance.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
 %[text] ## The two standard observers
 %[text] CIE 2006 defines two observers reflecting different viewing conditions:
 %[text] - **2 deg (foveal)** -- small stimuli, central vision, higher macular pigment, higher photopigment optical density
-%[text] - **10 deg (peripheral)** -- larger stimuli, parafoveal vision, lower macular pigment, lower photopigment optical density \
-%[text] Both are defined at **age 32** for reproducibility.
+%[text] - **10 deg (large-field)** -- larger stimuli, still centrally fixated but extending to 5 deg eccentricity, lower macular pigment, lower photopigment optical density \
+%[text] Both are defined at **age 32**, the approximate mean age of the observer population the fundamentals were derived from.
+%[text] Two screening pigments set these numbers. **Macular pigment** is a yellow filter over the fovea that absorbs roughly 400-530 nm light before it reaches the cones; it thins with eccentricity, so the 10 deg observer sees less of it. **Photopigment optical density** is how much pigment sits in each cone's outer segment: the segments shorten with eccentricity, and a lower density gives a narrower sensitivity curve through reduced self-screening.
 obs2 = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
 table([obs2.MacularDensity; obs10.MacularDensity], ...
       [obs2.Lod; obs10.Lod], ...
+      [obs2.Sod; obs10.Sod], ...
       [string(obs2.Type); string(obs10.Type)], ...
-      'VariableNames', {'MacularDensity_460nm', 'L_OD', 'Type'}, ...
+      'VariableNames', {'MacularDensity_460nm', 'L_OD', 'S_OD', 'Type'}, ...
       'RowNames', {'2-degree', '10-degree'})
 %%
 %[text] ## Visual comparison
-%[text] Stacked plot of the two standard observers' cone fundamentals via `obs.plotLMS(Parent=ax)`. The 2 deg observer (top) shows reduced S-cone sensitivity around 460 nm because of higher macular pigment absorption.
+%[text] Stacked plot of the two standard observers' cone fundamentals via `obs.plotLMS(Parent=ax)`. Both panels are peak-normalized (the default `NormalizeOutput=true`): each cone is divided by its own peak, so these figures compare spectral *shape*, not absolute sensitivity. The 2 deg observer's extra macular absorption around 460 nm therefore shows up as a depressed short-wavelength flank rather than a lower S peak -- the peak is pinned to 1.0 in both panels. The difference plot in the next section is where that shows clearly.
 wl = (380:1:780)';
 LMS2 = obs2.LMS(wl);
 LMS10 = obs10.LMS(wl);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs2.plotLMS(Title="2 deg Observer (Foveal)", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 1.05])
-obs10.plotLMS(Title="10 deg Observer (Peripheral)", Wavelength=wl, Parent=nexttile);
+obs10.plotLMS(Title="10 deg Observer (Large Field)", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Difference analysis
-%[text] Subtracting the 10 deg observer from the 2 deg observer makes the dependency on field size visible. The 2-deg observer absorbs more of the 460 nm region in the macular pigment layer, attenuating the S-cone response there. The L and M differences come almost entirely from the optical-density change between 0.50 and 0.38.
+%[text] Subtracting the 10 deg observer from the 2 deg observer makes the dependency on field size visible. Both mechanisms change together between the two observers: macular density falls from 0.35 to 0.095 at its 460 nm peak, and photopigment optical density falls from 0.50 to 0.38 for L and M and from 0.40 to 0.30 for S.
+%[text] Because both observers are peak-normalized, the optical-density change is largely divided out -- it mostly rescales each curve, and rescaling is what normalization removes. The macular change survives as a genuine shape difference and dominates all three residuals. It dominates so thoroughly that for the L cone it *overshoots*: applying the macular change alone produces a larger difference (0.1173) than both mechanisms together (0.1042), because the two effects partly cancel.
 diff_LMS = LMS2 - LMS10;
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, diff_LMS(:,1), 'r-'); hold on
@@ -44,7 +47,7 @@ xlim([380 780])
 %[text] Two read-back properties tell you whether an observer is standards-compliant:
 %[text] - `Type` -- string, `"CIE 170-1:2006"` for a tabulated standard, `"Individualized"` otherwise.
 %[text] - `StandardObserver` -- numeric companion: `2` or `10` for the matching standard, `0` otherwise. \
-%[text] **Any** modification (including a single property assignment) flips both back to the non-standard state -- your observer is no longer standards-compliant.
+%[text] Any **biophysical** modification -- `Age`, `FieldSize`, a density, a template, a lambda-max shift -- flips both back to the non-standard state. Output-shape settings (`OutputFormat`, `NormalizeOutput`, `LogOutput`, `NormalizationMethod`) do not: they change how the same observer's numbers are reported, not which observer it is, so compliance survives them.
 obs_test = IndividualCMF(StandardObserver=10);
 typeBefore = obs_test.Type;
 soBefore   = obs_test.StandardObserver;
@@ -67,6 +70,7 @@ table(typeRestored, soRestored, ageRestored, ...
 %%
 %[text] ## CIE 2015 XYZ color matching functions
 %[text] The toolbox produces CIE 2015 XYZ color matching functions as a linear transform of the LMS cone fundamentals. `obs.plotXYZ()` is the dedicated wrapper; the underlying `obs.XYZ(wl)` returns the raw Nx3 array.
+%[text] The two panels do not share a transform: `XYZ()` selects the 2 deg matrix for a field size up to 4 deg and the 10 deg matrix above it, following CIE 15. So the difference below is the LMS difference *and* a different matrix applied to it.
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs2.plotXYZ(Title="CIE 2015 XYZ -- 2 deg", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 2.25])
@@ -75,9 +79,9 @@ xlim([380 780]); ylim([0 2.25])
 %%
 %[text] ## Key takeaways
 %[text] - CIE 2006 defines 2 deg and 10 deg standard observers based on physiology
-%[text] - 2 deg: higher macular pigment, used for small stimuli; 10 deg: lower macular pigment, preferred for most applications
+%[text] - 2 deg: higher macular pigment, for stimuli up to about 4 deg; 10 deg: lower macular pigment, for larger fields. CIE 15 ties the choice to stimulus size, which is the rule `XYZ()` implements when it picks its transform matrix
 %[text] - Both are defined at Age=32
-%[text] - The `Type` and `StandardObserver` properties tell you whether an observer is standards-compliant; any modification flips both away from standard, and `obs.StandardObserver = 2` (or `10`) snaps everything back
+%[text] - The `Type` and `StandardObserver` properties tell you whether an observer is standards-compliant; any biophysical modification flips both away from standard (output-shape settings do not), and `obs.StandardObserver = 2` (or `10`) snaps everything back
 %[text] - Use `obs.XYZ(wl)` for CIE 2015 XYZ color matching functions \
 %[text] **Next:** [Example 03: Field Size Effects](matlab:edit('Example03_FieldSizeEffects.m')) -- how field size changes macular pigment and photopigment optical densities.
 
