@@ -2604,12 +2604,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorbance", LogOutput=options.Log);
 
+            % An absent cone (optical density 0) has no absorbance to show:
+            % the pipeline returns an identically zero column, so drawing it
+            % puts a flat line on the axis and a meaningless legend entry.
+            % Skipped, matching plotLMS and plotAbsorptance.
+            od = [obj.Lod, obj.Mod, obj.Sod];
             names = ["L", "M", "S"];
             p = gobjects(3, 1);
             for k = 1:3
-                p(k) = plot(ax, wl, A(:,k), '-', ...
-                    'Color', options.ConeColors(k,:), ...
-                    'LineWidth', 2, 'DisplayName', names(k));
+                if od(k) > 0
+                    p(k) = plot(ax, wl, A(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
 
             if options.Log
@@ -2697,15 +2704,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             Q = obj.LMS(wl, OutputFormat="quantal");
             E = obj.LMS(wl, OutputFormat="energy");
 
+            % Absent cones are skipped in both traces, leaving gobjects
+            % placeholders so the returned array stays 6x1. Same rule as
+            % plotLMS and plotAbsorptance.
+            od = [obj.Lod, obj.Mod, obj.Sod];
             names = ["L", "M", "S"];
             p = gobjects(6, 1);
             for k = 1:3
-                p(k) = plot(ax, wl, Q(:,k), '--', ...
-                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
-                    'DisplayName', names(k) + " (quantal)");
-                p(k+3) = plot(ax, wl, E(:,k), '-', ...
-                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
-                    'DisplayName', names(k) + " (energy)");
+                if od(k) > 0
+                    p(k) = plot(ax, wl, Q(:,k), '--', ...
+                        'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                        'DisplayName', names(k) + " (quantal)");
+                    p(k+3) = plot(ax, wl, E(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                        'DisplayName', names(k) + " (energy)");
+                end
             end
 
             obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);

@@ -657,6 +657,35 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             testCase.verifyTrue(ishold(ax), "plotLMS must preserve a caller's hold on");
         end
 
+        function testAbsentConesAreSkippedByEveryConePlotMethod(testCase)
+            % All four cone plot methods drop an absent cone rather than
+            % drawing its identically zero column as a flat line with a
+            % legend entry. plotLMS and plotAbsorptance already did;
+            % plotAbsorbance and plotQuantalEnergy did not.
+            obs = IndividualCMF(Mod=0);
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            layout = tiledlayout(fig, 2, 2);
+            pLMS  = obs.plotLMS(Parent=nexttile(layout));
+            pAbs  = obs.plotAbsorbance(Parent=nexttile(layout));
+            pAbsp = obs.plotAbsorptance(Parent=nexttile(layout));
+            pQE   = obs.plotQuantalEnergy(Parent=nexttile(layout));
+
+            testCase.verifyEqual(nnz(isgraphics(pLMS)), 2, 'plotLMS');
+            testCase.verifyEqual(nnz(isgraphics(pAbs)), 2, 'plotAbsorbance');
+            testCase.verifyEqual(nnz(isgraphics(pAbsp)), 2, 'plotAbsorptance');
+            testCase.verifyEqual(nnz(isgraphics(pQE)), 4, 'plotQuantalEnergy');
+
+            % Handle arrays keep their shape, with placeholders in the
+            % absent slots, so index k is always cone k.
+            testCase.verifySize(pAbs, [3 1]);
+            testCase.verifySize(pQE, [6 1]);
+            testCase.verifyFalse(isgraphics(pAbs(2)), 'M slot must be a placeholder');
+            testCase.verifyFalse(isgraphics(pQE(2)), 'M quantal slot');
+            testCase.verifyFalse(isgraphics(pQE(5)), 'M energy slot');
+        end
+
         % Theme-aware neutral colour
 
         function testNeutralColorFollowsFigureTheme(testCase)
