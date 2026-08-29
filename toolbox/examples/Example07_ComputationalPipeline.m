@@ -1,6 +1,6 @@
 %[text] # Example 07: Computational Pipeline
 %[text] Cone fundamentals are computed through a four-stage physiological pipeline that models light propagation through the eye:
-%[text] 1. **Photopigment absorbance** (linear, 0-1) -- intrinsic absorbance of the visual pigment, determined by the opsin protein. Pass `LogOutput=true` if you want $\\log_{10}$ values.
+%[text] 1. **Photopigment absorbance** (linear, peaking near 1) -- intrinsic absorbance of the visual pigment, determined by the opsin protein. Pass `LogOutput=true` if you want $\\log_{10}$ values.
 %[text] 2. **Retinal absorptance** -- `OutputFormat="absorptance"` returns the *relative* retinal absorptance `(1 - 10^(-OD*A)) / (1 - 10^(-OD))`, which peaks near 1 by construction for both Stockman-Rider and Govardovskii templates. The raw physical fraction `1 - 10^(-OD*A)` (which peaks near `1 - 10^(-OD)` ~ 0.58 for typical OD) is available through `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`.
 %[text] 3. **Corneal quantal** (linear) -- sensitivity at the cornea, in photon units, after lens and macular filtering
 %[text] 4. **Corneal energy** (linear) -- same as quantal, converted to energy units by dividing by the per-photon energy E = hc/lambda, i.e. multiplying by lambda \
@@ -22,7 +22,8 @@ quantal     = obs_q.L(wl);
 energy      = obs_e.L(wl);
 %%
 %[text] ## Visualizing the four stages
-%[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. All four observers use the default `NormalizeOutput=true`, so every panel peaks at 1.0 and the panels compare *shape* across stages. The very different absolute scales -- absorbance near 0.995, raw absorptance near 0.58, then smaller again after filtering -- are shown unnormalized in [Example 08](matlab:edit('Example08_OutputFormats.m')).
+%[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. The lower three panels are peak-normalized by the default `NormalizeOutput=true`, so they all top out at 1.0 and compare *shape* rather than scale.
+%[text] Stage 1 is the exception: `absorbance` ignores `NormalizeOutput` entirely and keeps its absolute template scale, which is why it peaks at 0.995 rather than 1. That scale is load-bearing -- `A(lambda_max) = 1` by template convention is what makes `Lod`, `Mod` and `Sod` mean peak *axial* optical density at the next stage. The raw physical absorptance, which peaks near 0.58 at this optical density instead of near 1, is computed further down in the optical-density sweep.
 tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
@@ -103,7 +104,7 @@ xlabel('Wavelength (nm)'); ylabel('Transmission (%)')
 title('Pre-receptoral transmission'); xlim([390 700])
 %%
 %[text] ## Energy conversion -- quantal -> energy
-%[text] The energy-unit sensitivity is the quantal sensitivity multiplied by lambda (S&R 2023, Eq. 8): $ \\bar{l}_E(\\lambda) = \\alpha\\,\\lambda\\,\\bar{l}_Q(\\lambda) $. Multiplying by lambda weights longer wavelengths more heavily, so the energy curve's peak sits slightly to the **right** (longer wavelengths) of the quantal curve. The reasoning is "an energy detector needs more sensitivity per photon at longer lambda to register the same energy" -- equivalently, the per-photon energy E = hc/lambda is *lower* at longer wavelengths.
+%[text] The energy-unit sensitivity is the quantal sensitivity multiplied by lambda (S&R 2023, Eq. 8): $ \\bar{l}_E(\\lambda) = \\alpha\\,\\lambda\\,\\bar{l}_Q(\\lambda) $. Multiplying by lambda weights longer wavelengths more heavily, so the energy curve's peak sits slightly to the **right** (longer wavelengths) of the quantal curve. The reasoning is "equal radiant energy delivers more photons at longer wavelengths, since each carries less, so the same photon-counting response corresponds to a larger energy-based sensitivity there" -- equivalently, the per-photon energy E = hc/lambda is *lower* at longer wavelengths.
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, quantal/max(quantal), 'b-'); hold on
 plot(wl, energy/max(energy),   'r-'); hold off
