@@ -3,7 +3,7 @@
 %[text] $ l = L / (L + M + S) $
 %[text] $ m = M / (L + M + S) $
 %[text] $ s = S / (L + M + S) = 1 - l - m $
-%[text] Since $ l + m + s = 1 $, only two coordinates are needed to specify chromaticity. The **spectral locus** is the curve traced by monochromatic lights through chromaticity space. Real colors fill the *convex hull* of that curve. The usual textbook phrasing -- locus plus the straight line joining its two endpoints -- comes from the CIE 1931 diagram and does not transfer exactly here: in cone chromaticity the violet end hooks back, because s peaks near 414 nm rather than at the short-wavelength end of the grid, so monochromatic points between about 391 and 425 nm fall slightly outside a chord drawn to the 390 nm endpoint. The chord below is drawn endpoint to endpoint for familiarity; the hull's true violet vertex sits near 409 nm. \\ 
+%[text] Since $ l + m + s = 1 $, only two coordinates are needed to specify chromaticity. The **spectral locus** is the curve traced by monochromatic lights through chromaticity space. Real colors fill the convex hull of that curve, closed by the **line of purples** -- the non-spectral mixtures of the two ends. As is well known, the locus is slightly non-convex at its short-wavelength end, so the purple line is conventionally drawn between the endpoints rather than between the hull's extreme points; here that leaves the 391-425 nm stretch a little outside the drawn boundary, by at most 0.010. \\ 
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
@@ -128,7 +128,7 @@ end
 %[text] - Chromaticity separates color from overall intensity via normalization (not from luminance specifically -- luminance is the weighted sum aL + bM)
 %[text] - lm coordinates: $ l = L / (L+M+S) $, $ m = M / (L+M+S) $; the third is implicit
 %[text] - Direct coordinate access: `lmChromaticity` returns $(l, m)$ via $L/(L+M+S), M/(L+M+S)$; `MacLeodBoynton` returns $(aL/(aL+bM),\\ S/(aL+bM))$ with $(a, b)$ the V* luminance weights -- the denominator is luminance, not the unweighted $L+M$ sum (different normalisation, different diagram); `xyChromaticity` returns CIE 1931 $(x, y)$. Use `evaluate(wl, Data='lmChromaticity')` for the table form.
-%[text] - Real colors fill the convex hull of the spectral locus; the line of purples closes the diagram between its extreme points, which in cone chromaticity are not quite the wavelength endpoints
+%[text] - Real colors fill the convex hull of the spectral locus, closed by the line of purples, drawn by convention between the wavelength endpoints
 %[text] - 2 deg/10 deg observers differ slightly; age (with `LensModel="VanDeKraats2007"`) shifts the short-$\\lambda$ region
 %[text] - CIE xy chromaticity errors for dichromats -- not because the LMS->XYZ matrix is singular, but because a dichromat's responses span only two dimensions; use a custom matrix to override \
 %[text] **Next:** [Example 11: Photopic Luminance](matlab:edit('Example11_Luminance.m')) -- V*(lambda) for individual observers and the dichromat luminance reduction.
