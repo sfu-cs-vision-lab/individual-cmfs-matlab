@@ -3,7 +3,7 @@
 %[text] $ l = L / (L + M + S) $
 %[text] $ m = M / (L + M + S) $
 %[text] $ s = S / (L + M + S) = 1 - l - m $
-%[text] Since $ l + m + s = 1 $, only two coordinates are needed to specify chromaticity. The **spectral locus** is the curve traced by monochromatic lights through chromaticity space. All real colors lie inside or on the closed boundary formed by that curve *together with* the straight line joining its two endpoints -- the line of purples, which contains no monochromatic light. \\ 
+%[text] Since $ l + m + s = 1 $, only two coordinates are needed to specify chromaticity. The **spectral locus** is the curve traced by monochromatic lights through chromaticity space. Real colors fill the *convex hull* of that curve. The usual textbook phrasing -- locus plus the straight line joining its two endpoints -- comes from the CIE 1931 diagram and does not transfer exactly here: in cone chromaticity the violet end hooks back, because s peaks near 414 nm rather than at the short-wavelength end of the grid, so monochromatic points between about 391 and 425 nm fall slightly outside a chord drawn to the 390 nm endpoint. The chord below is drawn endpoint to endpoint for familiarity; the hull's true violet vertex sits near 409 nm. \\ 
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
@@ -27,8 +27,9 @@ for mwl = mark_wls
     plot(l(j), m(j), 'ko', 'MarkerFaceColor', 'w', 'MarkerSize', 8)
     text(l(j)+0.01, m(j)+0.01, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), ...
+pPurple = plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), ...
     'LineWidth', 1, 'DisplayName', 'Line of purples'); hold off
+legend(pPurple, 'Location', 'best')
 xlabel('l = L / (L + M + S)'); ylabel('m = M / (L + M + S)')
 title('lm Chromaticity Diagram'); axis equal
 xlim([0 1]); ylim([0 1])
@@ -48,8 +49,9 @@ for mwl = mark_wls
     plot(l(j), m(j), 'ko', 'MarkerFaceColor', colors(j,:), 'MarkerSize', 10)
     text(l(j)+0.015, m(j)+0.015, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), ...
+pPurple = plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), ...
     'LineWidth', 1, 'DisplayName', 'Line of purples'); hold off
+legend(pPurple, 'Location', 'best')
 xlabel('l (L chromaticity)'); ylabel('m (M chromaticity)')
 title('lm chromaticity, wavelength-coded'); axis equal
 xlim([0 1]); ylim([0 1])
@@ -105,11 +107,12 @@ for mwl = mark_wls
     plot(xy(j,1), xy(j,2), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 10)
     text(xy(j,1)+0.01, xy(j,2)+0.01, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([xy(end,1), xy(1,1)], [xy(end,2), xy(1,2)], '--', 'Color', IndividualCMF.neutralColor(), ...
+pPurple = plot([xy(end,1), xy(1,1)], [xy(end,2), xy(1,2)], '--', 'Color', IndividualCMF.neutralColor(), ...
     'LineWidth', 1, 'DisplayName', 'Line of purples'); hold off
+legend(pPurple, 'Location', 'best')
 xlabel('x = X / (X+Y+Z)'); ylabel('y = Y / (X+Y+Z)')
 title('CIE xy chromaticity'); axis equal
-xlim([0 0.8]); ylim([0 0.9])
+xlim([-0.05 0.8]); ylim([0 0.9])
 %%
 %[text] ## Dichromat case -- the xy error path
 %[text] CIE xy is computed from XYZ. The LMS->XYZ matrix itself is fixed and perfectly invertible; the problem is the observer. With one cone class absent the LMS responses span only two dimensions, so pushing them through a trichromatic transform dresses a 2-D gamut in 3-D coordinates. The numbers would compute; they would just mean nothing. Rather than silently returning an undefined projection, the toolbox raises `IndividualCMF:XYZUndefinedForDichromat`. To get xy for a dichromat you must supply a custom transformation matrix (see [Example 13: Dichromacy](matlab:edit('Example13_Dichromacy.m'))).
@@ -122,12 +125,12 @@ catch ME
 end
 %%
 %[text] ## Key takeaways
-%[text] - Chromaticity separates color from luminance via normalization
+%[text] - Chromaticity separates color from overall intensity via normalization (not from luminance specifically -- luminance is the weighted sum aL + bM)
 %[text] - lm coordinates: $ l = L / (L+M+S) $, $ m = M / (L+M+S) $; the third is implicit
 %[text] - Direct coordinate access: `lmChromaticity` returns $(l, m)$ via $L/(L+M+S), M/(L+M+S)$; `MacLeodBoynton` returns $(aL/(aL+bM),\\ S/(aL+bM))$ with $(a, b)$ the V* luminance weights -- the denominator is luminance, not the unweighted $L+M$ sum (different normalisation, different diagram); `xyChromaticity` returns CIE 1931 $(x, y)$. Use `evaluate(wl, Data='lmChromaticity')` for the table form.
-%[text] - The spectral locus bounds all real colors; non-spectral colors close the diagram via the line of purples
+%[text] - Real colors fill the convex hull of the spectral locus; the line of purples closes the diagram between its extreme points, which in cone chromaticity are not quite the wavelength endpoints
 %[text] - 2 deg/10 deg observers differ slightly; age (with `LensModel="VanDeKraats2007"`) shifts the short-$\\lambda$ region
-%[text] - CIE xy chromaticity errors for dichromats (LMS->XYZ is rank-deficient); use a custom matrix to override \
+%[text] - CIE xy chromaticity errors for dichromats -- not because the LMS->XYZ matrix is singular, but because a dichromat's responses span only two dimensions; use a custom matrix to override \
 %[text] **Next:** [Example 11: Photopic Luminance](matlab:edit('Example11_Luminance.m')) -- V*(lambda) for individual observers and the dichromat luminance reduction.
 
 %[appendix]{"version":"1.0"}
