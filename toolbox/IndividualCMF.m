@@ -2420,7 +2420,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = options.Wavelength;
             chrom = obj.lmChromaticity(wl);
 
-            p = plot(ax, chrom(:,1), chrom(:,2), 'k-', 'LineWidth', 2, ...
+            p = plot(ax, chrom(:,1), chrom(:,2), '-', ...
+                'Color', IndividualCMF.neutralColor(ax), 'LineWidth', 2, ...
                 'DisplayName', 'Spectral locus');
 
             xlabel(ax, 'l');
@@ -2570,7 +2571,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
             % RGB CMFs go negative outside the primary gamut; the zero line
             % marks where.
-            plot(ax, wl, zeros(size(wl)), 'k--', 'LineWidth', 0.5, ...
+            plot(ax, wl, zeros(size(wl)), '--', ...
+                'Color', IndividualCMF.neutralColor(ax), 'LineWidth', 0.5, ...
                 'HandleVisibility', 'off');
 
             obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
