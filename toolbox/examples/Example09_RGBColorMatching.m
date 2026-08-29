@@ -17,6 +17,7 @@ table(obs.Primaries(1), obs.Primaries(2), obs.Primaries(3), ...
       'VariableNames', {'R_nm', 'G_nm', 'B_nm'})
 %%
 %[text] ## Visualizing RGB CMFs
+%[text] A word on the experiment these functions come from, because the next paragraph depends on it. An observer views a **split (bipartite) field**: the spectral test light fills one half, an adjustable mixture of the three primaries fills the other, and the primary intensities are adjusted until the two halves look identical. When no positive mixture can match the test light, one primary is moved over to the *test* half instead, and that amount is recorded as a negative value.
 %[text] `obs.plotRGBCMFs` is the dedicated wrapper for RGB CMF plots. Note the **negative values** -- particularly in the R curve around 500 nm. Negative tristimulus values mean the spectral test color cannot be matched by an additive mixture of the primaries; the only way to match it is to *add* primary light to the test side, giving a negative coefficient.
 obs.plotRGBCMFs(Title="RGB Color Matching Functions (Stiles & Burch 10 deg)", Wavelength=wl);
 hold on
@@ -27,7 +28,7 @@ hold off
 xlim([390 700])
 %%
 %[text] ## Reading negative values
-%[text] At 500 nm the RGB values are clearly negative for R. This is the classic "you can't match a pure spectral cyan with an RGB mixture" result -- you have to add red to the test side to make the colors agree.
+%[text] At 500 nm the R value is clearly negative (G and B are both positive). This is the classic "you can't match a pure spectral cyan with an RGB mixture" result -- you have to add red to the test side to make the colors agree.
 RGB_at_500 = RGB(wl == 500, :);
 table(RGB_at_500(1), RGB_at_500(2), RGB_at_500(3), ...
       'VariableNames', {'R_500nm', 'G_500nm', 'B_500nm'})
@@ -37,19 +38,18 @@ table(RGB_at_500(1), RGB_at_500(2), RGB_at_500(3), ...
 LMS_at_primaries = obs.LMS(obs.Primaries')
 %%
 %[text] ## Custom primaries
+%[text] Two features of the figure above are worth naming. The dashed grey verticals mark the three primary wavelengths, where by construction one curve reaches 1 and the other two reach 0. And the R curve peaks near 599 nm rather than at its own 645 nm primary: normalization pins R to 1 at 645 nm, which sits well down the L cone's long-wave slope, so the curve rises above 1 where the cones are more sensitive.
 %[text] Pass `Primaries` as a 1x3 vector to model any RGB triple. Below: comparing the toolbox default (Stiles & Burch) to a hypothetical display with monochromatic primaries near typical sRGB peak wavelengths. **Note:** sRGB and Adobe RGB are defined by *chromaticity coordinates*, not monochromatic wavelengths. Real displays have broad phosphor/LED emission spectra; the wavelengths used in this section only approximate where their primaries would sit on the spectral locus.
 obs_default = IndividualCMF();
 obs_sRGB    = IndividualCMF(Primaries=[615, 545, 465]);
-RGB_default = obs_default.RGB(wl);
-RGB_sRGB    = obs_sRGB.RGB(wl);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs_default.plotRGBCMFs(Title="Stiles & Burch [645/526/444]", Wavelength=wl, Parent=nexttile);
-hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
+xlim([390 700])
 obs_sRGB.plotRGBCMFs(Title="Custom sRGB-like [615/545/465]", Wavelength=wl, Parent=nexttile);
-hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
+xlim([390 700])
 %%
 %[text] ## Display-technology comparison
-%[text] Different display systems use different primaries. Adobe RGB's wider gamut comes entirely from a purer **green** -- it shares sRGB's red and blue primaries exactly. The CMF shapes shift accordingly.
+%[text] Different display systems use different primaries. Adobe RGB's wider gamut comes entirely from a purer **green** -- it shares sRGB's red and blue primaries exactly. The interesting part is where that shows up in the CMFs: not in the green curve, which peaks at 536 nm either way and moves by at most 0.046, but in the **red** one. Pushing the green primary to a shorter wavelength shrinks R's negative lobe from -0.396 to -0.189, a change of 0.277. A negative lobe is the gamut boundary made visible, so widening the gamut is exactly what shrinks it.
 %[text] The dominant wavelengths below stand in for each system's primaries; real display primaries are broadband, so this is an approximation (see the caveat above). The Stiles & Burch row is read from the observer so it cannot drift from the toolbox default.
 sb = IndividualCMF().Primaries;
 disp_specs = ["sRGB";           "Adobe RGB";       "Stiles & Burch"];
@@ -62,13 +62,13 @@ for k = 1:numel(disp_specs)
     obs_disp = IndividualCMF(Primaries=prim);
     obs_disp.plotRGBCMFs(Title=sprintf('%s [%d/%d/%d]', disp_specs(k), round(prim)), ...
         Wavelength=wl, Parent=nexttile);
-    hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
+    xlim([390 700])
 end
 %%
 %[text] ## Bad primaries: the SingularPrimaries error path
 %[text] When primaries are too close together (all in one cone's response region), the LMS-at-primaries matrix becomes near-singular and the toolbox refuses to compute the inverse rather than emit nonsense. Below: three primaries within 2 nm of each other near the L-cone peak.
 try
-    obs_bad = IndividualCMF(Primaries=[555, 556, 557]);
+    obs_bad = IndividualCMF(Primaries=[555, 555.5, 556]);
     obs_bad.RGB(550);
 catch ME
     disp(ME.identifier)
@@ -78,6 +78,7 @@ end
 %[text] ## Key takeaways
 %[text] - RGB CMFs are linear transforms of LMS cone fundamentals
 %[text] - Default primaries are Stiles & Burch 10 deg (645.15, 526.32, 444.44 nm)
+%[text] - `RGB` ignores `OutputFormat`: it always computes from energy-format, peak-normalized fundamentals, so an observer set to quantal or absorbance returns identical RGB CMFs
 %[text] - Negative tristimulus values mean the spectral color cannot be matched by an additive mixture
 %[text] - Set `Primaries=[R, G, B]` in nm to model any custom display
 %[text] - Primaries that don't span the L, M, S response regions distinctly raise `IndividualCMF:SingularPrimaries` \
