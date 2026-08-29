@@ -4,7 +4,7 @@
 exampleDefaults();
 %%
 %[text] ## Create an observer
-%[text] `IndividualCMF` with no arguments returns the **CIE 2006 10° standard observer**.
+%[text] `IndividualCMF` with no arguments returns the **CIE 2006 10 deg standard observer**.
 obs = IndividualCMF()
 %%
 %[text] ## Define wavelengths

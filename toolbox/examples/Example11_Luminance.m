@@ -1,7 +1,7 @@
 %[text] # Example 11: Photopic Luminance V*(lambda)
 %[text] The **photopic luminous efficiency function** $V^{*}(\\lambda)$ describes how the visual system weights different wavelengths when computing brightness. It is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ transform, i.e. a linear combination of the L- and M-cone fundamentals:
 %[text] $ V^*(\\lambda) = a \\bar{L}(\\lambda) + b \\bar{M}(\\lambda) $
-%[text] where the coefficients $(a, b)$ are field-size dependent: $(0.6899, 0.3483)$ for the 2° observer and $(0.6928, 0.3497)$ for the 10° observer. Sharpe et al. (2005) measured these directly in 40 genotyped observers; the CIE adopted them in CIE 170-2:2015.
+%[text] where the coefficients $(a, b)$ are field-size dependent: $(0.6899, 0.3483)$ for the 2 deg observer and $(0.6928, 0.3497)$ for the 10 deg observer. Sharpe et al. (2005) measured these directly in 40 genotyped observers; the CIE adopted them in CIE 170-2:2015.
 %[text] **Note on fit residuals:** the toolbox's $V^{*}(\\lambda)$ is constructed from the Stockman & Rider (2023) cone fundamentals; it is *not* a direct fit to the CIE tabulated $V^{*}(\\lambda)$. The two agree to better than 1% at the peak.
 %[text] **Time:** about 8 minutes.
 exampleDefaults();

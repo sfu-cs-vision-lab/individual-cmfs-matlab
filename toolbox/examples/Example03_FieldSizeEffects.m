@@ -2,7 +2,7 @@
 %[text] Field size -- the visual angle of the stimulus -- affects cone fundamentals via two physiological mechanisms:
 %[text] - **Macular pigment density**: macular pigment is concentrated in the central fovea; larger field sizes include more peripheral retina with less pigment
 %[text] - **Photopigment optical density**: foveal cones have longer outer segments (higher OD); peripheral cones have shorter outer segments (lower OD) \
-%[text] CIE defines exact values for 2° and 10° only. For arbitrary field sizes, two formula-based algorithms cover the continuum: `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`.
+%[text] CIE defines exact values for 2 deg and 10 deg only. For arbitrary field sizes, two formula-based algorithms cover the continuum: `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%

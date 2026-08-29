@@ -56,7 +56,7 @@ catch ME
 end
 %%
 %[text] ## Custom `TransformationMatrix` for dichromat XYZ
-%[text] If you have a published or domain-specific projection (e.g. Brettel, Viénot & Mollon 1997; a 2x3 dichromat projection padded into a 3x3 matrix), pass it as `TransformationMatrix=`. This is on the caller's authority: the toolbox validates shape, not physical meaning.
+%[text] If you have a published or domain-specific projection (e.g. Brettel, Vienot & Mollon 1997; a 2x3 dichromat projection padded into a 3x3 matrix), pass it as `TransformationMatrix=`. This is on the caller's authority: the toolbox validates shape, not physical meaning.
 %[text] **The matrix below is a shape-validation demo only** -- it zeroes the X row of the standard 10-deg LMS->XYZ transform, producing X = 0 everywhere. For meaningful dichromat XYZ simulation, use a Brettel-Vienot-Mollon style projection.
 M_custom = [zeros(1,3); CIE170.M_10DEG(2:3,:)];
 XYZ_custom = obs_proto.XYZ(wl, TransformationMatrix=M_custom);

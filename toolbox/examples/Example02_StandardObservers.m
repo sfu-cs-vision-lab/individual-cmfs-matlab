@@ -1,5 +1,5 @@
 %[text] # Example 02: CIE 2006 Standard Observers
-%[text] **CIE 170-1:2006** / **CIE 170-2:2015** define the physiologically-based cone fundamentals used here, replacing the older CIE 1931 and 1964 colorimetric functions. This example covers the 2° and 10° standard observers, when to use each, and how `Type` / `StandardObserver` track standards compliance.
+%[text] **CIE 170-1:2006** / **CIE 170-2:2015** define the physiologically-based cone fundamentals used here, replacing the older CIE 1931 and 1964 colorimetric functions. This example covers the 2 deg and 10 deg standard observers, when to use each, and how `Type` / `StandardObserver` track standards compliance.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
