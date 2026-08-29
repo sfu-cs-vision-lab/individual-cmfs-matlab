@@ -1,4 +1,4 @@
-%[text] # Example 10: Chromaticity Diagrams
+%[text] # Example 11: Chromaticity Diagrams
 %[text] **Chromaticity coordinates** separate color (hue + saturation) from overall intensity. (Not from luminance specifically -- luminance is the weighted sum $aL + bM$; dividing by $L+M+S$ removes intensity.) They are computed by normalizing the LMS tristimulus values:
 %[text] $ l = L / (L + M + S) $
 %[text] $ m = M / (L + M + S) $
@@ -74,7 +74,7 @@ table(maxDiff, wl(iMax), mean(locus_diff), ...
       'VariableNames', {'MaxDiff', 'AtWavelength_nm', 'MeanDiff'})
 %%
 %[text] ## Age effects on chromaticity
-%[text] Lens yellowing pulls the short-wavelength end of the spectral locus toward *lower* l values with age -- l at 400 nm falls from about 0.065 at 25 to 0.027 at 75. Worth knowing why the shift exists at all: for a monochromatic stimulus, prereceptoral filtering scales L, M and S by the same factor, which cancels exactly in a ratio like $L/(L+M+S)$. What survives is the peak renormalization applied to each fundamental separately, which rescales the three cones by different constants. Use the `VanDeKraats2007` lens model so age actually has an effect (see [Example 04: Aging Effects on Color Vision](matlab:edit('Example04_AgingEffects.m'))). The zoom in the lower-left quadrant makes the divergence clear.
+%[text] Lens yellowing pulls the short-wavelength end of the spectral locus toward *lower* l values with age -- l at 400 nm falls from about 0.065 at 25 to 0.027 at 75. Worth knowing why the shift exists at all: for a monochromatic stimulus, prereceptoral filtering scales L, M and S by the same factor, which cancels exactly in a ratio like $L/(L+M+S)$. What survives is the peak renormalization applied to each fundamental separately, which rescales the three cones by different constants. Use the `VanDeKraats2007` lens model so age actually has an effect (see [Example 05: Aging Effects on Color Vision](matlab:edit('Example05_AgingEffects.m'))). The zoom in the lower-left quadrant makes the divergence clear.
 ages = [25, 50, 75];
 agecol = lines(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, ...
@@ -115,7 +115,7 @@ title('CIE xy chromaticity'); axis equal
 xlim([-0.05 0.8]); ylim([0 0.9])
 %%
 %[text] ## Dichromat case -- the xy error path
-%[text] CIE xy is computed from XYZ. The LMS->XYZ matrix itself is fixed and perfectly invertible; the problem is the observer. With one cone class absent the LMS responses span only two dimensions, so pushing them through a trichromatic transform dresses a 2-D gamut in 3-D coordinates. The numbers would compute; they would just mean nothing. Rather than silently returning an undefined projection, the toolbox raises `IndividualCMF:XYZUndefinedForDichromat`. To get xy for a dichromat you must supply a custom transformation matrix (see [Example 13: Dichromacy](matlab:edit('Example13_Dichromacy.m'))).
+%[text] CIE xy is computed from XYZ. The LMS->XYZ matrix itself is fixed and perfectly invertible; the problem is the observer. With one cone class absent the LMS responses span only two dimensions, so pushing them through a trichromatic transform dresses a 2-D gamut in 3-D coordinates. The numbers would compute; they would just mean nothing. Rather than silently returning an undefined projection, the toolbox raises `IndividualCMF:XYZUndefinedForDichromat`. To get xy for a dichromat you must supply a custom transformation matrix (see [Example 14: Dichromacy](matlab:edit('Example14_Dichromacy.m'))).
 obs_protan = IndividualCMF(); obs_protan.Lod = 0;
 try
     obs_protan.xyChromaticity(wl);
@@ -131,7 +131,7 @@ end
 %[text] - Real colors fill the convex hull of the spectral locus, closed by the line of purples, drawn by convention between the wavelength endpoints
 %[text] - 2 deg/10 deg observers differ slightly; age (with `LensModel="VanDeKraats2007"`) shifts the short-$\\lambda$ region
 %[text] - CIE xy chromaticity errors for dichromats -- not because the LMS->XYZ matrix is singular, but because a dichromat's responses span only two dimensions; use a custom matrix to override \
-%[text] **Next:** [Example 11: Photopic Luminance](matlab:edit('Example11_Luminance.m')) -- V*(lambda) for individual observers and the dichromat luminance reduction.
+%[text] **Next:** [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')) -- V*(lambda) for individual observers and the dichromat luminance reduction.
 
 %[appendix]{"version":"1.0"}
 %---

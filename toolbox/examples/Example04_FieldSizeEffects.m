@@ -1,4 +1,4 @@
-%[text] # Example 03: Field Size Effects
+%[text] # Example 04: Field Size Effects
 %[text] Field size -- the visual angle of the stimulus -- affects cone fundamentals via two physiological mechanisms:
 %[text] - **Macular pigment density**: macular pigment is concentrated in the central fovea; larger field sizes include more peripheral retina with less pigment
 %[text] - **Photopigment optical density**: foveal cones have longer outer segments (higher OD); peripheral cones have shorter outer segments (lower OD) \
@@ -107,7 +107,7 @@ table(100*abs(obs_formula.MacularDensity - obs_CIE.MacularDensity)/obs_CIE.Macul
 %[text] These formulas are the field-size model CIE 170-1:2006 itself specifies for 1-10 deg, built on the Moreland-Alexander and Pokorny-Smith measurements, not third-party smoothing fitted to two table points. They reproduce the tabulated anchors to within a tenth of a percent -- macular 0.350020 against 0.350 at 2 deg, and at 10 deg the residuals tabulated above, 0.0052% for macular and 0.078% for L density.
 %%
 %[text] ## Manual density overrides
-%[text] You can override densities directly. Doing so auto-engages the corresponding algorithm to `"Custom"` (see [Example 14](matlab:edit('Example14_AdvancedCustomization.m'))), so the override is preserved across subsequent field-size or age changes.
+%[text] You can override densities directly. Doing so auto-engages the corresponding algorithm to `"Custom"` (see [Example 15](matlab:edit('Example15_AdvancedCustomization.m'))), so the override is preserved across subsequent field-size or age changes.
 obs_manual = IndividualCMF();
 obs_manual.MacularDensity = 0.5;
 obs_manual.Lod = 0.6;
@@ -131,8 +131,8 @@ grid on; xlim([380 520])
 %[text] - Larger fields -\> less macular pigment, lower OD (peripheral)
 %[text] - CIE defines exact values for 2 deg and 10 deg only; for everything else use the formula-based algorithms
 %[text] - `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"` give continuous formulas
-%[text] - Direct assignment to `MacularDensity`, `Lod`, etc. auto-engages Custom mode (see [Example 14](matlab:edit('Example14_AdvancedCustomization.m'))) \
-%[text] **Next:** [Example 04: Aging Effects on Color Vision](matlab:edit('Example04_AgingEffects.m')) -- how age and the choice of `LensModel` affect color vision.
+%[text] - Direct assignment to `MacularDensity`, `Lod`, etc. auto-engages Custom mode (see [Example 15](matlab:edit('Example15_AdvancedCustomization.m'))) \
+%[text] **Next:** [Example 05: Aging Effects on Color Vision](matlab:edit('Example05_AgingEffects.m')) -- how age and the choice of `LensModel` affect color vision.
 
 %[appendix]{"version":"1.0"}
 %---

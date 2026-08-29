@@ -1,4 +1,4 @@
-%[text] # Example 16: Normalization Methods
+%[text] # Example 17: Normalization Methods
 %[text] **This is a developer / reproducibility topic.** Most users will never touch `NormalizationMethod`. The default `"Continuous"` method is correct for almost all colorimetric work. This example covers when and why to override it.
 %[text] When `NormalizeOutput=true` (the default), each cone fundamental is divided by its peak so the maximum equals 1.0. The question is **how** that peak is found:
 %[text] - **`Continuous`** *(default)* -- uses numerical optimization (`fminbnd`) to find the exact peak. Resolution-independent. Normalized values never exceed 1.0.
@@ -92,7 +92,7 @@ table(max(obs_reference.L(wl_reference)), max(obs_reference.L((390:0.1:830)')), 
 %[text] ## Recommendations
 %[text] **Use Continuous when:** you need guaranteed values <= 1.0; you're evaluating at arbitrary wavelengths; this is the right default for general colorimetric work.
 %[text] **Use Sampled when:** you're matching a specific reference dataset (Pycone, published tables); you need bit-exact reproducibility on a known grid. Use the matching evaluation grid to avoid off-grid exceedance.
-%[text] **One trap worth knowing given the topic.** `NormalizationMethod` and `NormalizationGrid` are not carried by `getParameters` / `setParameters` -- that snapshot holds the biophysics only. Restore an observer from one and a `Sampled` configuration silently comes back as `Continuous`, quietly leaving you off the reference you set it up to match. Set both explicitly after any round trip. See [Example 15](matlab:edit('Example15_DataExport.m')).
+%[text] **One trap worth knowing given the topic.** `NormalizationMethod` and `NormalizationGrid` are not carried by `getParameters` / `setParameters` -- that snapshot holds the biophysics only. Restore an observer from one and a `Sampled` configuration silently comes back as `Continuous`, quietly leaving you off the reference you set it up to match. Set both explicitly after any round trip. See [Example 16](matlab:edit('Example16_DataExport.m')).
 %%
 %[text] ## Key takeaways
 %[text] - `Continuous` (default) finds the exact peak via optimisation; resolution-independent; never exceeds 1.0
@@ -100,7 +100,7 @@ table(max(obs_reference.L(wl_reference)), max(obs_reference.L((390:0.1:830)')), 
 %[text] - Use `NormalizationGrid = a:s:b` for explicit grid control
 %[text] - `obs.getPeak('L')` returns the unnormalised peak (the divisor)
 %[text] - For pycone parity, set `NormalizationMethod="Sampled"` and keep the default `NormalizationGrid` (380:1:780, the grid pycone normalizes over), then evaluate on that same grid. The method matters: under the default `Continuous` the grid is ignored entirely, leaving you about 1e-5 off \
-%[text] **Next:** [Example 17: Publication-Quality Figures](matlab:edit('Example17_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
+%[text] **Next:** [Example 18: Publication-Quality Figures](matlab:edit('Example18_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
 
 %[appendix]{"version":"1.0"}
 %---

@@ -1,6 +1,6 @@
 # Individual CMF Toolbox Examples
 
-This folder contains 18 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
+This folder contains 19 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
 
 For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`) -- it is also the guide registered with the Add-On Manager.
 
@@ -15,38 +15,39 @@ Roughly ordered from foundations to advanced usage:
 |---------|-------|------|-------------|
 | **ex01** | The Basics | ~5 min | Create your first observer, evaluate cones, and plot the fundamentals |
 | **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ color matching functions |
+| **ex03** | How an Observer Is Assembled | ~10 min | The three components; shape vs magnitude controls; what `CIE170` actually selects |
 
 ### Physiological Variations
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex03** | Field Size Effects | ~12 min | Macular pigment + photopigment OD vs field size; algorithm choice |
-| **ex04** | Aging Effects | ~12 min | Lens yellowing, the `LensModel` choice, and Custom-mode protection |
-| **ex05** | Genetic Variants | ~12 min | Ser180Ala polymorphism, hybrid cones, `Genotype` and `applyGenotype` |
-| **ex06** | Photopigment Models | ~10 min | Stockman-Rider 2023 vs Govardovskii 2000 photopigment templates |
+| **ex04** | Field Size Effects | ~12 min | Macular pigment + photopigment OD vs field size; algorithm choice |
+| **ex05** | Aging Effects | ~12 min | Lens yellowing, the `LensModel` choice, and Custom-mode protection |
+| **ex06** | Genetic Variants | ~12 min | Ser180Ala polymorphism, hybrid cones, `Genotype` and `applyGenotype` |
+| **ex07** | Photopigment Models | ~10 min | Stockman-Rider 2023 vs Govardovskii 2000 photopigment templates |
 
 ### Pipeline & Outputs
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex07** | Computational Pipeline | ~12 min | Four-stage pipeline using only the public API |
-| **ex08** | Output Formats | ~12 min | `energy` / `quantal` / `absorptance` / `absorbance` and `LogOutput` |
-| **ex09** | RGB Color Matching | ~12 min | RGB CMFs, negative values, custom display primaries |
-| **ex10** | Chromaticity Diagrams | ~10 min | lm and CIE xy chromaticity, spectral locus |
-| **ex11** | Photopic Luminance | ~8 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age, and dichromat reductions |
+| **ex08** | Computational Pipeline | ~12 min | Four-stage pipeline using only the public API |
+| **ex09** | Output Formats | ~12 min | `energy` / `quantal` / `absorptance` / `absorbance` and `LogOutput` |
+| **ex10** | RGB Color Matching | ~12 min | RGB CMFs, negative values, custom display primaries |
+| **ex11** | Chromaticity Diagrams | ~10 min | lm and CIE xy chromaticity, spectral locus |
+| **ex12** | Photopic Luminance | ~8 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age, and dichromat reductions |
 
 ### Observer Comparisons
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex12** | Observer Comparison | ~12 min | `compareTo`, RMS metrics, multi-observer comparison |
-| **ex13** | Dichromacy | ~10 min | Protan/deutan/tritan via `Lod`/`Mod`/`Sod` = 0; XYZ/RGB error path |
+| **ex13** | Observer Comparison | ~12 min | `compareTo`, RMS metrics, multi-observer comparison |
+| **ex14** | Dichromacy | ~10 min | Protan/deutan/tritan via `Lod`/`Mod`/`Sod` = 0; XYZ/RGB error path |
 
 ### Reference & Reproducibility
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex14** | Advanced Customization | ~15 min | Every parameter, Custom-mode behaviour, `getParameters` round-trip |
-| **ex15** | Data Export | ~8 min | `evaluate`, CSV / MAT; round-trip pointer to Example 14 |
-| **ex16** | Normalization Methods | ~10 min | Continuous vs Sampled; reproducing external reference implementations |
-| **ex17** | Publication Figures | ~12 min | Six-panel aging composite; vector export via `exportgraphics` |
-| **ex18** | Observer Metamerism | ~12 min | A metameric pair breaks for individual observers; xy chromaticity shifts from Ser180Ala and lens aging |
+| **ex15** | Advanced Customization | ~15 min | Every parameter, Custom-mode behaviour, `getParameters` round-trip |
+| **ex16** | Data Export | ~8 min | `evaluate`, CSV / MAT; round-trip pointer to Example 15 |
+| **ex17** | Normalization Methods | ~10 min | Continuous vs Sampled; reproducing external reference implementations |
+| **ex18** | Publication Figures | ~12 min | Six-panel aging composite; vector export via `exportgraphics` |
+| **ex19** | Observer Metamerism | ~12 min | A metameric pair breaks for individual observers; xy chromaticity shifts from Ser180Ala and lens aging |
 
 ## Running an example
 

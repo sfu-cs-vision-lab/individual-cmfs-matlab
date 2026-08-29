@@ -1,10 +1,10 @@
-%[text] # Example 06: Photopigment Template Models
+%[text] # Example 07: Photopigment Template Models
 %[text] Two photopigment absorbance template families are available via the `PhotopigmentModel` property:
-%[text] - **Stockman & Rider (2023)** *(default)* -- 8th-order shifted Fourier series refit to recover the CIE 2006 cone fundamentals; supports the genetic-variant and hybrid templates from [Example 05](matlab:edit('Example05_GeneticVariants.m')).
+%[text] - **Stockman & Rider (2023)** *(default)* -- 8th-order shifted Fourier series refit to recover the CIE 2006 cone fundamentals; supports the genetic-variant and hybrid templates from [Example 06](matlab:edit('Example06_GeneticVariants.m')).
 %[text] - **Govardovskii et al. (2000)** -- continuous analytical template based on A1 visual pigments from microspectrophotometry across many species; depends only on lambda-max, so it generalises to non-human eyes. \
 %[text] **Time:** about 10 minutes. 
 exampleDefaults();
-%[text] **Note:** this example is about *photopigment* templates. The lens template selection (`LensModel`) is covered in [Example 04: Aging Effects on Color Vision](matlab:edit('Example04_AgingEffects.m')).
+%[text] **Note:** this example is about *photopigment* templates. The lens template selection (`LensModel`) is covered in [Example 05: Aging Effects on Color Vision](matlab:edit('Example05_AgingEffects.m')).
 %[text] Both models occupy stage 1 of the pipeline; what differs is the absorbance shape, and downstream stages (lens, macular, energy conversion) are identical.
 %%
 %[text] ## Stacked comparison
@@ -110,7 +110,7 @@ xlim([380 780])
 %[text] - A1 is the standard human/mammalian chromophore; A2 is the freshwater-fish / larval-amphibian variant with a slower long-wavelength roll-off and stronger beta-band
 %[text] - The Stockman-Rider and Govardovskii A1 templates agree in the visible-range center; small systematic differences appear at the band edges
 %[text] - `obs.PhotopigmentModel = "..."` swaps templates dynamically; doing so flips `Type` to `"Individualized"` \
-%[text] **Next:** [Example 07: Computational Pipeline](matlab:edit('Example07_ComputationalPipeline.m')) -- the four-stage visual pipeline from absorbance to corneal sensitivity.
+%[text] **Next:** [Example 08: Computational Pipeline](matlab:edit('Example08_ComputationalPipeline.m')) -- the four-stage visual pipeline from absorbance to corneal sensitivity.
 
 %[appendix]{"version":"1.0"}
 %---

@@ -1,4 +1,4 @@
-%[text] # Example 07: Computational Pipeline
+%[text] # Example 08: Computational Pipeline
 %[text] Cone fundamentals are computed through a four-stage physiological pipeline that models light propagation through the eye:
 %[text] 1. **Photopigment absorbance** (linear, peaking near 1) -- intrinsic absorbance of the visual pigment, determined by the opsin protein. Pass `LogOutput=true` if you want $\\log_{10}$ values.
 %[text] 2. **Retinal absorptance** -- `OutputFormat="absorptance"` returns the *relative* retinal absorptance `(1 - 10^(-OD*A)) / (1 - 10^(-OD))`, which peaks near 1 by construction for both Stockman-Rider and Govardovskii templates. The raw physical fraction `1 - 10^(-OD*A)` (which peaks near `1 - 10^(-OD)` ~ 0.58 for typical OD) is available through `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`.
@@ -9,7 +9,7 @@
 exampleDefaults();
 %%
 %[text] ## Accessing the four stages
-%[text] The cleanest way is to set `OutputFormat` to one of the four pipeline-stage names. The cone-method calls (`L`, `M`, `S`, `LMS`) then return that stage's values. Stage 1 (absorbance) collapses to zero when a cone is absent -- see [Example 13: Dichromacy](matlab:edit('Example13_Dichromacy.m')) for the dichromat case.
+%[text] The cleanest way is to set `OutputFormat` to one of the four pipeline-stage names. The cone-method calls (`L`, `M`, `S`, `LMS`) then return that stage's values. Stage 1 (absorbance) collapses to zero when a cone is absent -- see [Example 14: Dichromacy](matlab:edit('Example14_Dichromacy.m')) for the dichromat case.
 obs = IndividualCMF();
 wl = (390:1:700)';
 obs_abs  = IndividualCMF(OutputFormat="absorbance");
@@ -130,7 +130,7 @@ table(max(obs.L(wl)), max(obs_raw.L(wl)), ...
 %[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` expose the filter spectra
 %[text] - `obs.plotDiagnostics()` gives a turn-key pipeline figure
 %[text] - `NormalizeOutput=false` exposes raw pipeline values \
-%[text] **Next:** [Example 08: Output Formats and Units](matlab:edit('Example08_OutputFormats.m')) -- choosing between `energy`, `quantal`, `absorptance`, and `absorbance` outputs.
+%[text] **Next:** [Example 09: Output Formats and Units](matlab:edit('Example09_OutputFormats.m')) -- choosing between `energy`, `quantal`, `absorptance`, and `absorbance` outputs.
 
 %[appendix]{"version":"1.0"}
 %---

@@ -1,4 +1,4 @@
-%[text] # Example 13: Dichromacy
+%[text] # Example 14: Dichromacy
 %[text] Gene-deletion dichromacy occurs when one of the cone opsin genes is missing or non-functional, so the corresponding photopigment is not expressed in the retina. The toolbox represents an absent cone by setting its optical density (`Lod`, `Mod`, or `Sod`) to zero. Every output format -- `energy`, `quantal`, `absorptance`, and `absorbance` -- collapses that cone's column to zero.
 %[text] Real dichromats vary in whether the affected cones are missing entirely or are present but filled with one of the surviving pigments; either way only two spectrally distinct cone classes remain, and the toolbox models that as the affected pigment being absent (zero optical density). A cone class present with a *shifted* pigment is anomalous trichromacy, not dichromacy: all three cones are expressed but the L and M peaks sit closer together, and it is modelled with a `LambdaMaxShift` rather than a zero density. The two are contrasted at the end of this example.
 %[text] **Time:** about 10 minutes.
@@ -84,9 +84,9 @@ legend('Normal L (reference)', 'Protanope L (Lod=0)', 'Protanomalous L (-15 nm)'
 %[text] - That models an absent pigment. Anomalous trichromacy keeps all three cones and shifts one lambda-max, so it uses `L_LambdaMaxShift` and friends instead -- and past -16.0345 nm the L cone switches onto the M template rather than shifting further
 %[text] - Zeroing a density engages `Custom` mode, which freezes all three cone densities. At any field size other than the default, set the surviving cones explicitly or they keep the 10 degree values
 %[text] - `XYZ` and `RGB` refuse for dichromats -- the observer spans two dimensions, and for RGB the primaries matrix is genuinely singular. Pass a `TransformationMatrix` to override
-%[text] - `Luminance` still works and is often unchanged: S contributes exactly zero to V*, so a tritanope's luminous efficiency matches the standard observer's. See [Example 11](matlab:edit('Example11_Luminance.m'))
+%[text] - `Luminance` still works and is often unchanged: S contributes exactly zero to V*, so a tritanope's luminous efficiency matches the standard observer's. See [Example 12](matlab:edit('Example12_Luminance.m'))
 %[text] - The four cone plot methods drop an absent cone from the axes and the legend, keeping `gobjects` placeholders so the returned handle array stays the same shape \\
-%[text] **Next:** [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')) -- full parameter-space control plus the round-trip `getParameters`/`setParameters` workflow.
+%[text] **Next:** [Example 15: Advanced Customization](matlab:edit('Example15_AdvancedCustomization.m')) -- full parameter-space control plus the round-trip `getParameters`/`setParameters` workflow.
 
 %[appendix]{"version":"1.0"}
 %---

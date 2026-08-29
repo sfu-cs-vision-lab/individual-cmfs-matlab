@@ -8,33 +8,34 @@
 %[text] `IndividualCMF` with no arguments returns the CIE 2006 10 deg standard observer. Evaluate any cone with `obs.L(wl)` / `obs.M(wl)` / `obs.S(wl)`, or all three with `obs.LMS(wl)`, passing wavelengths as a column vector.
 obs = IndividualCMF();
 obs.LMS((450:50:650)')
-%[text] The `plotLMS` wrapper draws the same three fundamentals. It plots whatever the observer's output settings produce, so the curves are peak-normalized here only because `NormalizeOutput` defaults to true -- see [Example 08](matlab:open('Example08_OutputFormats.m')).
+%[text] The `plotLMS` wrapper draws the same three fundamentals. It plots whatever the observer's output settings produce, so the curves are peak-normalized here only because `NormalizeOutput` defaults to true -- see [Example 09](matlab:open('Example09_OutputFormats.m')).
 obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Example gallery
-%[text] The toolbox ships 18 worked examples (plain-text Live Scripts), roughly ordered from foundations to advanced usage. Click an example to open it.
+%[text] The toolbox ships 19 worked examples (plain-text Live Scripts), roughly ordered from foundations to advanced usage. Click an example to open it.
 %[text:table]
 %[text] | # | Example | What it covers |
 %[text] | --- | --- | --- |
 %[text] | 01 | [The Basics](matlab:open('Example01_Basics.m')) | Construct an observer, evaluate cones, plot, normalization |
 %[text] | 02 | [Standard Observers](matlab:open('Example02_StandardObservers.m')) | CIE 2006 2 deg and 10 deg observers; XYZ color matching functions |
-%[text] | 03 | [Field Size Effects](matlab:open('Example03_FieldSizeEffects.m')) | Macular pigment and photopigment OD vs field size |
-%[text] | 04 | [Aging Effects](matlab:open('Example04_AgingEffects.m')) | Lens yellowing and the `LensModel` choice |
-%[text] | 05 | [Genetic Variants](matlab:open('Example05_GeneticVariants.m')) | Ser180Ala polymorphism, hybrid cones, `Genotype` |
-%[text] | 06 | [Photopigment Models](matlab:open('Example06_PhotopigmentModels.m')) | Stockman-Rider 2023 vs Govardovskii 2000 templates |
-%[text] | 07 | [Computational Pipeline](matlab:open('Example07_ComputationalPipeline.m')) | The four-stage pipeline via the public API |
-%[text] | 08 | [Output Formats](matlab:open('Example08_OutputFormats.m')) | `energy` / `quantal` / `absorptance` / `absorbance`, `LogOutput` |
-%[text] | 09 | [RGB Color Matching](matlab:open('Example09_RGBColorMatching.m')) | RGB CMFs, negative lobes, custom display primaries |
-%[text] | 10 | [Chromaticity Diagrams](matlab:open('Example10_ChromaticityDiagrams.m')) | lm and CIE xy chromaticity, spectral locus |
-%[text] | 11 | [Photopic Luminance](matlab:open('Example11_Luminance.m')) | $V^*(\\lambda)$ and MacLeod-Boynton coordinates |
-%[text] | 12 | [Observer Comparison](matlab:open('Example12_ObserverComparison.m')) | `compareTo`, RMS metrics, multi-observer overlays |
-%[text] | 13 | [Dichromacy](matlab:open('Example13_Dichromacy.m')) | Protan / deutan / tritan via zero optical density |
-%[text] | 14 | [Advanced Customization](matlab:open('Example14_AdvancedCustomization.m')) | Every parameter; `getParameters` round-trip |
-%[text] | 15 | [Data Export](matlab:open('Example15_DataExport.m')) | `evaluate`, CSV and MAT export |
-%[text] | 16 | [Normalization Methods](matlab:open('Example16_NormalizationMethods.m')) | Continuous vs Sampled peak normalization |
-%[text] | 17 | [Publication Figures](matlab:open('Example17_PublicationFigures.m')) | Multi-panel composites; vector export |
-%[text] | 18 | [Observer Metamerism](matlab:open('Example18_ObserverMetamerism.m')) | How a metameric match breaks across observers |
+%[text] | 03 | [How an Observer Is Assembled](matlab:open('Example03_HowAnObserverIsAssembled.m')) | The three components, shape vs magnitude, and what `CIE170` actually selects |
+%[text] | 04 | [Field Size Effects](matlab:open('Example04_FieldSizeEffects.m')) | Macular pigment and photopigment OD vs field size |
+%[text] | 05 | [Aging Effects](matlab:open('Example05_AgingEffects.m')) | Lens yellowing and the `LensModel` choice |
+%[text] | 06 | [Genetic Variants](matlab:open('Example06_GeneticVariants.m')) | Ser180Ala polymorphism, hybrid cones, `Genotype` |
+%[text] | 07 | [Photopigment Models](matlab:open('Example07_PhotopigmentModels.m')) | Stockman-Rider 2023 vs Govardovskii 2000 templates |
+%[text] | 08 | [Computational Pipeline](matlab:open('Example08_ComputationalPipeline.m')) | The four-stage pipeline via the public API |
+%[text] | 09 | [Output Formats](matlab:open('Example09_OutputFormats.m')) | `energy` / `quantal` / `absorptance` / `absorbance`, `LogOutput` |
+%[text] | 10 | [RGB Color Matching](matlab:open('Example10_RGBColorMatching.m')) | RGB CMFs, negative lobes, custom display primaries |
+%[text] | 11 | [Chromaticity Diagrams](matlab:open('Example11_ChromaticityDiagrams.m')) | lm and CIE xy chromaticity, spectral locus |
+%[text] | 12 | [Photopic Luminance](matlab:open('Example12_Luminance.m')) | $V^*(\\lambda)$ and MacLeod-Boynton coordinates |
+%[text] | 13 | [Observer Comparison](matlab:open('Example13_ObserverComparison.m')) | `compareTo`, RMS metrics, multi-observer overlays |
+%[text] | 14 | [Dichromacy](matlab:open('Example14_Dichromacy.m')) | Protan / deutan / tritan via zero optical density |
+%[text] | 15 | [Advanced Customization](matlab:open('Example15_AdvancedCustomization.m')) | Every parameter; `getParameters` round-trip |
+%[text] | 16 | [Data Export](matlab:open('Example16_DataExport.m')) | `evaluate`, CSV and MAT export |
+%[text] | 17 | [Normalization Methods](matlab:open('Example17_NormalizationMethods.m')) | Continuous vs Sampled peak normalization |
+%[text] | 18 | [Publication Figures](matlab:open('Example18_PublicationFigures.m')) | Multi-panel composites; vector export |
+%[text] | 19 | [Observer Metamerism](matlab:open('Example19_ObserverMetamerism.m')) | How a metameric match breaks across observers |
 %[text:table]
 %%
 %[text] ## Learn more

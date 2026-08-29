@@ -84,7 +84,7 @@ xlim([380 780]); ylim([0 2.25])
 %[text] - Both are defined at Age=32
 %[text] - The `Type` and `StandardObserver` properties tell you whether an observer is standards-compliant; any biophysical modification flips both away from standard (output-shape settings do not), and `obs.StandardObserver = 2` (or `10`) snaps everything back
 %[text] - Use `obs.XYZ(wl)` for CIE 2015 XYZ color matching functions \
-%[text] **Next:** [Example 03: Field Size Effects](matlab:edit('Example03_FieldSizeEffects.m')) -- how field size changes macular pigment and photopigment optical densities.
+%[text] **Next:** [Example 03: How an Observer Is Assembled](matlab:edit('Example03_HowAnObserverIsAssembled.m')) -- the three components behind every fundamental, and the two controls each one has.
 
 %[appendix]{"version":"1.0"}
 %---

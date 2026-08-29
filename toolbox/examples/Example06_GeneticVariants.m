@@ -1,4 +1,4 @@
-%[text] # Example 05: Genetic Variants and Cone Polymorphisms
+%[text] # Example 06: Genetic Variants and Cone Polymorphisms
 %[text] L- and M-opsin polymorphisms shift cone lambda-max. The dominant axis is the **Ser180Ala** substitution at codon 180 of the L-opsin: ~56% Serine, ~44% Alanine, with Alanine peaking ~**2.7 nm shorter** than Serine. That figure is the photopigment lambda-max shift; the cone fundamental's peak moves slightly differently once pre-receptoral filtering is applied. This example covers per-codon `Genotype=` configuration, the `applyGenotype` 5-letter notation, and the named M-in-L / L-in-M hybrid templates.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
@@ -109,7 +109,7 @@ legend('Normal L (Serine)', 'Normal M', 'Hybrid M (L-in-M)', 'Location', 'bestou
 %[text] - `setGenotype(cone, pos, aa)` for amino-acid control; `Genotype=struct(...)` or `Genotype="LSAYT/SAAFA"` in the constructor
 %[text] - `applyGenotype` automatically picks the right templates from a 5-letter genotype string
 %[text] - `L_LambdaMaxShift` allows custom peak adjustments (range -40 to +10 nm) \
-%[text] **Next:** [Example 06: Photopigment Template Models](matlab:edit('Example06_PhotopigmentModels.m')) -- comparing the Stockman & Rider (2023) and Govardovskii (2000) photopigment template models.
+%[text] **Next:** [Example 07: Photopigment Template Models](matlab:edit('Example07_PhotopigmentModels.m')) -- comparing the Stockman & Rider (2023) and Govardovskii (2000) photopigment template models.
 
 %[appendix]{"version":"1.0"}
 %---

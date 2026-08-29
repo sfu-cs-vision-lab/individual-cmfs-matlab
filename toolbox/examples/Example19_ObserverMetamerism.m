@@ -1,4 +1,4 @@
-%[text] # Example 18: Observer Metamerism
+%[text] # Example 19: Observer Metamerism
 %[text] Two spectral power distributions (SPDs) are **metameric** for a given observer if they produce identical cone responses (and hence identical color appearance) despite having different spectra. The CIE 2006 2-deg standard observer sees a vast set of SPD pairs as metameric -- but those same pairs are *not* metameric for every real observer.
 %[text] **Observer metamerism** is the phenomenon that a metameric match for one observer breaks for another. If every observer saw the same matches, the CIE Standard Observer would suffice; in practice they don't.
 %[text] **Not the same as illuminant metamerism** (two SPDs matching under one illuminant and breaking under another, same observer); that's a separate phenomenon and is not covered here.
@@ -44,7 +44,7 @@ legend('Target SPD (555 nm Gaussian)', 'Three-Gaussian mixture', ...
 xlim([380 780])
 %%
 %[text] ## Step 3: switch to an individual observer and watch the match break
-%[text] We construct an observer with the L-cone Alanine variant -- one of the two common L-opsin alleles, present in about 44% of the population. The Alanine and Serine templates sit 2.7 nm apart, but the standard observer uses neither: it uses the population-mean template (56% Serine, 44% Alanine). So switching to pure Alanine moves the L-cone photopigment lambda-max by 1.5 nm relative to the standard, and the L-cone fundamental peak by 1.6 nm. See [Example 05](matlab:edit('Example05_GeneticVariants.m')) for the templates themselves.
+%[text] We construct an observer with the L-cone Alanine variant -- one of the two common L-opsin alleles, present in about 44% of the population. The Alanine and Serine templates sit 2.7 nm apart, but the standard observer uses neither: it uses the population-mean template (56% Serine, 44% Alanine). So switching to pure Alanine moves the L-cone photopigment lambda-max by 1.5 nm relative to the standard, and the L-cone fundamental peak by 1.6 nm. See [Example 06](matlab:edit('Example06_GeneticVariants.m')) for the templates themselves.
 %[text] Nothing else about the observer changes -- M and S come back bit-identical to the standard's -- so every difference below is attributable to the L polymorphism alone. We integrate both SPDs against this observer's XYZ CMFs and compare.
 obsAla = IndividualCMF(L_OpsinTemplate="Alanine", FieldSize=2);
 XYZCmfsAla = obsAla.XYZ(wl);
@@ -70,7 +70,7 @@ table([xyTargetStd(1); xyMixStd(1)], [xyTargetStd(2); xyMixStd(2)], ...
 %%
 %[text] ## Step 5: a stronger observer difference
 %[text] The Ser180Ala polymorphism is the most common L-cone variant, and the gap it opens between the two SPDs is small: the Euclidean $\\Delta xy = \\sqrt{(\\Delta x)^2 + (\\Delta y)^2}$ between the Step 4 chromaticities comes to about 0.003, computed as `shiftAla` below. A 70-year-old with strong lens yellowing produces a much larger displacement.
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 obsAged = IndividualCMF(LensModel="VanDeKraats2007", Age=70, FieldSize=2);
 obsAged.ModelRangeWarning = false;
 XYZCmfsAged = obsAged.XYZ(wl);
@@ -114,7 +114,7 @@ xlim([-lim lim]); ylim([-lim lim])
 %[text] - Build any individual observer and integrate SPDs against `obs.XYZ(wl)` to compute its tristimulus response
 %[text] - Observer metamerism is one of the reasons individual cone fundamentals matter for applied color science: a match verified on the standard observer is not guaranteed to hold for the person actually looking at it
 %[text] - `XYZ()` on an individual observer applies the *standard* LMS-to-XYZ matrix and warns accordingly. That is the right call for comparing observers, but the results are individual colorimetric values, not CIE tristimulus values \
-%[text] This is the last example in the series. For related material, see [Example 12: Observer Comparison](matlab:edit('Example12_ObserverComparison.m')) (quantifying observer differences at the CMF level) and [Example 11: Photopic Luminance](matlab:edit('Example11_Luminance.m')) (V*(lambda) under genotype and aging).
+%[text] This is the last example in the series. For related material, see [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')) (quantifying observer differences at the CMF level) and [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')) (V*(lambda) under genotype and aging).
 
 %[appendix]{"version":"1.0"}
 %---

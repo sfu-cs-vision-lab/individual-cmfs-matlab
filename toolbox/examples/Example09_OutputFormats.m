@@ -1,4 +1,4 @@
-%[text] # Example 08: Output Formats and Units
+%[text] # Example 09: Output Formats and Units
 %[text] Cone sensitivities can be expressed at different stages of the visual pipeline. Four output formats are available via the `OutputFormat` property:
 %[text:table]
 %[text] | Format | Stage | Units |
@@ -95,9 +95,9 @@ xlim([390 700]); ylim([-4 0.25])
 %[text] - `quantal` and `energy` differ by a factor of lambda -- energy sensitivity is quantal times lambda, because a photon at longer lambda carries less energy (E = hc/lambda)
 %[text] - Set `OutputFormat` at construction, change it dynamically, or override per call via `obs.LMS(wl, OutputFormat=...)`
 %[text] - `OutputFormat` governs `L`, `M`, `S` and `LMS` only. `RGB`, `XYZ` and the chromaticity methods always compute from energy-format normalized fundamentals, so changing the format leaves them unmoved
-%[text] - The physics behind these four stages -- self-screening, filtering, the wavelength factor -- is in [Example 07](matlab:edit('Example07_ComputationalPipeline.m')); this example covers the API that selects between them
+%[text] - The physics behind these four stages -- self-screening, filtering, the wavelength factor -- is in [Example 08](matlab:edit('Example08_ComputationalPipeline.m')); this example covers the API that selects between them
 %[text] - `NormalizeOutput` and `LogOutput` are independent post-processing controls \
-%[text] **Next:** [Example 09: RGB Color Matching Functions](matlab:edit('Example09_RGBColorMatching.m')) -- RGB color matching functions and custom primaries.
+%[text] **Next:** [Example 10: RGB Color Matching Functions](matlab:edit('Example10_RGBColorMatching.m')) -- RGB color matching functions and custom primaries.
 
 %[appendix]{"version":"1.0"}
 %---

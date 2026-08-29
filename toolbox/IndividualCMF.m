@@ -2848,8 +2848,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % macularTemplate peaks at CIE170.STD_2DEG_MACULAR_DENSITY
             % (~0.350 OD); rescale to the observer's MacularDensity so the
             % plotted curve peaks at obs.MacularDensity, not at
-            % 0.35 * obs.MacularDensity. Matches the manual rescale in
-            % Example12.
+            % 0.35 * obs.MacularDensity. This is the same rescale
+            % getMacularDensitySpectrum applies.
             macTemplate = PreReceptoralFilter.macularTemplate(wl);
             macScale = obj.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
             mac = macTemplate * macScale;

@@ -1,4 +1,4 @@
-%[text] # Example 15: Data Export Workflows
+%[text] # Example 16: Data Export Workflows
 %[text] How to get cone-fundamental data out of an observer in a form usable by other tools -- CSV, MAT, or directly into a MATLAB table or struct. (`writetable` also writes `.xlsx` if you give it one; the mechanics are identical and not shown here.)
 %[text] The unified entry point is `obs.evaluate(wl, Data=...)`, which always returns a table: a `Wavelength_nm` column followed by one column per channel. `Data` selects which quantity you get. For a bare numeric array, call the named method (`obs.LMS(wl)`, `obs.RGB(wl)`, ...) instead.
 %[text] **Time:** about 10 minutes.
@@ -79,7 +79,7 @@ whos('-file', mat_path)
 %[text] ## Multi-observer comparison export
 %[text] A common workflow: scan over a parameter (here, age), pull the L-cone for each, and assemble a single CSV. This makes comparing observers in external tools trivial.
 ages = [25, 50, 75];
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
@@ -91,7 +91,7 @@ writetable(comparison, fullfile(tempdir, 'L_cone_by_age.csv'));
 head(comparison, 5)
 %%
 %[text] ## Round-trip via `getParameters` / `setParameters`
-%[text] For pure-MATLAB persistence of an observer's *configuration* (rather than its evaluated data), use `getParameters` to get an `ObserverParameters` value object and save that; `setParameters` restores. The full demonstration is in [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')).
+%[text] For pure-MATLAB persistence of an observer's *configuration* (rather than its evaluated data), use `getParameters` to get an `ObserverParameters` value object and save that; `setParameters` restores. The full demonstration is in [Example 15: Advanced Customization](matlab:edit('Example15_AdvancedCustomization.m')).
 %%
 %[text] ## Direct array methods
 %[text] `evaluate` delegates to the named methods rather than reimplementing them, so the two agree bit for bit. Use whichever fits the calling code.
@@ -105,7 +105,7 @@ isequal(LMS_direct, LMS_via_evaluate)
 %[text] - `writetable` handles CSV; `save` handles MAT
 %[text] - CSV carries data only. Put the observer's parameters -- including `NormalizeOutput`, `NormalizationMethod` and `Primaries` -- in the MAT metadata struct, or encode the varying parameter in the column names, as the multi-observer export does with age, so a recipient can tell what the numbers are
 %[text] - For biophysical state, use the `getParameters`/`setParameters` round trip -- it carries the physiology but not the output settings, which must be recorded separately \
-%[text] **Next:** [Example 16: Normalization Methods](matlab:edit('Example16_NormalizationMethods.m')) -- Continuous vs Sampled normalization and reproducibility.
+%[text] **Next:** [Example 17: Normalization Methods](matlab:edit('Example17_NormalizationMethods.m')) -- Continuous vs Sampled normalization and reproducibility.
 
 %[appendix]{"version":"1.0"}
 %---

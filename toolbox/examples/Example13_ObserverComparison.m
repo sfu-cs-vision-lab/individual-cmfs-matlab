@@ -1,13 +1,13 @@
-%[text] # Example 12: Observer Comparison
+%[text] # Example 13: Observer Comparison
 %[text] Compare two or more observers and quantify their differences.
-%[text] **Reminder:** age has no effect on `LensDensity` under the default `LensModel="StockmanRider2023"`. The sections below use `LensModel="VanDeKraats2007"` whenever an age contrast is needed (see [Example 04](matlab:edit('Example04_AgingEffects.m'))).
+%[text] **Reminder:** age has no effect on `LensDensity` under the default `LensModel="StockmanRider2023"`. The sections below use `LensModel="VanDeKraats2007"` whenever an age contrast is needed (see [Example 05](matlab:edit('Example05_AgingEffects.m'))).
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
 %[text] ## `compareTo` -- quick visual comparison
 %[text] The `compareTo` method overlays the reference observer (solid lines) and a comparison observer (dashed) on a single axis.
 wl = (390:1:700)';
-%[text] Every comparison below is computed from **peak-normalized** fundamentals (the default), so the metrics -- max-abs, RMS, peak wavelengths -- measure spectral *shape*, not absolute sensitivity. Two observers can differ substantially in total light catch and still score near zero here; [Example 04](matlab:edit('Example04_AgingEffects.m')) quantifies that loss separately, and also covers the `ValidRange` / `Domain` contract for models evaluated outside their fitted range.
+%[text] Every comparison below is computed from **peak-normalized** fundamentals (the default), so the metrics -- max-abs, RMS, peak wavelengths -- measure spectral *shape*, not absolute sensitivity. Two observers can differ substantially in total light catch and still score near zero here; [Example 05](matlab:edit('Example05_AgingEffects.m')) quantifies that loss separately, and also covers the `ValidRange` / `Domain` contract for models evaluated outside their fitted range.
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
 obs_ref.compareTo(obs_comp, Title="CIE 10 deg standard vs Age 60 (VanDeKraats2007)", Wavelength=wl);
@@ -140,7 +140,7 @@ obs_old   = IndividualCMF(LensModel="VanDeKraats2007", Age=70, FieldSize=10);
 % plotLens takes no Wavelength argument, so it evaluates on the default
 % 360-830 nm grid, past the VanDeKraats2007 model's 300-700 nm fit. The
 % extrapolation is a smooth bounded decay; the warning is silenced because
-% model range is not what this section is about. See Example 04.
+% model range is not what this section is about. See Example 05.
 obs_young.ModelRangeWarning = false;
 obs_old.ModelRangeWarning = false;
 obs_young.plotLens(Compare=obs_old, Title="Lens density -- Age 25 vs Age 70");
@@ -155,7 +155,7 @@ obs2.plotMacular(Compare=obs10, Title="Macular pigment -- 2 deg vs 10 deg");
 %[text] - `obs.plotLens(Compare=...)`, `obs.plotMacular(Compare=...)` for filter-spectrum overlays
 %[text] - RMS / max-abs differences quantify observer similarity per cone
 %[text] - For age comparisons, use `LensModel="VanDeKraats2007"` (the default `StockmanRider2023` is age-flat) \
-%[text] **Next:** [Example 13: Dichromacy](matlab:edit('Example13_Dichromacy.m')) -- gene-deletion dichromacy via `Lod`/`Mod`/`Sod` = 0.
+%[text] **Next:** [Example 14: Dichromacy](matlab:edit('Example14_Dichromacy.m')) -- gene-deletion dichromacy via `Lod`/`Mod`/`Sod` = 0.
 
 %[appendix]{"version":"1.0"}
 %---

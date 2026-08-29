@@ -1,4 +1,4 @@
-%[text] # Example 14: Advanced Customization
+%[text] # Example 15: Advanced Customization
 %[text] Full control over every observer parameter for specialized applications: building hypothetical observers, exploring the parameter space, encoding individual variation, and round-tripping observer state for reproducibility.
 %[text] **Time:** about 15 minutes.
 exampleDefaults();
@@ -90,7 +90,7 @@ obs_normal.compareTo(obs_anomalous, Title="Normal (solid) vs anomalous (dashed)"
 xlim([390 700])
 %%
 %[text] ## Genotype and primaries -- see earlier examples
-%[text] Per-codon `Genotype=` and `setGenotype`/`applyGenotype` are covered in [Example 05: Genetic Variants](matlab:edit('Example05_GeneticVariants.m')). Custom `Primaries` is covered in [Example 09: RGB Color Matching Functions](matlab:edit('Example09_RGBColorMatching.m')).
+%[text] Per-codon `Genotype=` and `setGenotype`/`applyGenotype` are covered in [Example 06: Genetic Variants](matlab:edit('Example06_GeneticVariants.m')). Custom `Primaries` is covered in [Example 10: RGB Color Matching Functions](matlab:edit('Example10_RGBColorMatching.m')).
 %%
 %[text] ## A fully customized observer
 %[text] Combining everything in one call. The displayed property listing makes the parameter set self-documenting.
@@ -147,7 +147,7 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
 %[text] - `LensDensityAlgorithm`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` are the three density-algorithm properties
 %[text] - `setGenotype`, `applyGenotype`, and the `Genotype=` constructor arg are three paths to genetic configuration, differing in granularity
 %[text] - All parameters are validated with helpful error messages \
-%[text] **Next:** [Example 15: Data Export Workflows](matlab:edit('Example15_DataExport.m')) -- exporting cone fundamentals as arrays, tables, structs, CSV, Excel, and MAT files via the `evaluate` method.
+%[text] **Next:** [Example 16: Data Export Workflows](matlab:edit('Example16_DataExport.m')) -- exporting cone fundamentals as arrays, tables, structs, CSV, Excel, and MAT files via the `evaluate` method.
 
 %[appendix]{"version":"1.0"}
 %---

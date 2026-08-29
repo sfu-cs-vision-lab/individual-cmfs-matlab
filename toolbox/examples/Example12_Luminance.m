@@ -1,4 +1,4 @@
-%[text] # Example 11: Photopic Luminance V*(lambda)
+%[text] # Example 12: Photopic Luminance V*(lambda)
 %[text] The **photopic luminous efficiency function** $V^{*}(\\lambda)$ describes how the visual system weights different wavelengths when computing luminance -- the quantity flicker photometry and additive matching measure. Luminance is not brightness: brightness carries chromatic contributions (the Helmholtz-Kohlrausch effect) that $V^{*}$ deliberately excludes. Nor is $V^{*}$ the 1924 $V(\\lambda)$, which underestimates short-wavelength sensitivity; it is the cone-fundamental-based successor. It is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ transform, i.e. a linear combination of the L- and M-cone fundamentals:
 %[text] $ V^*(\\lambda) = a \\bar{L}(\\lambda) + b \\bar{M}(\\lambda) $
 %[text] where the coefficients $(a, b)$ are field-size dependent: $(0.6899, 0.3483)$ for the 2 deg observer and $(0.6928, 0.3497)$ for the 10 deg observer. Sharpe et al. (2005) measured these directly in 40 genotyped observers; the CIE adopted them in CIE 170-2:2015.
@@ -41,7 +41,7 @@ xlim([500 700])
 %[text] As the lens yellows with age, short-wavelength light is increasingly absorbed before reaching the photoreceptors. With the `VanDeKraats2007` lens model, $V^{*}(\\lambda)$ drops on the short-wavelength flank for older observers while the long-wavelength side moves less, though not by nothing -- it rises 7 to 11 percent between ages 25 and 75 as renormalization lifts what the lens did not attenuate, and the V* peak itself walks from 551 to 558 nm.
 ages = [25, 50, 75];
 agecol = lines(numel(ages));
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
@@ -123,8 +123,8 @@ table(Phi_v, Km, Phi_v / Km, ...
 %[text] - It always uses energy-normalized LMS regardless of the observer's `OutputFormat`
 %[text] - Genotype and lens aging produce visible individual differences in $V^{*}(\\lambda)$
 %[text] - For dichromats, $V^{*}(\\lambda)$ reduces to the residual cone's contribution -- in this unrenormalized formulation a protanope retains only the $bM$ term (peak $\\approx 0.35$) and a deuteranope only $aL$ (peak $\\approx 0.69$). Real dichromat luminous efficiency is conventionally renormalized, which changes the picture: a renormalized protanope loses at long wavelengths (0.13 of standard at 650 nm) but a renormalized deuteranope slightly *gains* there (1.39 at 650 nm), so this is a reshaping rather than a uniform dimming \
-%[text] - Dichromacy in depth -- how zero optical density models it, and what the other derived quantities do -- is [Example 13](matlab:edit('Example13_Dichromacy.m')), which carries no luminance content of its own \\
-%[text] **Next:** [Example 12: Observer Comparison](matlab:edit('Example12_ObserverComparison.m')) -- visual and quantitative observer-vs-observer comparison.
+%[text] - Dichromacy in depth -- how zero optical density models it, and what the other derived quantities do -- is [Example 14](matlab:edit('Example14_Dichromacy.m')), which carries no luminance content of its own \\
+%[text] **Next:** [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')) -- visual and quantitative observer-vs-observer comparison.
 %[text]
 
 %[appendix]{"version":"1.0"}

@@ -26,8 +26,8 @@ obs.plotLMS(Title="Human Cone Fundamentals (CIE 2006 10 deg Observer)");
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Peak normalization
-%[text] Output is peak-normalized by default: each cone is divided by the peak of its *continuous* spectral model, found by search rather than read off a grid. The true peak almost never lands on an integer wavelength, so the maximum over a sampled grid comes out a hair under 1.0 -- 0.99999 for L below. See [Example 16](matlab:edit('Example16_NormalizationMethods.m')) for how the peak is located, and [Example 08](matlab:edit('Example08_OutputFormats.m')) for un-normalized output and other format controls.
-%[text] The peak wavelengths below are those of the complete fundamental in energy units, not the photopigment's lambda-max: lens and macular filtering and the quantal-to-energy conversion all move the peak. [Example 07](matlab:edit('Example07_ComputationalPipeline.m')) walks that pipeline.
+%[text] Output is peak-normalized by default: each cone is divided by the peak of its *continuous* spectral model, found by search rather than read off a grid. The true peak almost never lands on an integer wavelength, so the maximum over a sampled grid comes out a hair under 1.0 -- 0.99999 for L below. See [Example 17](matlab:edit('Example17_NormalizationMethods.m')) for how the peak is located, and [Example 09](matlab:edit('Example09_OutputFormats.m')) for un-normalized output and other format controls.
+%[text] The peak wavelengths below are those of the complete fundamental in energy units, not the photopigment's lambda-max: lens and macular filtering and the quantal-to-energy conversion all move the peak. [Example 08](matlab:edit('Example08_ComputationalPipeline.m')) walks that pipeline.
 [peakL, iL] = max(L);
 [peakM, iM] = max(M);
 [peakS, iS] = max(S);

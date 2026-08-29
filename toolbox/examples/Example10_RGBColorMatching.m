@@ -1,4 +1,4 @@
-%[text] # Example 09: RGB Color Matching Functions
+%[text] # Example 10: RGB Color Matching Functions
 %[text] **RGB color matching functions** describe how much of three primary lights are needed to match every spectral color. They are computed from the LMS cone fundamentals via a linear transformation determined by the LMS values at the three primary wavelengths.
 %[text] The toolbox uses **Stiles & Burch (1959) 10 deg primaries** by default:
 %[text] - R: 645.15 nm (nominally 15 500 cm$^{-1}$, i.e. 645.16 nm; both CIE170 and pycone carry the rounded 645.15)
@@ -82,7 +82,7 @@ end
 %[text] - Negative tristimulus values mean the spectral color cannot be matched by an additive mixture
 %[text] - Set `Primaries=[R, G, B]` in nm to model any custom display
 %[text] - Primaries that don't span the L, M, S response regions distinctly raise `IndividualCMF:SingularPrimaries` \
-%[text] **Next:** [Example 10: Chromaticity Diagrams](matlab:edit('Example10_ChromaticityDiagrams.m')) -- chromaticity coordinates and the spectral locus.
+%[text] **Next:** [Example 11: Chromaticity Diagrams](matlab:edit('Example11_ChromaticityDiagrams.m')) -- chromaticity coordinates and the spectral locus.
 
 %[appendix]{"version":"1.0"}
 %---

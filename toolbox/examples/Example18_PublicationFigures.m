@@ -1,4 +1,4 @@
-%[text] # Example 17: Publication-Quality Figures
+%[text] # Example 18: Publication-Quality Figures
 %[text] Multi-panel publication figures use MATLAB's `tiledlayout` and `nexttile` directly. Every `IndividualCMF` plot method accepts `Parent=`, so passing `nexttile()` places that plot in the next tile of the layout. Export with `exportgraphics`.
 %[text] This is the capstone example: combine everything from the earlier scripts into figures suitable for papers and presentations.
 %[text] **Time:** about 10 minutes.
@@ -35,7 +35,7 @@ obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 %%
 %[text] ## Two-observer comparison (inline)
 %[text] `compareTo` overlays a second observer in dashed lines. Same gca pattern as `plotLMS`.
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
 obs_comp.ModelRangeWarning = false;
@@ -43,7 +43,7 @@ obs_ref.compareTo(obs_comp, ...
     Title="CIE 10 deg (solid) vs Age 60 VanDeKraats2007 (dashed)");
 %%
 %[text] ## A six-perspective view of aging (VanDeKraats2007 model)
-%[text] The next six sections each isolate one aspect of how the visual system changes with age, using the `VanDeKraats2007` lens model. Together these are exactly the panels you'd assemble into a publication-summary aging figure (see the final "composite figure" section below). Always use `VanDeKraats2007` (or `Pokorny1987`) for age studies; the default `StockmanRider2023` lens is age-flat (see [Example 04](matlab:edit('Example04_AgingEffects.m'))).
+%[text] The next six sections each isolate one aspect of how the visual system changes with age, using the `VanDeKraats2007` lens model. Together these are exactly the panels you'd assemble into a publication-summary aging figure (see the final "composite figure" section below). Always use `VanDeKraats2007` (or `Pokorny1987`) for age studies; the default `StockmanRider2023` lens is age-flat (see [Example 05](matlab:edit('Example05_AgingEffects.m'))).
 wl = (390:1:700)';
 ages = [25, 40, 55, 70];
 agecol = parula(numel(ages));
@@ -253,7 +253,7 @@ exportgraphics(gcf, fullfile(tempdir, "observer_panel.png"), Resolution=300);
 %[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
 %[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
 %[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern publication-export call -- PDF / SVG / EPS preferred over raster \
-%[text] **Next:** [Example 18: Observer Metamerism](matlab:edit('Example18_ObserverMetamerism.m')) -- how a metameric pair for the standard observer breaks for an individual observer.
+%[text] **Next:** [Example 19: Observer Metamerism](matlab:edit('Example19_ObserverMetamerism.m')) -- how a metameric pair for the standard observer breaks for an individual observer.
 
 %[appendix]{"version":"1.0"}
 %---

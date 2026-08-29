@@ -1,4 +1,4 @@
-%[text] # Example 04: Aging Effects on Color Vision
+%[text] # Example 05: Aging Effects on Color Vision
 %[text] The crystalline lens grows progressively denser at short wavelengths with age. This example compares the three available `LensModel` choices and quantifies the impact on S-cone sensitivity.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
@@ -88,7 +88,7 @@ legend('StockmanRider2023 (flat with age)', 'Pokorny1987', 'VanDeKraats2007', 'L
 grid on
 %%
 %[text] ## Custom-mode override (advanced)
-%[text] The `LensDensity` value computed by the lens model can be overridden directly. Doing so auto-engages `LensDensityAlgorithm="Custom"` so the override is preserved across subsequent `Age` changes; `obs.LensDensity = []` hands it back to the model. See [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')) for full coverage.
+%[text] The `LensDensity` value computed by the lens model can be overridden directly. Doing so auto-engages `LensDensityAlgorithm="Custom"` so the override is preserved across subsequent `Age` changes; `obs.LensDensity = []` hands it back to the model. See [Example 15: Advanced Customization](matlab:edit('Example15_AdvancedCustomization.m')) for full coverage.
 obs_override = IndividualCMF(LensModel="VanDeKraats2007", Age=55, LensDensity=2.0);
 table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensityAlgorithm), ...
       'VariableNames', {'Age', 'LensDensity', 'Algorithm'})
@@ -98,7 +98,7 @@ table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensit
 %[text] - S-cone sensitivity is most affected -- by 75 it retains about a third of its age-20 total catch -- but L and M are not spared: L retains about four fifths and M about three quarters. Their normalized *shape* is nearly age-invariant, which is what the plots show; the amplitude loss needs `NormalizeOutput=false`
 %[text] - Pick `LensModel` deliberately: `StockmanRider2023` for CIE-spec compliance, `VanDeKraats2007` (or `Pokorny1987`) for age studies
 %[text] - Setting `LensDensity` directly auto-engages Custom mode and preserves the value across Age changes \
-%[text] **Next:** [Example 05: Genetic Variants and Cone Polymorphisms](matlab:edit('Example05_GeneticVariants.m')). Modeling individual genetic differences via the L-cone Ser180Ala polymorphism and hybrid cone variants.
+%[text] **Next:** [Example 06: Genetic Variants and Cone Polymorphisms](matlab:edit('Example06_GeneticVariants.m')). Modeling individual genetic differences via the L-cone Ser180Ala polymorphism and hybrid cone variants.
 
 %[appendix]{"version":"1.0"}
 %---

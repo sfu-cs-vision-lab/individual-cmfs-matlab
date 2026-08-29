@@ -438,9 +438,10 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
         end
 
         function testFreshAxesEscapesPriorTiledLayout(testCase)
-            % Models the Example15 pattern: after a tiledlayout/nexttile
-            % section leaves gca pointing at the last tile, 'ax = axes'
-            % must produce a target that is NOT one of those tiles.
+            % A tiledlayout/nexttile section leaves gca pointing at the
+            % last tile. A later 'ax = axes' must produce a target that is
+            % NOT one of those tiles, or the next plot lands in the old
+            % layout.
             fig = figure('Visible','off');
             tl = tiledlayout(fig, 2, 3);
             tileAxes = gobjects(6, 1);
