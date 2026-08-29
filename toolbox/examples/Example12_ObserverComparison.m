@@ -7,10 +7,9 @@ exampleDefaults();
 %[text] ## `compareTo` -- quick visual comparison
 %[text] The `compareTo` method overlays the reference observer (solid lines) and a comparison observer (dashed) on a single axis.
 wl = (390:1:700)';
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] Every comparison below is computed from **peak-normalized** fundamentals (the default), so the metrics -- max-abs, RMS, peak wavelengths -- measure spectral *shape*, not absolute sensitivity. Two observers can differ substantially in total light catch and still score near zero here; [Example 04](matlab:edit('Example04_AgingEffects.m')) quantifies that loss separately, and also covers the `ValidRange` / `Domain` contract for models evaluated outside their fitted range.
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
-obs_comp.ModelRangeWarning = false;
 obs_ref.compareTo(obs_comp, Title="CIE 10 deg standard vs Age 60 (VanDeKraats2007)", Wavelength=wl);
 %%
 %[text] ## Quantifying the difference
@@ -56,8 +55,6 @@ observers = { ...
     IndividualCMF(L_OpsinTemplate="Serine"),                                  'Ser180 homozygote'; ...
     IndividualCMF(L_OpsinTemplate="Alanine"),                                 'Ala180 homozygote'};
 n = size(observers, 1);
-% Two of these use VanDeKraats2007 past its 700 nm fit; see the note above.
-for i = 1:n, observers{i, 1}.ModelRangeWarning = false; end
 ref = observers{1, 1}.LMS(wl);
 rms_diffs = zeros(n, 3);
 for i = 1:n
