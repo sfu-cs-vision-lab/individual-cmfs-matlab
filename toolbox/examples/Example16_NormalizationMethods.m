@@ -8,7 +8,7 @@ exampleDefaults();
 %%
 %[text] ## Two normalization methods
 %[text] You can request either method by name. The wavelengths `Sampled` normalizes over live in `NormalizationGrid`, which accepts any wavelength vector -- the `start:step:stop` form below is just convenient.
-%[text] Three of the four output formats are normalized. `absorbance` is the exception: it is never normalized, whatever `NormalizeOutput` says, because its absolute scale carries meaning -- `A(lambda_max) = 1` is what makes `Lod`/`Mod`/`Sod` mean peak axial optical density.
+%[text] Three of the four output formats are normalized. `absorbance` is the exception: it is never normalized, whatever `NormalizeOutput` says, because its absolute scale carries meaning -- the templates are anchored so `A(lambda_max)` is 1, which is what makes `Lod`/`Mod`/`Sod` mean peak axial optical density. (The anchor is a convention rather than a measured equality -- the Fourier fit puts the L peak at 0.995.)
 obs_cont = IndividualCMF(NormalizationMethod="Continuous");
 obs_samp = IndividualCMF(NormalizationMethod="Sampled");
 grid_default = obs_samp.NormalizationGrid;
@@ -77,7 +77,7 @@ grid on; ylim([0.997 1.001])
 %%
 %[text] ## Reproducing external reference implementations
 %[text] To match an external implementation that normalizes on a discrete wavelength grid, set `NormalizationMethod="Sampled"` and give `NormalizationGrid` the same wavelengths the reference uses, then evaluate at that grid. **Pycone** (the Python reference implementation) is the canonical example: it accepts a user-configurable step size. Because the grid is a plain wavelength vector, one expression serves as both the normalization grid and the evaluation grid.
-%[text] The grid below is a stand-in for some external reference's configuration, not pycone's -- pycone normalizes over 380:1:780, which is exactly why that is this toolbox's default `NormalizationGrid`.
+%[text] pycone's own grid needs no work here: it normalizes over 380:1:780, which is already this toolbox's default. The grid below stands in for a *different* tool, to show what changing it looks like.
 wl_reference = (390:5:830)';
 obs_reference = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=wl_reference);
 table(string(obs_reference.NormalizationMethod), ...
@@ -85,17 +85,21 @@ table(string(obs_reference.NormalizationMethod), ...
       max(obs_reference.NormalizationGrid), ...
       numel(obs_reference.NormalizationGrid), ...
       'VariableNames', {'Method', 'Grid_min', 'Grid_max', 'Grid_points'})
+%[text] Evaluating on that same grid closes the loop: the maximum is exactly 1, because the wavelength the divisor came from is one of the points being evaluated. That is the whole trick -- exceedance only appears when the evaluation grid is finer than the normalization grid.
+table(max(obs_reference.L(wl_reference)), max(obs_reference.L((390:0.1:830)')), ...
+      'VariableNames', {'On_its_own_grid', 'On_a_finer_grid'})
 %%
 %[text] ## Recommendations
 %[text] **Use Continuous when:** you need guaranteed values <= 1.0; you're evaluating at arbitrary wavelengths; this is the right default for general colorimetric work.
 %[text] **Use Sampled when:** you're matching a specific reference dataset (Pycone, published tables); you need bit-exact reproducibility on a known grid. Use the matching evaluation grid to avoid off-grid exceedance.
+%[text] **One trap worth knowing given the topic.** `NormalizationMethod` and `NormalizationGrid` are not carried by `getParameters` / `setParameters` -- that snapshot holds the biophysics only. Restore an observer from one and a `Sampled` configuration silently comes back as `Continuous`, quietly leaving you off the reference you set it up to match. Set both explicitly after any round trip. See [Example 15](matlab:edit('Example15_DataExport.m')).
 %%
 %[text] ## Key takeaways
 %[text] - `Continuous` (default) finds the exact peak via optimisation; resolution-independent; never exceeds 1.0
 %[text] - `Sampled` finds the max over a discrete grid; resolution-dependent; may exceed 1.0 between grid points
 %[text] - Use `NormalizationGrid = a:s:b` for explicit grid control
 %[text] - `obs.getPeak('L')` returns the unnormalised peak (the divisor)
-%[text] - For pycone parity, keep the default `NormalizationGrid` (380:1:780, which is the grid pycone normalizes over) or set it to the grid the pycone session used, and evaluate on that same grid \
+%[text] - For pycone parity, set `NormalizationMethod="Sampled"` and keep the default `NormalizationGrid` (380:1:780, the grid pycone normalizes over), then evaluate on that same grid. The method matters: under the default `Continuous` the grid is ignored entirely, leaving you about 1e-5 off \
 %[text] **Next:** [Example 17: Publication-Quality Figures](matlab:edit('Example17_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
 
 %[appendix]{"version":"1.0"}
