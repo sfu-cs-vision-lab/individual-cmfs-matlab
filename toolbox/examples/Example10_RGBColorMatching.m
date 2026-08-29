@@ -1,25 +1,27 @@
 %[text] # Example 10: RGB Color Matching Functions
-%[text] **RGB color matching functions** describe how much of three primary lights are needed to match every spectral color. They are computed from the LMS cone fundamentals via a linear transformation determined by the LMS values at the three primary wavelengths.
-%[text] The toolbox uses **Stiles & Burch (1959) 10 deg primaries** by default:
-%[text] - R: 645.15 nm (nominally 15 500 cm$^{-1}$, i.e. 645.16 nm; both CIE170 and pycone carry the rounded 645.15)
-%[text] - G: 526.32 nm (19 000 cm$^{-1}$)
-%[text] - B: 444.44 nm (22 500 cm$^{-1}$) \
-%[text] You can also use any custom primary wavelengths to model specific displays. 
+%[text] RGB colour matching functions give the amounts of three primary lights needed to match each wavelength of the spectrum. The toolbox computes them from the LMS cone fundamentals by a linear transformation, which is fixed once the three primary wavelengths are chosen.
+%[text] The default primaries are those of Stiles and Burch (1959) for 10 deg matching:
+%[text] - R at 645.15 nm, nominally 15 500 cm$^{-1}$, which is 645.16 nm. Both CIE 170 and pycone carry the rounded value.
+%[text] - G at 526.32 nm, which is 19 000 cm$^{-1}$.
+%[text] - B at 444.44 nm, which is 22 500 cm$^{-1}$. \
+%[text] Any other set of primary wavelengths can be supplied, which allows a particular display to be modelled.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
-%[text] ## Default RGB CMFs
-%[text] An observer in default configuration uses the Stiles & Burch 10 deg primaries. The `RGB(wl)` method returns an Nx3 matrix.
+%[text] ## The default functions
+%[text] A default observer uses the Stiles and Burch primaries. `RGB(wl)` returns an N by 3 array.
 obs = IndividualCMF();
 wl = (390:1:700)';
 RGB = obs.RGB(wl);
 table(obs.Primaries(1), obs.Primaries(2), obs.Primaries(3), ...
       'VariableNames', {'R_nm', 'G_nm', 'B_nm'})
 %%
-%[text] ## Visualizing RGB CMFs
-%[text] A word on the experiment these functions come from, because the next paragraph depends on it. An observer views a **split (bipartite) field**: the spectral test light fills one half, an adjustable mixture of the three primaries fills the other, and the primary intensities are adjusted until the two halves look identical. When no positive mixture can match the test light, one primary is moved over to the *test* half instead, and that amount is recorded as a negative value.
-%[text] `obs.plotRGBCMFs` is the dedicated wrapper for RGB CMF plots. Note the **negative values** -- particularly in the R curve around 500 nm. Negative tristimulus values mean the spectral test color cannot be matched by an additive mixture of the primaries; the only way to match it is to *add* primary light to the test side, giving a negative coefficient.
-obs.plotRGBCMFs(Title="RGB Color Matching Functions (Stiles & Burch 10 deg)", Wavelength=wl);
+%[text] ## The colour matching experiment
+%[text] These functions come from a matching experiment, and the negative values in the figure below only make sense in terms of it.
+%[text] The observer views a field divided into two halves. One half is filled with a single wavelength of light, called the test light. The other half is filled with a mixture of the three primaries. The observer adjusts the amounts of the three primaries until the two halves look identical.
+%[text] For some test wavelengths no mixture of the three primaries can produce a match. One primary is then moved to the test half of the field instead, where it desaturates the test light and brings it within reach of the other two. The amount moved across is recorded as a negative value.
+%[text] `plotRGBCMFs` draws the three functions. The dashed vertical lines mark the primary wavelengths, where by construction one function is 1 and the other two are 0.
+obs.plotRGBCMFs(Title="RGB colour matching functions (Stiles & Burch 10 deg)", Wavelength=wl);
 hold on
 xline(obs.Primaries(1), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility', 'off')
 xline(obs.Primaries(2), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility', 'off')
@@ -27,30 +29,34 @@ xline(obs.Primaries(3), '--', 'Color', [0.5 0.5 0.5], 'HandleVisibility', 'off')
 hold off
 xlim([390 700])
 %%
-%[text] ## Reading negative values
-%[text] At 500 nm the R value is clearly negative (G and B are both positive). This is the classic "you can't match a pure spectral cyan with an RGB mixture" result -- you have to add red to the test side to make the colors agree.
+%[text] ## A negative value read from the table
+%[text] At 500 nm the R value is negative while G and B are both positive. A spectral light at 500 nm cannot be matched by any mixture of the three primaries. The red primary has to be added to the test half instead.
 RGB_at_500 = RGB(wl == 500, :);
 table(RGB_at_500(1), RGB_at_500(2), RGB_at_500(3), ...
       'VariableNames', {'R_500nm', 'G_500nm', 'B_500nm'})
 %%
-%[text] ## LMS values at the primaries determine the transform
-%[text] The LMS-to-RGB transform is the inverse of the 3x3 matrix `M` whose **column** $j$ is the LMS vector at primary wavelength $\\lambda_j$ (equivalently, row $i$ contains the $i$-th cone's response at the three primaries). After applying that inverse, each primary's wavelength produces a unit vector along its RGB axis.
+%[text] ## Where the transformation comes from
+%[text] Build the 3 by 3 matrix whose column $j$ is the LMS response at primary wavelength $\\lambda_j$. Equivalently, row $i$ holds the response of cone $i$ at the three primaries. The LMS to RGB transformation is the inverse of that matrix. Applying it makes each primary wavelength produce a unit vector along its own RGB axis, which is why the three functions take the values 1, 0 and 0 at the primaries.
 LMS_at_primaries = obs.LMS(obs.Primaries')
 %%
-%[text] ## Custom primaries
-%[text] Two features of the figure above are worth naming. The dashed grey verticals mark the three primary wavelengths, where by construction one curve reaches 1 and the other two reach 0. And the R curve peaks near 599 nm rather than at its own 645 nm primary: normalization pins R to 1 at 645 nm, which sits well down the L cone's long-wave slope, so the curve rises above 1 where the cones are more sensitive.
-%[text] Pass `Primaries` as a 1x3 vector to model any RGB triple. Below: comparing the toolbox default (Stiles & Burch) to a hypothetical display with monochromatic primaries near typical sRGB peak wavelengths. **Note:** sRGB and Adobe RGB are defined by *chromaticity coordinates*, not monochromatic wavelengths. Real displays have broad phosphor/LED emission spectra; the wavelengths used in this section only approximate where their primaries would sit on the spectral locus.
+%[text] The R function reaches its largest value near 599 nm rather than at its own primary of 645 nm. Normalization sets R to 1 at 645 nm, and at that wavelength the L cone is already well below its own peak sensitivity. At wavelengths where the cones are more sensitive the function therefore rises above 1.
+%%
+%[text] ## Supplying your own primaries
+%[text] `Primaries` accepts a 1 by 3 vector of wavelengths. The panels below compare the toolbox default against a display with primaries near the peak wavelengths typical of sRGB.
+%[text] Note that sRGB and Adobe RGB are defined by chromaticity coordinates rather than by single wavelengths, and that real display primaries emit over a band of wavelengths rather than at one. The wavelengths used here only indicate roughly where those primaries fall on the spectrum locus.
 obs_default = IndividualCMF();
 obs_sRGB    = IndividualCMF(Primaries=[615, 545, 465]);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs_default.plotRGBCMFs(Title="Stiles & Burch [645/526/444]", Wavelength=wl, Parent=nexttile);
 xlim([390 700])
-obs_sRGB.plotRGBCMFs(Title="Custom sRGB-like [615/545/465]", Wavelength=wl, Parent=nexttile);
+obs_sRGB.plotRGBCMFs(Title="sRGB-like [615/545/465]", Wavelength=wl, Parent=nexttile);
 xlim([390 700])
 %%
-%[text] ## Display-technology comparison
-%[text] Different display systems use different primaries. Adobe RGB's wider gamut comes entirely from a purer **green** -- it shares sRGB's red and blue primaries exactly. The interesting part is where that shows up in the CMFs: not in the green curve, which peaks at 536 nm either way and moves by at most 0.046, but in the **red** one. Pushing the green primary to a shorter wavelength shrinks R's negative lobe from -0.396 to -0.189, a change of 0.277. A negative lobe is the gamut boundary made visible, so widening the gamut is exactly what shrinks it.
-%[text] The dominant wavelengths below stand in for each system's primaries; real display primaries are broadband, so this is an approximation (see the caveat above). The Stiles & Burch row is read from the observer so it cannot drift from the toolbox default.
+%[text] ## Three sets of primaries compared
+%[text] Adobe RGB covers a wider range of colours than sRGB. It does so through its green primary alone, since the two systems share the same red and blue primaries.
+%[text] The effect on the colour matching functions is not where it might be expected. The green function changes little. It peaks at 536 nm under both systems and its largest change is 0.046. The red function changes far more. Moving the green primary to a shorter wavelength raises the most negative value of the R function from -0.396 to -0.189, a change of 0.277.
+%[text] The negative values mark the test wavelengths that the three primaries cannot match, so a set of primaries that covers more colours produces smaller negative values.
+%[text] The wavelengths below stand in for each system's primaries, with the same caveat about broadband emission. The Stiles and Burch row is read back from an observer so that it cannot disagree with the toolbox default.
 sb = IndividualCMF().Primaries;
 disp_specs = ["sRGB";           "Adobe RGB";       "Stiles & Burch"];
 disp_R = [611;                  611;               sb(1)];
@@ -65,8 +71,9 @@ for k = 1:numel(disp_specs)
     xlim([390 700])
 end
 %%
-%[text] ## Bad primaries: the SingularPrimaries error path
-%[text] When primaries are too close together (all in one cone's response region), the LMS-at-primaries matrix becomes near-singular and the toolbox refuses to compute the inverse rather than emit nonsense. Below: three primaries within 2 nm of each other near the L-cone peak.
+%[text] ## Primaries that cannot be used
+%[text] The three primaries must be independent, in the sense that no two of them can be combined to match the third. If they are too close together in wavelength, all three fall in much the same part of the spectrum, the matrix of LMS values at the primaries is close to singular, and its inverse is meaningless.
+%[text] The toolbox raises `IndividualCMF:SingularPrimaries` in that case rather than returning the result. The three primaries below lie within 2 nm of each other, near the L-cone peak.
 try
     obs_bad = IndividualCMF(Primaries=[555, 555.5, 556]);
     obs_bad.RGB(550);
@@ -76,13 +83,13 @@ catch ME
 end
 %%
 %[text] ## Key takeaways
-%[text] - RGB CMFs are linear transforms of LMS cone fundamentals
-%[text] - Default primaries are Stiles & Burch 10 deg (645.15, 526.32, 444.44 nm)
-%[text] - `RGB` ignores `OutputFormat`: it always computes from energy-format, peak-normalized fundamentals, so an observer set to quantal or absorbance returns identical RGB CMFs
-%[text] - Negative tristimulus values mean the spectral color cannot be matched by an additive mixture
-%[text] - Set `Primaries=[R, G, B]` in nm to model any custom display
-%[text] - Primaries that don't span the L, M, S response regions distinctly raise `IndividualCMF:SingularPrimaries` \
-%[text] **Next:** [Example 11: Chromaticity Diagrams](matlab:edit('Example11_ChromaticityDiagrams.m')) -- chromaticity coordinates and the spectral locus.
+%[text] - RGB colour matching functions are a linear transformation of the LMS cone fundamentals
+%[text] - The default primaries are those of Stiles and Burch at 645.15, 526.32 and 444.44 nm
+%[text] - `RGB` ignores `OutputFormat`. It always computes from peak-normalized fundamentals in energy units, so an observer set to quantal or absorbance returns the same functions
+%[text] - A negative value means the test light cannot be matched by any mixture of the three primaries, and that the primary concerned must be added to the test light instead
+%[text] - Set `Primaries=[R, G, B]` in nm to model another set of primaries
+%[text] - Primaries that are not independent raise `IndividualCMF:SingularPrimaries` \
+%[text] **Next:** [Example 11: Chromaticity Diagrams](matlab:edit('Example11_ChromaticityDiagrams.m')). Chromaticity coordinates and the spectrum locus.
 
 %[appendix]{"version":"1.0"}
 %---

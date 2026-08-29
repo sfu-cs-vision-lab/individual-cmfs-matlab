@@ -1,15 +1,15 @@
 %[text] # Example 08: Computational Pipeline
-%[text] Cone fundamentals are computed through a four-stage physiological pipeline that models light propagation through the eye:
-%[text] 1. **Photopigment absorbance** (linear, peaking near 1) -- intrinsic absorbance of the visual pigment, determined by the opsin protein. Pass `LogOutput=true` if you want $\\log_{10}$ values.
-%[text] 2. **Retinal absorptance** -- `OutputFormat="absorptance"` returns the *relative* retinal absorptance `(1 - 10^(-OD*A)) / (1 - 10^(-OD))`, which peaks near 1 by construction for both Stockman-Rider and Govardovskii templates. The raw physical fraction `1 - 10^(-OD*A)` (which peaks near `1 - 10^(-OD)` ~ 0.58 for typical OD) is available through `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`.
-%[text] 3. **Corneal quantal** (linear) -- sensitivity at the cornea, in photon units, after lens and macular filtering
-%[text] 4. **Corneal energy** (linear) -- same as quantal, converted to energy units by dividing by the per-photon energy E = hc/lambda, i.e. multiplying by lambda \
-%[text] Each stage is exposed via the `OutputFormat` property. 
+%[text] A cone fundamental is computed in four stages, which follow the light from the photopigment back out to the cornea:
+%[text] 1. **Photopigment absorbance.** The absorbance of the visual pigment itself, set by the opsin protein. It is scaled so that its largest value is 1 at lambda-max. Pass `LogOutput=true` for base-10 logarithmic values.
+%[text] 2. **Retinal absorptance.** The fraction of light the cone actually absorbs, which depends on the amount of pigment present.
+%[text] 3. **Corneal quantal sensitivity.** Sensitivity measured at the cornea, in photon units, after the lens and macular pigment have absorbed part of the light.
+%[text] 4. **Corneal energy sensitivity.** The same quantity in energy units. \
+%[text] The `OutputFormat` property selects which stage the cone methods return.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
-%[text] ## Accessing the four stages
-%[text] The cleanest way is to set `OutputFormat` to one of the four pipeline-stage names. The cone-method calls (`L`, `M`, `S`, `LMS`) then return that stage's values. Stage 1 (absorbance) collapses to zero when a cone is absent -- see [Example 14: Dichromacy](matlab:edit('Example14_Dichromacy.m')) for the dichromat case.
+%[text] ## Reading each stage
+%[text] Setting `OutputFormat` to one of the four stage names makes `L`, `M`, `S` and `LMS` return that stage. A cone with an optical density of zero returns zero absorbance, which [Example 14](matlab:edit('Example14_Dichromacy.m')) covers.
 obs = IndividualCMF();
 wl = (390:1:700)';
 obs_abs  = IndividualCMF(OutputFormat="absorbance");
@@ -21,14 +21,15 @@ absorptance = obs_absp.L(wl);
 quantal     = obs_q.L(wl);
 energy      = obs_e.L(wl);
 %%
-%[text] ## Visualizing the four stages
-%[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. The lower three panels are peak-normalized by the default `NormalizeOutput=true`, so they all top out at 1.0 and compare *shape* rather than scale.
-%[text] Stage 1 is the exception: `absorbance` ignores `NormalizeOutput` entirely and keeps its absolute template scale, which is why it peaks at 0.995 rather than 1. That scale is load-bearing -- `A(lambda_max) = 1` by template convention is what makes `Lod`, `Mod` and `Sod` mean peak *axial* optical density at the next stage. The raw physical absorptance, which peaks near 0.58 at this optical density instead of near 1, is computed further down in the optical-density sweep.
+%[text] ## The four stages plotted
+%[text] Each panel shows the L cone at the same wavelengths, one panel per stage.
+%[text] The lower three panels are peak-normalized by the default `NormalizeOutput=true`, so each reaches 1.0 and the panels compare shape rather than scale.
+%[text] The first panel is different. Absorbance ignores `NormalizeOutput` and keeps the scale of the template, which is why it peaks at 0.995 rather than at 1.0. That scale carries meaning. The templates are anchored so that absorbance is 1 at lambda-max, and it is that convention which makes `Lod`, `Mod` and `Sod` the peak axial optical density at the next stage. The 0.995 is the residual of the Fourier fit rather than a departure from the convention.
 tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
 ylabel('Absorbance')
-title('Stage 1: Photopigment absorbance (linear)'); xlim([390 700])
+title('Stage 1: Photopigment absorbance'); xlim([390 700])
 nexttile
 plot(wl, absorptance, 'r-')
 ylabel('Absorptance')
@@ -36,34 +37,35 @@ title('Stage 2: Relative retinal absorptance'); xlim([390 700])
 nexttile
 plot(wl, quantal, 'r-')
 ylabel('Sensitivity')
-title('Stage 3: Corneal quantal'); xlim([390 700])
+title('Stage 3: Corneal quantal sensitivity'); xlim([390 700])
 nexttile
 plot(wl, energy, 'r-')
 xlabel('Wavelength (nm)'); ylabel('Sensitivity')
-title('Stage 4: Corneal energy (default)'); xlim([390 700])
+title('Stage 4: Corneal energy sensitivity (the default)'); xlim([390 700])
 %%
-%[text] ## Overlaid normalized comparison
-%[text] Normalising each curve to its own peak makes the *shape changes* between stages comparable. Pre-receptoral filtering progressively erodes short-wavelength sensitivity; energy conversion shifts the peak slightly toward **longer** wavelengths (multiplying by lambda -- see the next section).
+%[text] ## The four stages overlaid
+%[text] Dividing each curve by its own peak makes the change of shape between stages comparable. The lens and the macular pigment reduce the sensitivity at short wavelengths, and the conversion to energy units moves the peak to slightly longer wavelengths. The next two sections explain both.
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, absorbance/max(absorbance),  'b-'); hold on
 plot(wl, absorptance/max(absorptance), 'c-')
 plot(wl, quantal/max(quantal),         'g-')
 plot(wl, energy/max(energy),           'r-'); hold off
 xlabel('Wavelength (nm)'); ylabel('Normalised value')
-title('L-cone -- pipeline stages, normalised')
+title('L cone at each pipeline stage, normalised')
 legend('Absorbance', 'Absorptance', 'Quantal', 'Energy', 'Location', 'bestoutside')
 grid on; xlim([390 700])
 %%
-%[text] ## Self-screening -- absorbance -> absorptance
-%[text] Self-screening follows the Beer-Lambert law applied to a finite optical density:
+%[text] ## From absorbance to absorptance
+%[text] The fraction of light a cone absorbs follows the Beer-Lambert law applied to a layer of pigment of finite optical density:
 %[text] $ \\text{absorptance}_{\\text{raw}} = 1 - 10^{-\\text{OD} \\cdot \\text{absorbance}} $
-%[text] The toolbox's high-level `OutputFormat="absorptance"` returns the *relative* form (divided by `1 - 10^(-OD)` so the peak is near 1). The block below uses the raw form to illustrate how shape varies with OD; the toolbox API returns its rescaled version.
-%[text] Higher OD -> broader, more saturated curves; the L-cone's actual OD is below.
+%[text] Setting `OutputFormat="absorptance"` returns a relative form of this, divided by $1 - 10^{-\\text{OD}}$ so that its peak is near 1. The raw fraction is available from `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`, and the next section uses it.
+%[text] The optical densities of the default observer are below.
 table(obs.Lod, obs.Mod, obs.Sod, ...
       'VariableNames', {'L_OD', 'M_OD', 'S_OD'})
 %%
-%[text] ## Self-screening at different optical densities
-%[text] Sweeping OD from 0.2 to 1.0 in the raw form $1 - 10^{-\\text{OD}\\cdot A}$ shows two coupled effects: as OD increases, the peak amplitude rises (more pigment absorbs more light) and the curve broadens -- the near-peak region saturates against the 1-10^(-OD) ceiling while the tails, still in the linear regime, keep growing. The toolbox's `absorbance` is already on a near-unit scale (the Stockman-Rider L template peaks at 0.9949), so it is used directly here rather than re-divided by its own peak -- that division would quietly redefine what the OD labels mean. Raw values plotted -- not renormalised -- so the amplitude story is visible.
+%[text] ## The effect of optical density
+%[text] The figure below evaluates the raw form at optical densities of 0.2, 0.5 and 1.0. Two things change together as the density increases. The peak rises, since more pigment absorbs more light. The curve also becomes wider, because near the peak the absorptance approaches its ceiling of $1 - 10^{-\\text{OD}}$ and cannot rise much further, while at wavelengths away from the peak it is still far from that ceiling and continues to grow. This widening is called self-screening.
+%[text] The absorbance used here is the toolbox value, which is already close to a peak of 1. It is passed in as it stands rather than divided by its own peak, since that division would change what the optical density labels mean. The values are plotted as computed, without normalization, so that the change in peak height is visible.
 abs_linear = absorbance;
 od_values = [0.2, 0.5, 1.0];
 odcol = lines(numel(od_values));
@@ -80,11 +82,11 @@ for i = 2:numel(od_values)
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('Raw absorptance (fraction)')
-title('Self-screening -- effect of optical density')
+title('Self-screening at three optical densities')
 legend('Location', 'bestoutside'); xlim([450 650]); ylim([0 1])
 %%
-%[text] ## Pre-receptoral filtering -- lens + macular
-%[text] The lens and the macular pigment absorb light *before* it reaches the cones. The toolbox exposes the lens density spectrum directly; the macular template comes from `PreReceptoralFilter.macularTemplate`. Combined transmission = 10^(-density).
+%[text] ## The lens and the macular pigment
+%[text] The lens and the macular pigment absorb light before it reaches the cones. `getLensDensitySpectrum` returns the lens density directly, and `getMacularDensitySpectrum` returns the macular density. The fraction of light transmitted through both is $10^{-D}$, where $D$ is the sum of the two densities.
 lens_density    = obs.getLensDensitySpectrum(wl);
 macular_density = obs.getMacularDensitySpectrum(wl);
 total_density   = lens_density + macular_density;
@@ -95,42 +97,45 @@ plot(wl, lens_density, 'b-'); hold on
 plot(wl, macular_density, 'g-')
 plot(wl, total_density, '-', 'Color', IndividualCMF.neutralColor()); hold off
 xlabel('Wavelength (nm)'); ylabel('Optical Density')
-title('Pre-receptoral optical density')
+title('Optical density of the lens and the macular pigment')
 legend('Lens', 'Macular', 'Total', 'Location', 'bestoutside')
 grid on; xlim([390 700])
 nexttile
 plot(wl, transmission * 100, '-', 'Color', IndividualCMF.neutralColor())
 xlabel('Wavelength (nm)'); ylabel('Transmission (%)')
-title('Pre-receptoral transmission'); xlim([390 700])
+title('Fraction of light reaching the cones'); xlim([390 700])
 %%
-%[text] ## Energy conversion -- quantal -> energy
-%[text] The energy-unit sensitivity is the quantal sensitivity multiplied by lambda (S&R 2023, Eq. 8): $ \\bar{l}_E(\\lambda) = \\alpha\\,\\lambda\\,\\bar{l}_Q(\\lambda) $. Multiplying by lambda weights longer wavelengths more heavily, so the energy curve's peak sits slightly to the **right** (longer wavelengths) of the quantal curve. The reasoning is "equal radiant energy delivers more photons at longer wavelengths, since each carries less, so the same photon-counting response corresponds to a larger energy-based sensitivity there" -- equivalently, the per-photon energy E = hc/lambda is *lower* at longer wavelengths.
+%[text] ## From quantal to energy units
+%[text] The sensitivity in energy units is the sensitivity in quantal units multiplied by wavelength, as given in Equation 8 of Stockman and Rider (2023):
+%[text] $ \\bar{l}_E(\\lambda) = \\alpha\\,\\lambda\\,\\bar{l}_Q(\\lambda) $
+%[text] The energy of one photon is $E = hc/\\lambda$, so a photon at a long wavelength carries less energy than one at a short wavelength. A fixed amount of radiant energy therefore delivers more photons at longer wavelengths. Expressing the same photon-counting response per unit energy rather than per photon gives a larger value at longer wavelengths, which is why multiplying by wavelength moves the peak in that direction.
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, quantal/max(quantal), 'b-'); hold on
 plot(wl, energy/max(energy),   'r-'); hold off
 xlabel('Wavelength (nm)'); ylabel('Normalised sensitivity')
-title('Quantal vs energy -- wavelength factor')
+title('Quantal and energy sensitivity compared')
 legend('Quantal', 'Energy', 'Location', 'bestoutside')
 grid on; xlim([390 700])
 %%
-%[text] ## Built-in `plotDiagnostics`
-%[text] For a turn-key pipeline visualization the observer has a `plotDiagnostics` method that produces the standard pipeline figure in one call.
+%[text] ## The built-in diagnostic figure
+%[text] `plotDiagnostics` draws the whole pipeline in a single call.
 obs.plotDiagnostics(Wavelength=wl);
 %%
-%[text] ## Unnormalized output via `NormalizeOutput=false`
-%[text] To see *raw* pipeline values (the actual physical quantities, not peak-normalised), use `NormalizeOutput=false`. The peak of the raw L-cone is the divisor that the default-normalised observer is dividing by.
+%[text] ## Unnormalized values
+%[text] `NormalizeOutput=false` returns the values as computed, without dividing by the peak. The peak of the unnormalized L cone is the number the default observer divides by.
 obs_raw = IndividualCMF(NormalizeOutput=false, OutputFormat="energy");
 table(max(obs.L(wl)), max(obs_raw.L(wl)), ...
       'VariableNames', {'L_normalized_peak', 'L_raw_peak'})
 %%
 %[text] ## Key takeaways
-%[text] - Four pipeline stages: `absorbance` -> `absorptance` -> `quantal` -> `energy`
-%[text] - `OutputFormat` selects the stage returned by `L/M/S/LMS`. `RGB` is not affected: it always computes from energy-format, normalized fundamentals
-%[text] - Self-screening (OD) broadens the curve; pre-receptoral filtering attenuates short wavelengths; energy conversion shifts the peak slightly to the **right** (longer wavelengths) because multiplying by lambda weights longer wavelengths more
-%[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` expose the filter spectra
-%[text] - `obs.plotDiagnostics()` gives a turn-key pipeline figure
-%[text] - `NormalizeOutput=false` exposes raw pipeline values \
-%[text] **Next:** [Example 09: Output Formats and Units](matlab:edit('Example09_OutputFormats.m')) -- choosing between `energy`, `quantal`, `absorptance`, and `absorbance` outputs.
+%[text] - The four stages are absorbance, absorptance, quantal sensitivity and energy sensitivity, in that order
+%[text] - `OutputFormat` selects which stage `L`, `M`, `S` and `LMS` return. `RGB` is unaffected, since it always computes from normalized fundamentals in energy units
+%[text] - A higher optical density widens the curve, by self-screening. The lens and the macular pigment reduce the sensitivity at short wavelengths. The conversion to energy units moves the peak to longer wavelengths
+%[text] - Absorbance ignores `NormalizeOutput` and keeps the scale of its template, which is what gives `Lod`, `Mod` and `Sod` their meaning
+%[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` return the two filter spectra
+%[text] - `obs.plotDiagnostics()` draws the whole pipeline in one call
+%[text] - `NormalizeOutput=false` returns the values without dividing by the peak \
+%[text] **Next:** [Example 09: Output Formats and Units](matlab:edit('Example09_OutputFormats.m')). Choosing between the `energy`, `quantal`, `absorptance` and `absorbance` outputs.
 
 %[appendix]{"version":"1.0"}
 %---

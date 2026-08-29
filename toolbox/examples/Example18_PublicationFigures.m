@@ -1,10 +1,10 @@
 %[text] # Example 18: Publication-Quality Figures
-%[text] Multi-panel publication figures use MATLAB's `tiledlayout` and `nexttile` directly. Every `IndividualCMF` plot method accepts `Parent=`, so passing `nexttile()` places that plot in the next tile of the layout. Export with `exportgraphics`.
-%[text] This is the capstone example: combine everything from the earlier scripts into figures suitable for papers and presentations.
+%[text] Multi-panel figures are built with MATLAB's own `tiledlayout` and `nexttile`. Every plot method in the toolbox accepts a `Parent` argument, so passing it `nexttile()` places that plot in the next tile. Figures are written to file with `exportgraphics`.
+%[text] This example draws on the material of the earlier ones and assembles it into figures of the kind used in papers and presentations.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
-%[text] ## Style guide for publication figures
+%[text] ## Suggested settings
 %[text:table]
 %[text] | Element | Recommended setting |
 %[text] | --- | --- |
@@ -15,42 +15,41 @@ exampleDefaults();
 %[text] | Data lines | 1\.5-2 pt |
 %[text] | Reference lines | 0\.5-1 pt |
 %[text] | Axes | 1 pt |
-%[text] | Cone colors | `IndividualCMF.CONE_COLORS` rows L, M, S; override per call with `ConeColors=` |
-%[text] | Vector export | PDF / SVG / EPS preferred (via `exportgraphics`) |
-%[text] | Raster export | `Resolution=300` minimum |
+%[text] | Cone colours | `IndividualCMF.CONE_COLORS` rows L, M, S. Override per call with `ConeColors=` |
+%[text] | Vector export | PDF, SVG or EPS, through `exportgraphics` |
+%[text] | Raster export | `Resolution=300` or higher |
 %[text] | Single-column width | 3\.25-3.5 in (83-89 mm) |
 %[text] | Double-column width | 6\.5-7 in (165-178 mm) |
 %[text:table]
 %%
-%[text] ## Two paths to publication figures
-%[text] This example shows two complementary patterns:
-%[text] - **Inline plotting** (single panels in a Live Script section): call the `IndividualCMF` shortcuts (`obs.plotLMS`, `obs.compareTo`, ...). They draw into the current axes via `gca`, so the output is captured inline by the Live Editor.
-%[text] - **Standalone publication figures** (multi-panel composites, PNG/PDF export): build the figure with `figure`, `tiledlayout`, and `nexttile`, passing each tile to a plot method via `Parent=`. Those produce real figure windows. \
-%[text] The sections below alternate between the two patterns.
+%[text] ## Two ways of drawing
+%[text] This example uses two patterns, and alternates between them.
+%[text] - **Drawing inline.** For a single panel in a Live Script section, call a plot method such as `obs.plotLMS` or `obs.compareTo` without creating a figure. They draw into the current axes, so the Live Editor captures the result under that section.
+%[text] - **Drawing a standalone figure.** For a composite that will be exported, call `figure`, then `tiledlayout` and `nexttile`, and pass each tile to a plot method through `Parent=`. These open a figure window of their own. \
 %%
-%[text] ## Single-panel LMS plot (inline)
-%[text] For inline Live Script use, call the `IndividualCMF` plot shortcut: it draws into the current axes (gca) so the output is captured by the Live Editor section.
+%[text] ## A single panel drawn inline
 obs = IndividualCMF(StandardObserver=10);
 obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 %%
-%[text] ## Two-observer comparison (inline)
-%[text] `compareTo` overlays a second observer in dashed lines. Same gca pattern as `plotLMS`.
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] ## Two observers drawn inline
+%[text] `compareTo` draws a second observer with dashed lines, into the current axes as before.
+%[text] The `VanDeKraats2007` model was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
 obs_comp.ModelRangeWarning = false;
 obs_ref.compareTo(obs_comp, ...
-    Title="CIE 10 deg (solid) vs Age 60 VanDeKraats2007 (dashed)");
+    Title="CIE 10 deg (solid) and age 60, VanDeKraats2007 (dashed)");
 %%
-%[text] ## A six-perspective view of aging (VanDeKraats2007 model)
-%[text] The next six sections each isolate one aspect of how the visual system changes with age, using the `VanDeKraats2007` lens model. Together these are exactly the panels you'd assemble into a publication-summary aging figure (see the final "composite figure" section below). Always use `VanDeKraats2007` (or `Pokorny1987`) for age studies; the default `StockmanRider2023` lens is age-flat (see [Example 05](matlab:edit('Example05_AgingEffects.m'))).
+%[text] ## Six views of the same effect
+%[text] The six sections that follow each show one consequence of the lens absorbing more light with age. The section after them assembles the same six panels into one figure.
+%[text] Age work requires `VanDeKraats2007` or `Pokorny1987`, since the default lens model does not depend on age. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
 wl = (390:1:700)';
 ages = [25, 40, 55, 70];
 agecol = parula(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
 %%
-%[text] ### Lens density spectrum vs age
+%[text] ### Lens optical density
 plot(wl, age_observers(1).getLensDensitySpectrum(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -60,10 +59,10 @@ for i = 2:numel(ages)
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('Lens optical density')
-title('Lens density spectrum')
+title('Lens optical density')
 legend('Location', 'bestoutside'); xlim([390 550])
 %%
-%[text] ### Pre-receptoral transmission vs age
+%[text] ### Light reaching the cones
 transmission = @(o) 100 * 10.^(-(o.getLensDensitySpectrum(wl) + o.getMacularDensitySpectrum(wl)));
 plot(wl, transmission(age_observers(1)), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
@@ -74,11 +73,11 @@ for i = 2:numel(ages)
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('Transmission (%)')
-title('Pre-receptoral transmission (lens + macular)')
+title('Transmission through the lens and macular pigment')
 legend('Location', 'bestoutside'); xlim([390 700])
 %%
-%[text] ### S-cone amplitude vs age
-%[text] Plotted **unnormalized** (`NormalizeOutput=false`). Under the default normalization each age would peak at exactly 1.0 and the amplitude loss this panel exists to show would be invisible.
+%[text] ### S-cone sensitivity
+%[text] These curves are drawn with `NormalizeOutput=false`. Under the default normalization each age would reach 1.0 at its own peak and the loss this panel exists to show would not appear at all.
 plot(wl, age_observers(1).S(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -88,11 +87,12 @@ for i = 2:numel(ages)
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('S-Cone Sensitivity')
-title('S-cone amplitude')
+title('S-cone sensitivity')
 legend('Location', 'bestoutside'); xlim([390 520])
 %%
-%[text] ### L-cone vs age
-%[text] Also unnormalized. L keeps most of its amplitude but not all -- about 12% is lost between 25 and 70, against 17% for M and 61% for S. M is left out of the six panels for space, not because it is uninteresting -- unnormalized it peaks 24 nm short of L and reaches only 92% of L's height, so it would be a clearly separate curve. Its loss simply tells the same story as L's. "Only S ages" would be the wrong reading.
+%[text] ### L-cone sensitivity
+%[text] Also drawn without normalization. The L cone keeps most of its sensitivity but not all of it. Between ages 25 and 70 it loses about 12%, against 17% for M and 61% for S.
+%[text] The M cone is left out of the six panels for space rather than because it is unaffected. Without normalization it peaks 24 nm short of L and reaches only 92% of L's height, so it would be a clearly separate curve, and its loss with age is of the same kind as L's.
 plot(wl, age_observers(1).L(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -102,11 +102,12 @@ for i = 2:numel(ages)
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
-title('L-cone amplitude')
+title('L-cone sensitivity')
 legend('Location', 'bestoutside'); xlim([500 650])
 %%
-%[text] ### V*(lambda) shift across ages
-%[text] Zoomed to 500-620 nm: the peak moves about 5.7 nm toward longer wavelengths between 25 and 70, which is invisible across the full visible range. These curves keep the default normalization -- the shift is the point here, not the amplitude. (V* is a weighted sum of two normalized cones, so its own maximum lands slightly above 1, near 1.01.)
+%[text] ### Photopic luminance
+%[text] The axes cover 500 to 620 nm. Over that range the peak of $V^{*}(\\lambda)$ can be seen to move about 5.7 nm towards longer wavelengths between ages 25 and 70, which is not visible across the full spectrum.
+%[text] These curves keep the default normalization, since the movement of the peak is the subject here rather than the height of the curve. Note that $V^{*}$ is a weighted sum of two normalized cones, so its own maximum is slightly above 1, near 1.01.
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -119,7 +120,7 @@ xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)')
 title('Photopic luminance')
 legend('Location', 'bestoutside'); xlim([500 620])
 %%
-%[text] ### Spectral locus shift across ages
+%[text] ### Spectrum locus
 chrom = age_observers(1).lmChromaticity(wl);
 plot(chrom(:,1), chrom(:,2), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
@@ -131,11 +132,11 @@ for i = 2:numel(ages)
 end
 hold off
 xlabel('l = L / (L + M + S)'); ylabel('m = M / (L + M + S)')
-title('Spectral locus (lm chromaticity), short-wave arm')
+title('Spectrum locus, short-wavelength end')
 legend('Location', 'bestoutside'); axis equal; xlim([0 0.30]); ylim([0 0.45])
 %%
-%[text] ### Composite figure for publication
-%[text] The same six panels assembled into a single 2x3 figure, sized to the tile grid at 400 x 320 px per tile; left at the default figure size a 2x3 grid comes out cramped and tall. Exported via `exportgraphics` (see "Exporting for publication" below) it scales to a clean publication-quality summary.
+%[text] ### The six panels as one figure
+%[text] The figure is sized to its tile grid, at 400 by 320 pixels per tile. Left at the default figure size, a 2 by 3 grid of panels comes out narrow and tall.
 figure(Position=[100 100 1200 640]);
 tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
@@ -154,21 +155,21 @@ for i = 1:numel(ages)
     plot(wl, 100 * 10.^(-od_total), 'Color', agecol(i,:))
 end
 hold off
-xlabel('Wavelength (nm)'); ylabel('Transmission (%)'); title('Pre-receptoral transmission'); xlim([390 700])
+xlabel('Wavelength (nm)'); ylabel('Transmission (%)'); title('Transmission'); xlim([390 700])
 nexttile
 hold on
 for i = 1:numel(ages)
     plot(wl, age_observers(i).S(wl, NormalizeOutput=false), 'Color', agecol(i,:))
 end
 hold off
-xlabel('Wavelength (nm)'); ylabel('S sensitivity'); title('S-cone'); xlim([390 520])
+xlabel('Wavelength (nm)'); ylabel('S sensitivity'); title('S cone'); xlim([390 520])
 nexttile
 hold on
 for i = 1:numel(ages)
     plot(wl, age_observers(i).L(wl, NormalizeOutput=false), 'Color', agecol(i,:))
 end
 hold off
-xlabel('Wavelength (nm)'); ylabel('L sensitivity'); title('L-cone'); xlim([500 650])
+xlabel('Wavelength (nm)'); ylabel('L sensitivity'); title('L cone'); xlim([500 650])
 nexttile
 hold on
 for i = 1:numel(ages)
@@ -183,11 +184,11 @@ for i = 1:numel(ages)
     plot(chrom(:,1), chrom(:,2), 'Color', agecol(i,:))
 end
 hold off
-xlabel('l'); ylabel('m'); title('Spectral locus (short-wave arm)'); axis equal; xlim([0 0.30]); ylim([0 0.45])
-sgtitle('Aging effects (VanDeKraats2007 lens, ages 25-70)', 'FontWeight', 'bold')
+xlabel('l'); ylabel('m'); title('Spectrum locus'); axis equal; xlim([0 0.30]); ylim([0 0.45])
+sgtitle('Effects of age, VanDeKraats2007 lens model, ages 25 to 70', 'FontWeight', 'bold')
 %%
-%[text] ## Genetic-variants figure
-%[text] Two-panel figure illustrating the L-cone Ser180Ala polymorphism. Left: zoom on the L-cone peak. Right: full-spectrum LMS with Serine (solid) and Alanine (dashed L) overlaid.
+%[text] ## A two-panel figure
+%[text] The figure below shows the L-cone Ser180Ala polymorphism. The left panel covers the wavelengths around the L-cone peak. The right panel shows all three cones across the spectrum, with the serine variant drawn solid and the alanine L cone drawn dashed.
 obs_ser  = IndividualCMF(L_OpsinTemplate="Serine");
 obs_mean = IndividualCMF(L_OpsinTemplate="Mean");
 obs_ala  = IndividualCMF(L_OpsinTemplate="Alanine");
@@ -199,7 +200,7 @@ plot(wl_zoom, obs_ser.L(wl_zoom),  'r-'); hold on
 plot(wl_zoom, obs_mean.L(wl_zoom), '-', 'Color', IndividualCMF.neutralColor())
 plot(wl_zoom, obs_ala.L(wl_zoom),  'b-'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
-title('Ser180Ala polymorphism (L-cone peak zoom)')
+title('Near the L-cone peak')
 legend('Serine', 'Mean', 'Alanine', 'Location', 'bestoutside')
 nexttile
 plot(wl, obs_ser.L(wl), 'r-'); hold on
@@ -207,12 +208,12 @@ plot(wl, obs_ser.M(wl), 'g-')
 plot(wl, obs_ser.S(wl), 'b-')
 plot(wl, obs_ala.L(wl), 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('Sensitivity')
-title('Serine (solid) vs Alanine L (dashed)')
+title('Serine (solid) and Alanine L (dashed)')
 grid on; xlim([390 700])
 sgtitle('L-cone genetic variants', 'FontWeight', 'bold')
 %%
-%[text] ## Exporting for publication
-%[text] `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern recommendation for publication figures. The toolbox doesn't manage export paths automatically: write to the path you want.
+%[text] ## Writing a figure to file
+%[text] `exportgraphics(gcf, path, 'ContentType', 'vector')` is the current recommendation for publication figures. The toolbox does not manage output paths, so give it the path you want.
 obs_pub = IndividualCMF(StandardObserver=10);
 LMS_pub = obs_pub.LMS(wl);
 figure;
@@ -220,16 +221,15 @@ plot(wl, LMS_pub(:,1), 'r-', 'LineWidth', 1.5); hold on
 plot(wl, LMS_pub(:,2), 'Color', [0 0.6 0], 'LineWidth', 1.5)
 plot(wl, LMS_pub(:,3), 'b-', 'LineWidth', 1.5); hold off
 xlabel('Wavelength (nm)'); ylabel('Relative Sensitivity')
-title('CIE 2006 10 deg Cone Fundamentals')
+title('CIE 2006 10 deg cone fundamentals')
 legend('L', 'M', 'S', 'Location', 'bestoutside')
 grid on; xlim([380 700]); ylim([0 1.05])
 pdf_path = fullfile(tempdir, 'cone_fundamentals.pdf');
 exportgraphics(gcf, pdf_path, 'ContentType', 'vector');
 disp(['Exported: ' pdf_path])
 %%
-%%
-%[text] ## Four-panel observer figure
-%[text] A 2x2 composite: cone fundamentals, RGB CMFs, lens density, and macular density for one observer. Each plot method receives its own tile through `Parent=`, so no wrapper class is involved.
+%[text] ## A four-panel figure
+%[text] The figure below shows the cone fundamentals, the RGB colour matching functions, the lens density and the macular density for one observer. Each plot method receives its own tile through `Parent=`.
 obs4 = IndividualCMF(StandardObserver=10);
 wl4 = (390:1:780)';
 figure(Position=[100 100 1000 750]);
@@ -239,21 +239,21 @@ obs4.plotLMS(Parent=nexttile(t4), Wavelength=wl4, Title="Cone fundamentals");
 obs4.plotRGBCMFs(Parent=nexttile(t4), Wavelength=wl4, Title="RGB CMFs");
 obs4.plotLens(Parent=nexttile(t4), Wavelength=wl4, Title="Lens density");
 obs4.plotMacular(Parent=nexttile(t4), Wavelength=wl4, Title="Macular density");
-%[text] Export at publication resolution. `exportgraphics` picks the format from the file extension and produces vector output for PDF and EPS.
+%[text] `exportgraphics` chooses the format from the file extension, and produces vector output for PDF and EPS.
 exportgraphics(gcf, fullfile(tempdir, "observer_panel.pdf"), ContentType="vector");
 exportgraphics(gcf, fullfile(tempdir, "observer_panel.png"), Resolution=300);
 %%
 %[text] ## Key takeaways
-%[text] - **Pass `NormalizeOutput=false` whenever the figure is about amplitude.** The default normalization pins every curve to 1.0, which silently hides the effect -- here it would have concealed a 61% S-cone loss across the age range
-%[text] - Every plot method takes `Parent=`, so `nexttile` composes them into any layout; that is the mechanism behind all three composites above
-%[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
-%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to the tile grid: pick a per-tile size and multiply by the column and row counts. The three composites here use 400 x 320, 500 x 420 and 500 x 375 px per tile -- ordinary landscape ratios, chosen so no panel ends up tall and narrow. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
-%[text] - A section that follows a standalone figure must open its own `figure` before drawing. `gcf` is still the previous section's figure, so a bare `plot` lands in one of its tiles and silently replaces that panel.
-%[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering. One caveat: parula ends in a pale yellow, so on a white ground the oldest observer -- usually the one the figure is about -- draws the faintest line. `flipud(parula(n))` or a truncated map puts the contrast where the interest is
-%[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
-%[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
-%[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern publication-export call -- PDF / SVG / EPS preferred over raster \
-%[text] **Next:** [Example 19: Observer Metamerism](matlab:edit('Example19_ObserverMetamerism.m')) -- how a metameric pair for the standard observer breaks for an individual observer.
+%[text] - Pass `NormalizeOutput=false` whenever a figure is about how much sensitivity changes. The default normalization sets every curve to 1.0 at its peak, and no warning is given. Here it would have hidden the 61% S-cone loss entirely
+%[text] - Every plot method accepts `Parent=`, so `nexttile` places them into any layout. That is how all three composite figures here are built
+%[text] - A section that draws inline never calls `figure`, so the plot appears under that section in the Live Editor. Draw the first curve before `hold on` rather than after, so that re-running a section replaces the curves instead of adding a second set
+%[text] - A standalone figure calls `figure` first, then `tiledlayout` and `nexttile`. Size the figure to its tile grid by choosing a size per tile and multiplying by the number of rows and columns. The three composites here use 400 by 320, 500 by 420 and 500 by 375 pixels per tile, which keep each panel wider than it is tall. Inside a fresh `nexttile` a bare `hold on` is safe, since the tile starts empty
+%[text] - A section that follows a standalone figure must call `figure` before drawing. Otherwise `gcf` is still the previous figure, and a bare `plot` draws into one of its tiles and replaces that panel
+%[text] - Use `parula` or another sequential colormap for an age axis, since `lines` gives no sense of order. Note that parula ends in a pale yellow, so on a white background the oldest observer draws the faintest line, which is usually the one of most interest. `flipud(parula(n))` or a truncated map puts the strongest contrast where it is wanted
+%[text] - Age sweeps need `LensModel="VanDeKraats2007"`, since the default model does not depend on age
+%[text] - `sgtitle` adds a title above a whole `tiledlayout`
+%[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` writes the figure. Prefer PDF, SVG or EPS over a raster format \
+%[text] **Next:** [Example 19: Observer Metamerism](matlab:edit('Example19_ObserverMetamerism.m')). How a match made for the standard observer fails for an individual observer.
 
 %[appendix]{"version":"1.0"}
 %---

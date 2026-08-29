@@ -1,14 +1,14 @@
 %[text] # Example 17: Normalization Methods
-%[text] **This is a developer / reproducibility topic.** Most users will never touch `NormalizationMethod`. The default `"Continuous"` method is correct for almost all colorimetric work. This example covers when and why to override it.
-%[text] When `NormalizeOutput=true` (the default), each cone fundamental is divided by its peak so the maximum equals 1.0. The question is **how** that peak is found:
-%[text] - **`Continuous`** *(default)* -- uses numerical optimization (`fminbnd`) to find the exact peak. Resolution-independent. Normalized values never exceed 1.0.
-%[text] - **`Sampled`** -- uses `max()` over a discrete wavelength grid. Resolution-dependent. May slightly exceed 1.0 at off-grid wavelengths but matches reference tools (e.g., Pycone) that use the same approach. \
+%[text] This example concerns reproducibility. Most users never need to change `NormalizationMethod`, and the default is correct for ordinary colorimetric work. The reason to change it is to match another implementation exactly.
+%[text] With `NormalizeOutput=true`, which is the default, each cone fundamental is divided by its peak so that the maximum is 1.0. `NormalizationMethod` decides how that peak is found:
+%[text] - **`Continuous`**, the default. It locates the peak by numerical optimization, using `fminbnd`. The result does not depend on any wavelength grid, and the normalized values never exceed 1.0.
+%[text] - **`Sampled`**. It takes the largest value on a discrete grid of wavelengths. The result depends on that grid, and the normalized values can exceed 1.0 slightly at wavelengths between grid points. This is what pycone and similar tools do. \
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
-%[text] ## Two normalization methods
-%[text] You can request either method by name. The wavelengths `Sampled` normalizes over live in `NormalizationGrid`, which accepts any wavelength vector -- the `start:step:stop` form below is just convenient.
-%[text] Three of the four output formats are normalized. `absorbance` is the exception: it is never normalized, whatever `NormalizeOutput` says, because its absolute scale carries meaning -- the templates are anchored so `A(lambda_max)` is 1, which is what makes `Lod`/`Mod`/`Sod` mean peak axial optical density. (The anchor is a convention rather than a measured equality -- the Fourier fit puts the L peak at 0.995.)
+%[text] ## Selecting a method
+%[text] Either method can be named. The wavelengths that `Sampled` searches are held in `NormalizationGrid`, which accepts any wavelength vector. The `start:step:stop` form used below is only a convenient way to write one.
+%[text] Three of the four output formats are normalized. Absorbance is not, whatever `NormalizeOutput` is set to, because its scale carries meaning. The templates are anchored so that absorbance is 1 at lambda-max, and that is what makes `Lod`, `Mod` and `Sod` the peak axial optical density. The anchoring is a convention that the Fourier fit approximates rather than an exact equality, and it puts the L peak at 0.995.
 obs_cont = IndividualCMF(NormalizationMethod="Continuous");
 obs_samp = IndividualCMF(NormalizationMethod="Sampled");
 grid_default = obs_samp.NormalizationGrid;
@@ -16,8 +16,8 @@ table(string(obs_cont.NormalizationMethod), string(obs_samp.NormalizationMethod)
       min(grid_default), max(grid_default), numel(grid_default), ...
       'VariableNames', {'Cont_method', 'Samp_method', 'Grid_min', 'Grid_max', 'Grid_points'})
 %%
-%[text] ## Comparing the two normalizations on the L-cone
-%[text] Side-by-side: the two methods produce nearly identical L-cone curves over the visible range. The difference is around 1e-5 -- the fifth decimal place -- significant only when reproducibility against a reference implementation is required.
+%[text] ## The two methods compared
+%[text] Over the visible range the two methods give almost the same L-cone curve. The difference is about 1e-5, in the fifth decimal place. It matters only when the results have to match another implementation exactly.
 wl = (400:5:700)';
 L_cont = obs_cont.L(wl);
 L_samp = obs_samp.L(wl);
@@ -26,22 +26,22 @@ nexttile
 plot(wl, L_cont, 'b-'); hold on
 plot(wl, L_samp, 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
-title('L-cone, two methods overlaid'); legend('Continuous', 'Sampled')
+title('L cone under both methods'); legend('Continuous', 'Sampled')
 nexttile
 plot(wl, (L_cont - L_samp) * 1e5, '-', 'Color', IndividualCMF.neutralColor())
 xlabel('Wavelength (nm)'); ylabel('Difference (x10^{-5})')
-title('Continuous - Sampled (scaled)')
+title('Continuous minus Sampled, scaled by 10^5')
 table(max(abs(L_cont - L_samp)), mean(abs(L_cont - L_samp)), ...
       'VariableNames', {'MaxAbsDiff', 'MeanAbsDiff'})
 %%
-%[text] ## Inspecting the normalization peak with `getPeak`
-%[text] The `getPeak` method returns the *unnormalized* peak value used as the divisor. The Continuous peak is always at least as large as the Sampled peak (because it can find the true maximum between grid points).
+%[text] ## Reading the divisor
+%[text] `getPeak` returns the unnormalized peak value that the method found, which is the number each curve is divided by. The Continuous peak is always at least as large as the Sampled peak, since it can find a maximum lying between grid points.
 table(obs_cont.getPeak('L'), obs_samp.getPeak('L'), ...
       obs_cont.getPeak('L') - obs_samp.getPeak('L'), ...
       'VariableNames', {'Continuous_peak', 'Sampled_peak', 'Difference'})
 %%
-%[text] ## Resolution dependence of `Sampled`
-%[text] Coarser grids miss the true maximum and find a smaller peak (so subsequent normalised values are *higher* -- including possibly above 1.0). Finer grids approach the Continuous result.
+%[text] ## How the grid affects the result
+%[text] A coarse grid is less likely to include a point close to the true peak, so it finds a smaller divisor, and dividing by a smaller number gives larger normalized values. A finer grid approaches the Continuous result.
 peaks = struct();
 for step = [1, 5, 10]
     o = IndividualCMF(NormalizationMethod="Sampled", ...
@@ -51,8 +51,8 @@ end
 table(peaks.step_1, peaks.step_5, peaks.step_10, obs_cont.getPeak('L'), ...
       'VariableNames', {'Step_1nm', 'Step_5nm', 'Step_10nm', 'Continuous'})
 %%
-%[text] ## The off-grid exceedance issue
-%[text] If you normalise on a coarse grid then evaluate at a finer grid, the values can exceed 1.0 -- you've found a wavelength between two grid points where the true sensitivity is higher than any sampled value.
+%[text] ## Values above 1.0
+%[text] Normalizing on a coarse grid and then evaluating on a finer one can give values above 1.0. The finer grid includes wavelengths at which the sensitivity is higher than at any point the coarse grid sampled.
 obs_demo  = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=380:10:780);
 obs_cont2 = IndividualCMF(NormalizationMethod="Continuous");
 wl_fine = (500:0.1:600)';
@@ -60,8 +60,10 @@ table(max(obs_demo.L(wl_fine)),  max(obs_demo.L(wl_fine))  > 1.0, ...
       max(obs_cont2.L(wl_fine)), max(obs_cont2.L(wl_fine)) > 1.0, ...
       'VariableNames', {'Sampled_max', 'Sampled_exceeds_1', 'Continuous_max', 'Continuous_exceeds_1'})
 %%
-%[text] ## Visualizing the exceedance
-%[text] Zooming around the true L-cone peak (566.7 nm) with a deliberately coarse 5 nm Sampled grid. The sampled maximum is taken at 565 nm, the grid point nearest the peak, so the red curve reaches exactly 1.0 there and then climbs *above* it between the 565 and 570 nm grid points, peaking near 1.00048. Continuous (blue) stays at or below 1.0 everywhere. Note the y-axis spans only 0.004 -- the exceedance is under 5e-4 and is invisible on a normal scale.
+%[text] ## The same effect drawn
+%[text] The figure below covers the wavelengths around the true L-cone peak at 566.7 nm, using a deliberately coarse 5 nm grid for the Sampled method.
+%[text] The nearest grid point to the peak is 565 nm, so the Sampled curve reaches exactly 1.0 there. Between 565 and 570 nm it rises above 1.0, reaching about 1.00048. The Continuous curve stays at or below 1.0 everywhere.
+%[text] Note the range of the y axis, which spans only 0.004. The amount by which the Sampled curve exceeds 1.0 is less than 5e-4 and would not be visible on an ordinary axis.
 wl_zoom = (560:0.01:576)';
 obs_samp_5 = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=380:5:780);
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
@@ -71,13 +73,13 @@ plot(wl_zoom, ones(size(wl_zoom)), ':', 'Color', IndividualCMF.neutralColor(), '
 plot((560:5:575)', obs_samp_5.L((560:5:575)'), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
 hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
-title('Off-grid exceedance (Sampled 5 nm vs Continuous)')
+title('Sampled on a 5 nm grid, against Continuous')
 legend('Continuous', 'Sampled (5 nm)', 'y = 1', 'Sampled grid points', 'Location', 'bestoutside')
 grid on; ylim([0.997 1.001])
 %%
-%[text] ## Reproducing external reference implementations
-%[text] To match an external implementation that normalizes on a discrete wavelength grid, set `NormalizationMethod="Sampled"` and give `NormalizationGrid` the same wavelengths the reference uses, then evaluate at that grid. **Pycone** (the Python reference implementation) is the canonical example: it accepts a user-configurable step size. Because the grid is a plain wavelength vector, one expression serves as both the normalization grid and the evaluation grid.
-%[text] pycone's own grid needs no work here: it normalizes over 380:1:780, which is already this toolbox's default. The grid below stands in for a *different* tool, to show what changing it looks like.
+%[text] ## Matching another implementation
+%[text] To match an implementation that normalizes on a discrete grid, set `NormalizationMethod="Sampled"`, give `NormalizationGrid` the wavelengths that implementation uses, and evaluate on those same wavelengths. Since the grid is an ordinary wavelength vector, one expression can serve as both.
+%[text] pycone needs no work here. It normalizes over 380:1:780, which is already this toolbox's default grid. The grid used below stands in for a different tool, to show what changing it involves.
 wl_reference = (390:5:830)';
 obs_reference = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=wl_reference);
 table(string(obs_reference.NormalizationMethod), ...
@@ -85,22 +87,22 @@ table(string(obs_reference.NormalizationMethod), ...
       max(obs_reference.NormalizationGrid), ...
       numel(obs_reference.NormalizationGrid), ...
       'VariableNames', {'Method', 'Grid_min', 'Grid_max', 'Grid_points'})
-%[text] Evaluating on that same grid closes the loop: the maximum is exactly 1, because the wavelength the divisor came from is one of the points being evaluated. That is the whole trick -- exceedance only appears when the evaluation grid is finer than the normalization grid.
+%[text] Evaluating on the same grid gives a maximum of exactly 1, because the wavelength the divisor came from is one of the wavelengths being evaluated. Values above 1.0 appear only when the evaluation grid is finer than the normalization grid.
 table(max(obs_reference.L(wl_reference)), max(obs_reference.L((390:0.1:830)')), ...
       'VariableNames', {'On_its_own_grid', 'On_a_finer_grid'})
 %%
-%[text] ## Recommendations
-%[text] **Use Continuous when:** you need guaranteed values <= 1.0; you're evaluating at arbitrary wavelengths; this is the right default for general colorimetric work.
-%[text] **Use Sampled when:** you're matching a specific reference dataset (Pycone, published tables); you need bit-exact reproducibility on a known grid. Use the matching evaluation grid to avoid off-grid exceedance.
-%[text] **One trap worth knowing given the topic.** `NormalizationMethod` and `NormalizationGrid` are not carried by `getParameters` / `setParameters` -- that snapshot holds the biophysics only. Restore an observer from one and a `Sampled` configuration silently comes back as `Continuous`, quietly leaving you off the reference you set it up to match. Set both explicitly after any round trip. See [Example 16](matlab:edit('Example16_DataExport.m')).
+%[text] ## Which method to use
+%[text] Use **Continuous** when the values must not exceed 1.0, and when evaluating at arbitrary wavelengths. It is the right choice for ordinary colorimetric work.
+%[text] Use **Sampled** when matching a particular reference implementation or a published table, and when the results have to agree with it exactly. Evaluate on the same grid used for normalization, so that no value exceeds 1.0.
+%[text] Note that `NormalizationMethod` and `NormalizationGrid` are not carried by `getParameters` and `setParameters`, which hold the observer's biophysical state only. An observer restored from a saved parameter set comes back with `Continuous` even if it was configured as `Sampled`, and no warning is issued. Set both properties again after any such transfer. See [Example 16](matlab:edit('Example16_DataExport.m')).
 %%
 %[text] ## Key takeaways
-%[text] - `Continuous` (default) finds the exact peak via optimisation; resolution-independent; never exceeds 1.0
-%[text] - `Sampled` finds the max over a discrete grid; resolution-dependent; may exceed 1.0 between grid points
-%[text] - Use `NormalizationGrid = a:s:b` for explicit grid control
-%[text] - `obs.getPeak('L')` returns the unnormalised peak (the divisor)
-%[text] - For pycone parity, set `NormalizationMethod="Sampled"` and keep the default `NormalizationGrid` (380:1:780, the grid pycone normalizes over), then evaluate on that same grid. The method matters: under the default `Continuous` the grid is ignored entirely, leaving you about 1e-5 off \
-%[text] **Next:** [Example 18: Publication-Quality Figures](matlab:edit('Example18_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
+%[text] - `Continuous`, the default, finds the peak by optimization. It does not depend on a grid and never returns values above 1.0
+%[text] - `Sampled` takes the largest value on a grid. It depends on that grid and can return values slightly above 1.0 between grid points
+%[text] - `NormalizationGrid` sets the wavelengths that `Sampled` searches
+%[text] - `obs.getPeak('L')` returns the divisor
+%[text] - For agreement with pycone, set `NormalizationMethod="Sampled"`, keep the default grid of 380:1:780, and evaluate on that grid. The method is the part that matters, since under `Continuous` the grid is not used at all and the result is about 1e-5 away \
+%[text] **Next:** [Example 18: Publication-Quality Figures](matlab:edit('Example18_PublicationFigures.m')). Building multi-panel figures and exporting them.
 
 %[appendix]{"version":"1.0"}
 %---

@@ -1,16 +1,15 @@
 %[text] # Example 16: Data Export Workflows
-%[text] How to get cone-fundamental data out of an observer in a form usable by other tools -- CSV, MAT, or directly into a MATLAB table or struct. (`writetable` also writes `.xlsx` if you give it one; the mechanics are identical and not shown here.)
-%[text] The unified entry point is `obs.evaluate(wl, Data=...)`, which always returns a table: a `Wavelength_nm` column followed by one column per channel. `Data` selects which quantity you get. For a bare numeric array, call the named method (`obs.LMS(wl)`, `obs.RGB(wl)`, ...) instead.
+%[text] This example shows how to get data out of an observer in a form other tools can read, as a MATLAB table or struct, as a CSV file, or as a MAT file. `writetable` also writes `.xlsx` files if given that extension, and works the same way.
+%[text] The main method is `obs.evaluate(wl, Data=...)`, which always returns a table. The first column is `Wavelength_nm` and the rest hold one channel each. The `Data` argument chooses the quantity. For a plain numeric array, call the named method such as `obs.LMS(wl)` instead.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
-%[text] ## The `evaluate` method
-%[text] **Syntax:** `[result, wl] = obs.evaluate(wl, Data=...)`
-%[text] Each `Data` value delegates to the method of the same name, so the table and the direct call always agree.
+%[text] ## The evaluate method
+%[text] The call takes the form `[result, wl] = obs.evaluate(wl, Data=...)`. Each value of `Data` calls the method of the same name, so the table and the direct call always give the same numbers.
 %[text:table]
 %[text] | `Data` | Columns | Equivalent method |
 %[text] | --- | --- | --- |
-%[text] | `"LMS"` *(default)* | `L`, `M`, `S` | `obs.LMS(wl)` |
+%[text] | `"LMS"`, the default | `L`, `M`, `S` | `obs.LMS(wl)` |
 %[text] | `"L"`, `"M"`, `"S"` | one cone | `obs.L(wl)` |
 %[text] | `"RGB"` | `R`, `G`, `B` | `obs.RGB(wl)` |
 %[text] | `"XYZ"` | `X`, `Y`, `Z` | `obs.XYZ(wl)` |
@@ -22,41 +21,42 @@ exampleDefaults();
 obs = IndividualCMF();
 wl = (380:5:780)';
 %%
-%[text] ## A labelled table
-%[text] Each cone gets its own named column, with `Wavelength_nm` first. This is the form to hand straight to `writetable`, `stackedplot`, or `groupsummary`.
+%[text] ## A table with named columns
+%[text] Each cone has its own column and the wavelengths come first. This is the form to pass to `writetable`, `stackedplot` or `groupsummary`.
 data_table = obs.evaluate(wl, Data='LMS');
 head(data_table, 5)
 %%
-%[text] ## Getting a raw numeric matrix
-%[text] For downstream computation, call the named method. It skips the table wrapper entirely, so there is nothing to unpack.
+%[text] ## A numeric array
+%[text] For further computation, call the named method. It returns the array directly, with no table to unpack.
 data_array = obs.LMS(wl);
 size(data_array)
 data_array(1:5, :)
 %%
-%[text] ## Getting a struct
-%[text] `table2struct` with `ToScalar=true` gives one field per column, which is what you want for MAT-file storage.
+%[text] ## A struct
+%[text] `table2struct` with `ToScalar=true` gives one field per column, which suits storage in a MAT file.
 data_struct = table2struct(data_table, ToScalar=true);
 fieldnames(data_struct)
 %%
-%[text] ## Other `Data` selections
-%[text] `evaluate` covers more than LMS. RGB and XYZ color matching functions, luminance, and all three chromaticity conventions are available from the same call.
+%[text] ## Other quantities
+%[text] `evaluate` covers more than the cone fundamentals. The RGB and XYZ colour matching functions, luminance, and all three chromaticity conventions come from the same call.
 L_only = obs.evaluate(wl, Data='L');
 RGB    = obs.evaluate(wl, Data='RGB');
 chrom  = obs.evaluate(wl, Data='lmChromaticity');
 table(width(L_only) - 1, width(RGB) - 1, width(chrom) - 1, ...
       'VariableNames', {'L_cols', 'RGB_cols', 'lmChromaticity_cols'})
 %%
-%[text] ## Export to CSV
-%[text] `writetable` takes the `evaluate` output as-is; the column names carry through to the header row.
+%[text] ## Writing a CSV file
+%[text] `writetable` accepts the output of `evaluate` unchanged, and the column names become the header row.
 csv_path = fullfile(tempdir, 'cone_fundamentals.csv');
 writetable(data_table, csv_path);
 csv_lines = readlines(csv_path);
 disp(csv_lines(1:min(6, end)))
 %%
-%[text] ## Export to MAT -- preserve full precision and metadata
-%[text] For pure-MATLAB workflows, `.mat` is the native choice. It also handles arbitrary nested structures, so you can co-locate the data with provenance metadata.
-%[text] Do not hand-copy the observer's parameters into a struct. `getParameters` returns an `ObserverParameters` value object that already holds every biophysical field, survives `save`/`load`, and reconstructs the observer exactly -- a transcribed list silently drops whatever you forgot, and for a non-default observer that is usually the interesting part (lambda-max shifts, cone optical densities and opsin templates all vanish from a hand-written struct).
-%[text] What `getParameters` does *not* carry is the output settings, and those decide what the numbers mean: `NormalizeOutput` and `NormalizationMethod` distinguish peak-normalized from absolute, `LogOutput` decides whether the values are log10, and `Primaries` is required to interpret the RGB columns at all, since RGB CMFs are defined relative to them. Record those alongside. Worth adding a toolbox version too, from `ver` for an installed toolbox -- normalization behaviour is still settling in this beta series, so a file without one is hard to reinterpret later.
+%[text] ## Writing a MAT file with its metadata
+%[text] For work that stays in MATLAB, a MAT file keeps full precision and can hold nested structures, so the data and a record of how it was produced can be stored together.
+%[text] Store the result of `getParameters` rather than copying the observer's properties into a struct by hand. `getParameters` returns an `ObserverParameters` object that already holds every biophysical field, survives `save` and `load`, and restores the observer exactly. A list written out by hand omits whatever was forgotten, and for a non-standard observer the omissions are usually the interesting part, since lambda-max shifts, cone optical densities and opsin templates are all easy to leave out.
+%[text] What `getParameters` does not carry is the output settings, and those determine what the numbers mean. `NormalizeOutput` and `NormalizationMethod` decide whether the values are peak-normalized, `LogOutput` decides whether they are logarithms, and `Primaries` is needed to interpret the RGB columns at all, since the RGB functions are defined relative to them. Record these alongside.
+%[text] Recording the toolbox version is worth doing as well, which `ver` provides for an installed toolbox. Normalization behaviour is still changing in this beta series, and a file without a version is hard to interpret later.
 metadata = struct( ...
     'parameters',            obs.getParameters(), ...
     'observer_type',         char(obs.Type), ...
@@ -76,10 +76,10 @@ mat_path = fullfile(tempdir, 'full_export.mat');
 save(mat_path, 'full_export');
 whos('-file', mat_path)
 %%
-%[text] ## Multi-observer comparison export
-%[text] A common workflow: scan over a parameter (here, age), pull the L-cone for each, and assemble a single CSV. This makes comparing observers in external tools trivial.
+%[text] ## Exporting several observers together
+%[text] The example below builds one observer per age, takes the L cone from each, and writes them to a single CSV file with the age in each column name. A recipient can then tell which column belongs to which observer without a separate metadata file.
 ages = [25, 50, 75];
-%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 05](matlab:edit('Example05_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
+%[text] The `VanDeKraats2007` model was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
@@ -90,22 +90,22 @@ end
 writetable(comparison, fullfile(tempdir, 'L_cone_by_age.csv'));
 head(comparison, 5)
 %%
-%[text] ## Round-trip via `getParameters` / `setParameters`
-%[text] For pure-MATLAB persistence of an observer's *configuration* (rather than its evaluated data), use `getParameters` to get an `ObserverParameters` value object and save that; `setParameters` restores. The full demonstration is in [Example 15: Advanced Customization](matlab:edit('Example15_AdvancedCustomization.m')).
+%[text] ## Saving the observer rather than its data
+%[text] To store the configuration of an observer rather than the numbers it produces, use `getParameters` to obtain an `ObserverParameters` object, save that, and restore it later with `setParameters`. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) works through it in full.
 %%
-%[text] ## Direct array methods
-%[text] `evaluate` delegates to the named methods rather than reimplementing them, so the two agree bit for bit. Use whichever fits the calling code.
+%[text] ## The two routes agree
+%[text] `evaluate` calls the named methods rather than repeating their work, so the two give identical results. Use whichever suits the surrounding code.
 LMS_direct = obs.LMS(wl);
 LMS_via_evaluate = table2array(data_table(:, 2:end));
 isequal(LMS_direct, LMS_via_evaluate)
 %%
 %[text] ## Key takeaways
-%[text] - `evaluate(wl, Data=...)` always returns a labelled table, one column per channel
-%[text] - For an array call the named method; for a struct use `table2struct(t, ToScalar=true)`
-%[text] - `writetable` handles CSV; `save` handles MAT
-%[text] - CSV carries data only. Put the observer's parameters -- including `NormalizeOutput`, `NormalizationMethod` and `Primaries` -- in the MAT metadata struct, or encode the varying parameter in the column names, as the multi-observer export does with age, so a recipient can tell what the numbers are
-%[text] - For biophysical state, use the `getParameters`/`setParameters` round trip -- it carries the physiology but not the output settings, which must be recorded separately \
-%[text] **Next:** [Example 17: Normalization Methods](matlab:edit('Example17_NormalizationMethods.m')) -- Continuous vs Sampled normalization and reproducibility.
+%[text] - `evaluate(wl, Data=...)` returns a table with one column per channel
+%[text] - Call the named method for an array, or `table2struct(t, ToScalar=true)` for a struct
+%[text] - `writetable` writes CSV and Excel files, and `save` writes MAT files
+%[text] - A CSV file carries the numbers alone. Record the observer's parameters in a MAT file alongside, including `NormalizeOutput`, `NormalizationMethod` and `Primaries`, or put the varying parameter in the column names as the multi-observer export does
+%[text] - `getParameters` and `setParameters` transfer the observer itself. They do not transfer the output settings, which have to be recorded separately \
+%[text] **Next:** [Example 17: Normalization Methods](matlab:edit('Example17_NormalizationMethods.m')). The two ways of locating the peak, and reproducing another implementation exactly.
 
 %[appendix]{"version":"1.0"}
 %---
