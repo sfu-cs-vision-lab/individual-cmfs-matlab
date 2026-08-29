@@ -34,7 +34,7 @@ tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, diff_LMS(:,1), 'r-'); hold on
 plot(wl, diff_LMS(:,2), 'g-')
 plot(wl, diff_LMS(:,3), 'b-')
-plot(wl, zeros(size(wl)), 'k--', 'LineWidth', 1); hold off
+plot(wl, zeros(size(wl)), '--', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1); hold off
 xlabel('Wavelength (nm)'); ylabel('Sensitivity Difference (2 deg - 10 deg)')
 title('How the 2 deg and 10 deg observers differ')
 legend('L', 'M', 'S', 'Location', 'bestoutside')

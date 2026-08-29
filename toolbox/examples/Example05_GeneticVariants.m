@@ -20,7 +20,7 @@ table([string(obs_mean.L_OpsinTemplate); string(obs_ser.L_OpsinTemplate); string
 %[text] The Serine and Alanine curves are nearly indistinguishable when overlaid -- the shift is real but small. The classic way to expose it is the **difference curve** $L_{\\mathrm{Ser}}(\\lambda) - L_{\\mathrm{Ala}}(\\lambda)$: a small spectral shift between two near-identical curves produces a characteristic S-shaped (zero-crossing) residual, with the zero crossing near the peak wavelength.
 wl = (520:0.5:640)';
 plot(wl, obs_ser.L(wl) - obs_ala.L(wl), 'r-')
-yline(0, 'k--', 'HandleVisibility', 'off')
+yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off')
 xlabel('Wavelength (nm)'); ylabel('L_{Ser} - L_{Ala}')
 title('Ser180Ala shift signature (Serine minus Alanine)')
 %%

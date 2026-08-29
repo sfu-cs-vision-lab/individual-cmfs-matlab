@@ -193,7 +193,7 @@ figure(Position=[100 100 1000 420]);
 tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl_zoom, obs_ser.L(wl_zoom),  'r-'); hold on
-plot(wl_zoom, obs_mean.L(wl_zoom), 'k-')
+plot(wl_zoom, obs_mean.L(wl_zoom), '-', 'Color', IndividualCMF.neutralColor())
 plot(wl_zoom, obs_ala.L(wl_zoom),  'b-'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
 title('Ser180Ala polymorphism (L-cone peak zoom)')

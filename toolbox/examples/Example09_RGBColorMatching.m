@@ -44,9 +44,9 @@ RGB_default = obs_default.RGB(wl);
 RGB_sRGB    = obs_sRGB.RGB(wl);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs_default.plotRGBCMFs(Title="Stiles & Burch [645/526/444]", Wavelength=wl, Parent=nexttile);
-hold on; yline(0, 'k--', 'HandleVisibility', 'off'); hold off; xlim([390 700])
+hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
 obs_sRGB.plotRGBCMFs(Title="Custom sRGB-like [615/545/465]", Wavelength=wl, Parent=nexttile);
-hold on; yline(0, 'k--', 'HandleVisibility', 'off'); hold off; xlim([390 700])
+hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
 %%
 %[text] ## Display-technology comparison
 %[text] Different display systems use different primaries. Wider gamuts (Adobe RGB) push the red and green primaries further into saturated regions. The CMF shapes shift accordingly.
@@ -60,7 +60,7 @@ for k = 1:numel(disp_specs)
     obs_disp = IndividualCMF(Primaries=prim);
     obs_disp.plotRGBCMFs(Title=sprintf('%s [%d/%d/%d]', disp_specs(k), round(prim)), ...
         Wavelength=wl, Parent=nexttile);
-    hold on; yline(0, 'k--', 'HandleVisibility', 'off'); hold off; xlim([390 700])
+    hold on; yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off'); hold off; xlim([390 700])
 end
 %%
 %[text] ## Bad primaries: the SingularPrimaries error path

@@ -67,7 +67,7 @@ xlim([380 700])
 proto = IndividualCMF(Lod=0);
 deut  = IndividualCMF(Mod=0);
 trit  = IndividualCMF(Sod=0);
-plot(wl, obs10.Luminance(wl), 'k-'); hold on
+plot(wl, obs10.Luminance(wl), '-', 'Color', IndividualCMF.neutralColor()); hold on
 plot(wl, proto.Luminance(wl), 'r--')
 plot(wl, deut.Luminance(wl),  'g--')
 plot(wl, trit.Luminance(wl),  'b:'); hold off
@@ -83,7 +83,7 @@ wl_mb = (390:1:700)';
 mb = obs10.MacLeodBoynton(wl_mb);
 l_mb = mb(:,1); s_mb = mb(:,2);
 mark_wls = [400, 450, 500, 550, 600, 650, 700];
-plot(l_mb, s_mb, 'k-'); hold on
+plot(l_mb, s_mb, '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl_mb == mwl);
     plot(l_mb(j), s_mb(j), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 10)

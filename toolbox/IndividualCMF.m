@@ -2781,7 +2781,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Lens Density"; end
-                p = plot(ax, wl, lens, '-', 'Color', [0 0 0], ...
+                p = plot(ax, wl, lens, '-', 'Color', IndividualCMF.neutralColor(ax), ...
                     'LineWidth', 2, 'DisplayName', 'Lens');
             else
                 if ~isa(options.Compare, 'IndividualCMF')
@@ -2841,7 +2841,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Macular Pigment Density"; end
-                p = plot(ax, wl, mac, '-', 'Color', [0 0 0], ...
+                p = plot(ax, wl, mac, '-', 'Color', IndividualCMF.neutralColor(ax), ...
                     'LineWidth', 2, 'DisplayName', 'Macular');
             else
                 if ~isa(options.Compare, 'IndividualCMF')
@@ -4100,6 +4100,76 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static)
+        function c = neutralColor(target)
+            % NEUTRALCOLOR  Line colour that stays legible in either theme.
+            %
+            %   c = IndividualCMF.neutralColor() returns black on a light
+            %   figure theme and white on a dark one, so a curve drawn in
+            %   it reads against the axes background either way. A literal
+            %   black line disappears on MATLAB's dark theme, which is what
+            %   this exists to avoid.
+            %
+            %   c = IndividualCMF.neutralColor(ax) resolves the theme from
+            %   that axes or figure rather than from the current figure.
+            %
+            %   The colour is resolved when you call this, not bound to the
+            %   figure: switching theme afterwards will not recolour a line
+            %   already drawn. Re-run the plot after switching. MATLAB
+            %   offers no supported way to bind a line colour to the theme
+            %   as of R2025b.
+            %
+            %   Before R2025a, figures have no Theme property and this
+            %   always returns black, matching the pre-theme behaviour.
+            %
+            %   OPTIONAL INPUTS:
+            %       target - Axes, figure, or any graphics handle whose
+            %                figure ancestor carries the theme.
+            %                Default: gcf (graphics handle)
+            %
+            %   OUTPUTS:
+            %       c - 1x3 RGB triplet, [0 0 0] or [1 1 1] (double)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       plot(400:700, obs.Luminance((400:700)'), ...
+            %           'Color', IndividualCMF.neutralColor())
+            arguments
+                target = []
+            end
+
+            % gcf rather than groot().CurrentFigure, so that calling this
+            % as a plot argument with no figure open still resolves the
+            % theme: gcf creates the figure the plot is about to draw
+            % into, and a new figure inherits the desktop theme. Reading
+            % CurrentFigure would return empty there and answer black on a
+            % dark desktop, which is the case this method exists to fix.
+            if isempty(target)
+                fig = gcf;
+            else
+                fig = ancestor(target, 'figure');
+            end
+
+            % The read is what gets guarded, not the property test. Before
+            % R2025a a figure already has a Theme property, but it holds a
+            % matlab.graphics.GraphicsPlaceholder, and isprop reports
+            % BaseColorStyle on a placeholder even though reading it errors.
+            % Testing for either property therefore passes on a release that
+            % cannot answer, which took out every plot method drawing a
+            % neutral line.
+            c = [0 0 0];
+            if isempty(fig)
+                return;
+            end
+            try
+                style = string(fig.Theme.BaseColorStyle);
+            catch
+                return;
+            end
+            if style == "dark"
+                c = [1 1 1];
+            end
+        end
+
         function observers = across(parameter, values, fixedArgs)
             % ACROSS  Construct an array of IndividualCMF observers across a parameter axis.
             %

@@ -657,5 +657,90 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             testCase.verifyTrue(ishold(ax), "plotLMS must preserve a caller's hold on");
         end
 
+        % Theme-aware neutral colour
+
+        function testNeutralColorFollowsFigureTheme(testCase)
+            % Black on a light figure, white on a dark one. A literal black
+            % line is invisible on MATLAB's dark theme, which is the whole
+            % reason this helper exists.
+            testCase.assumeTrue(IndividualCMFVisualizationTest.figureThemesAvailable(), ...
+                'Figure themes require R2025a or newer');
+            close all force;
+
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            theme(fig, 'light');
+            testCase.verifyEqual(IndividualCMF.neutralColor(fig), [0 0 0], ...
+                'Light theme must give black');
+
+            theme(fig, 'dark');
+            testCase.verifyEqual(IndividualCMF.neutralColor(fig), [1 1 1], ...
+                'Dark theme must give white');
+        end
+
+        function testNeutralColorResolvesThroughAnAxes(testCase)
+            % Passing an axes (what the plot methods do) must resolve the
+            % theme from its figure ancestor, not from whatever figure
+            % happens to be current.
+            testCase.assumeTrue(IndividualCMFVisualizationTest.figureThemesAvailable(), ...
+                'Figure themes require R2025a or newer');
+            close all force;
+
+            darkFig = figure('Visible', 'off');
+            lightFig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close([darkFig lightFig])); %#ok<NASGU>
+            theme(darkFig, 'dark');
+            theme(lightFig, 'light');
+            ax = axes(darkFig);
+
+            % lightFig is current, but ax belongs to darkFig.
+            figure(lightFig);
+            testCase.verifyEqual(IndividualCMF.neutralColor(ax), [1 1 1], ...
+                'Must read the theme of the target axes, not the current figure');
+        end
+
+        function testPlotLensAndMacularUseTheNeutralColor(testCase)
+            % The two toolbox plots that draw a single achromatic curve must
+            % go through neutralColor, or they vanish on a dark theme.
+            testCase.assumeTrue(IndividualCMFVisualizationTest.figureThemesAvailable(), ...
+                'Figure themes require R2025a or newer');
+            close all force;
+
+            obs = IndividualCMF();
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            theme(fig, 'dark');
+
+            layout = tiledlayout(fig, 1, 2);
+            pLens = obs.plotLens(Parent=nexttile(layout));
+            pMac  = obs.plotMacular(Parent=nexttile(layout));
+
+            testCase.verifyEqual(pLens(1).Color, [1 1 1], ...
+                'plotLens must draw white on a dark theme');
+            testCase.verifyEqual(pMac(1).Color, [1 1 1], ...
+                'plotMacular must draw white on a dark theme');
+        end
+
     end
+
+    methods (Access = private, Static)
+
+        function tf = figureThemesAvailable()
+            % A figure gained Theme before that object gained BaseColorStyle,
+            % and the theme function arrived with the latter, so testing for
+            % Theme alone lets these run on a release that cannot satisfy
+            % them.
+            fig = figure('Visible', 'off');
+            closer = onCleanup(@() close(fig));
+            try
+                style = string(fig.Theme.BaseColorStyle); %#ok<NASGU>
+                tf = exist('theme', 'file') ~= 0;
+            catch
+                tf = false;
+            end
+        end
+
+    end
+
 end

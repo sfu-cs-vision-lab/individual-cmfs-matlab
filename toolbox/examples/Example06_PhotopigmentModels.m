@@ -34,7 +34,7 @@ residual = LMS_sr - LMS_gov;
 plot(wl, residual(:,1), 'r-'); hold on
 plot(wl, residual(:,2), 'g-')
 plot(wl, residual(:,3), 'b-')
-plot(wl, zeros(size(wl)), 'k--', 'LineWidth', 1); hold off
+plot(wl, zeros(size(wl)), '--', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1); hold off
 xlabel('Wavelength (nm)'); ylabel('Sensitivity Difference (S-R - Gov)')
 title('Residuals between template models')
 legend('L', 'M', 'S', 'Location', 'bestoutside')
@@ -96,7 +96,7 @@ wl_common = (360:1:780)';
 absCommon = 10.^Nomograms.stockmanRiderCommon(wl_common, 'M', 20);
 absGovRef = Nomograms.govardovskii2000(wl_common, 547.3);
 plot(wl_common, absCommon, 'm-'); hold on
-plot(wl_common, absGovRef, 'k--'); hold off
+plot(wl_common, absGovRef, '--', 'Color', IndividualCMF.neutralColor()); hold off
 xlabel('Wavelength (nm)'); ylabel('Absorbance')
 title('S-R common (M +20 nm) vs Govardovskii at 547.3 nm')
 legend('S-R common (shifted)', 'Govardovskii (2000)', 'Location', 'bestoutside')

@@ -27,7 +27,7 @@ plot(wl, L_samp, 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
 title('L-cone, two methods overlaid'); legend('Continuous', 'Sampled')
 nexttile
-plot(wl, (L_cont - L_samp) * 1000, 'k-')
+plot(wl, (L_cont - L_samp) * 1000, '-', 'Color', IndividualCMF.neutralColor())
 xlabel('Wavelength (nm)'); ylabel('Difference (x10^{-3})')
 title('Continuous - Sampled (scaled)')
 table(max(abs(L_cont - L_samp)), mean(abs(L_cont - L_samp)), ...
@@ -66,7 +66,7 @@ obs_samp_5 = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=380:
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl_zoom, obs_cont.L(wl_zoom), 'b-'); hold on
 plot(wl_zoom, obs_samp_5.L(wl_zoom), 'r--')
-plot(wl_zoom, ones(size(wl_zoom)), 'k:', 'LineWidth', 1)
+plot(wl_zoom, ones(size(wl_zoom)), ':', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1)
 plot((555:5:565)', obs_samp_5.L((555:5:565)'), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
 hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')

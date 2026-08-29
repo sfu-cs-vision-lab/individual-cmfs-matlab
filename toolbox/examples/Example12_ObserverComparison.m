@@ -40,7 +40,7 @@ nexttile
 plot(wl, diffs(:,1), 'r-'); hold on
 plot(wl, diffs(:,2), 'g-')
 plot(wl, diffs(:,3), 'b-')
-plot(wl, zeros(size(wl)), 'k--'); hold off
+plot(wl, zeros(size(wl)), '--', 'Color', IndividualCMF.neutralColor()); hold off
 xlabel('Wavelength (nm)'); ylabel('Sensitivity Difference')
 title('Reference - Comparison')
 legend('L', 'M', 'S', 'Location', 'bestoutside')

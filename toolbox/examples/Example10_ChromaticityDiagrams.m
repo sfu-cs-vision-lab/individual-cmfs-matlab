@@ -21,13 +21,13 @@ table(l(idx), m(idx), s(idx), l(idx)+m(idx)+s(idx), ...
 %[text] ## The spectral locus
 %[text] The closed curve consisting of the monochromatic spectral locus plus the dashed "line of purples" (a non-spectral interpolation between the long-wavelength and short-wavelength endpoints) bounds all physically realisable chromaticities.
 mark_wls = [400, 450, 500, 550, 600, 650, 700];
-plot(l, m, 'k-'); hold on
+plot(l, m, '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl == mwl);
     plot(l(j), m(j), 'ko', 'MarkerFaceColor', 'w', 'MarkerSize', 8)
     text(l(j)+0.01, m(j)+0.01, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([l(end), l(1)], [m(end), m(1)], 'k--', 'LineWidth', 1); hold off
+plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1); hold off
 xlabel('l = L / (L + M + S)'); ylabel('m = M / (L + M + S)')
 title('lm Chromaticity Diagram'); axis equal
 xlim([0 1]); ylim([0 1])
@@ -47,7 +47,7 @@ for mwl = mark_wls
     plot(l(j), m(j), 'ko', 'MarkerFaceColor', colors(j,:), 'MarkerSize', 10)
     text(l(j)+0.015, m(j)+0.015, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([l(end), l(1)], [m(end), m(1)], 'k--', 'LineWidth', 1); hold off
+plot([l(end), l(1)], [m(end), m(1)], '--', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1); hold off
 xlabel('l (L chromaticity)'); ylabel('m (M chromaticity)')
 title('lm chromaticity, wavelength-coded'); axis equal
 xlim([0 1]); ylim([0 1])
@@ -95,13 +95,13 @@ title('Using plotChromaticity()')
 %[text] ## CIE xy chromaticity
 %[text] The CIE 1931 xy chromaticity diagram is obtained by projective normalization of XYZ. The built-in `xyChromaticity` method delegates to `XYZ` internally (so the same non-standard-observer warnings apply) and returns an `Nx2` matrix of `[x, y]`.
 xy = obs.xyChromaticity(wl);
-plot(xy(:,1), xy(:,2), 'k-'); hold on
+plot(xy(:,1), xy(:,2), '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl == mwl);
     plot(xy(j,1), xy(j,2), 'ko', 'MarkerFaceColor', wavelengthToRGB(mwl), 'MarkerSize', 10)
     text(xy(j,1)+0.01, xy(j,2)+0.01, sprintf('%d nm', mwl), 'FontSize', 9)
 end
-plot([xy(end,1), xy(1,1)], [xy(end,2), xy(1,2)], 'k--', 'LineWidth', 1); hold off
+plot([xy(end,1), xy(1,1)], [xy(end,2), xy(1,2)], '--', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1); hold off
 xlabel('x = X / (X+Y+Z)'); ylabel('y = Y / (X+Y+Z)')
 title('CIE xy chromaticity'); axis equal
 xlim([0 0.8]); ylim([0 0.9])

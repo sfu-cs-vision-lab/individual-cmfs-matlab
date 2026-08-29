@@ -92,13 +92,13 @@ tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, lens_density, 'b-'); hold on
 plot(wl, macular_density, 'g-')
-plot(wl, total_density, 'k-'); hold off
+plot(wl, total_density, '-', 'Color', IndividualCMF.neutralColor()); hold off
 xlabel('Wavelength (nm)'); ylabel('Optical Density')
 title('Pre-receptoral optical density')
 legend('Lens', 'Macular', 'Total', 'Location', 'bestoutside')
 grid on; xlim([390 700])
 nexttile
-plot(wl, transmission * 100, 'k-')
+plot(wl, transmission * 100, '-', 'Color', IndividualCMF.neutralColor())
 xlabel('Wavelength (nm)'); ylabel('Transmission (%)')
 title('Pre-receptoral transmission'); xlim([390 700])
 %%

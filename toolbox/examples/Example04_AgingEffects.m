@@ -77,7 +77,7 @@ wl_lens = (380:1:550)';
 obs70_SR = IndividualCMF(LensModel="StockmanRider2023", Age=70, FieldSize=10);
 obs70_P  = IndividualCMF(LensModel="Pokorny1987",       Age=70, FieldSize=10);
 obs70_VK = IndividualCMF(LensModel="VanDeKraats2007",   Age=70, FieldSize=10);
-plot(wl_lens, obs70_SR.getLensDensitySpectrum(wl_lens), 'k-', 'LineWidth', 1.5); hold on
+plot(wl_lens, obs70_SR.getLensDensitySpectrum(wl_lens), '-', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1.5); hold on
 plot(wl_lens, obs70_P.getLensDensitySpectrum(wl_lens),  'b-', 'LineWidth', 1.5)
 plot(wl_lens, obs70_VK.getLensDensitySpectrum(wl_lens), 'r-', 'LineWidth', 1.5); hold off
 xlabel('Wavelength (nm)'); ylabel('Lens Optical Density')

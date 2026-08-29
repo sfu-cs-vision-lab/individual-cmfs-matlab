@@ -33,9 +33,9 @@ table(XYZTarget, XYZMixture, XYZTarget - XYZMixture, ...
 %[text] ## Step 2: visualize the metameric pair
 %[text] The two SPDs are spectrally distinct: one is a broad single Gaussian peaked at 555 nm, the other is a three-Gaussian sum with a tall middle peak and small flanking contributions. They are perceptually identical to the CIE 2006 2-deg standard observer.
 f = gcf; f.Position(3:4) = [800 500];
-plot(wl, spdTarget, 'k-'); hold on
+plot(wl, spdTarget, '-', 'Color', IndividualCMF.neutralColor()); hold on
 plot(wl, spdMixture, 'r--')
-plot(wl, zeros(size(wl)), 'k:', 'HandleVisibility', 'off')
+plot(wl, zeros(size(wl)), ':', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off')
 hold off
 xlabel('Wavelength (nm)'); ylabel('Spectral power (arbitrary)')
 title('A metameric pair for the CIE 2006 2-deg standard observer')
