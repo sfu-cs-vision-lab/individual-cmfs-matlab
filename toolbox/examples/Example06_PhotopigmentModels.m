@@ -22,10 +22,10 @@ xlim([390 700]); ylim([0 1.05])
 %%
 %[text] ## Overlay comparison
 %[text] Plotting both models on the same axes makes the differences obvious. The two are very close in the central visible range but diverge slightly near the band edges. `compareTo` paints the first observer's curves solid and the second observer's dashed; the legend is relabeled afterwards to distinguish S-R from Gov.
-obs_sr.compareTo(obs_gov, Title="Stockman & Rider (solid) vs Govardovskii (dashed)", ...
+p_cmp = obs_sr.compareTo(obs_gov, Title="Stockman & Rider (solid) vs Govardovskii (dashed)", ...
     Wavelength=wl);
 xlim([390 700])
-legend({'L (S-R)', 'M (S-R)', 'S (S-R)', 'L (Gov)', 'M (Gov)', 'S (Gov)'}, ...
+legend(p_cmp, {'L (S-R)', 'M (S-R)', 'S (S-R)', 'L (Gov)', 'M (Gov)', 'S (Gov)'}, ...
        'Location', 'bestoutside', 'NumColumns', 2);
 %%
 %[text] ## Residual analysis
@@ -49,8 +49,8 @@ table(rms(residual)', max(abs(residual))', ...
 %[text] | --- | --- | --- |
 %[text] | CIE 2006 standard compliance | Yes | No |
 %[text] | Genetic variants (Ser/Ala, hybrids) | Yes | No |
-%[text] | Analytical form | 8th-order shifted Fourier (in log-lambda) | Sum of exponentials (alpha-band) + Gaussian (beta-band) |
-%[text] | Species generality | Human only | Any A1 pigment |
+%[text] | Analytical form | 8th-order shifted Fourier (in log-lambda) | Reciprocal of a sum of exponentials (alpha-band) + Gaussian (beta-band) |
+%[text] | Species generality | Human only | Any vertebrate A1 pigment |
 %[text] | Beta-band shape | Implicit (Fourier capture) | Explicit Gaussian term |
 %[text:table]
 %%
@@ -75,7 +75,7 @@ table(template_before, type_before, template_after, type_after, ...
 %[text] - **Long-wavelength decay rate** -- A2 has a slower long-wave roll-off
 %[text] - **Beta-band amplitude** -- 0.37 (A2) vs 0.26 (A1)
 %[text] - **Beta-band width regression** -- quadratic in lambda-max for A2 (Eq. 8b) vs linear for A1 (Eq. 5b) \
-%[text] The plot below shows both templates for an L-cone-like lambda-max (560 nm). The A2 long-wave flank reaches further into the red, and the short-wavelength shoulder below 450 nm sits higher (this is the right edge of the beta-band; the beta peak itself lies near 365 nm, off the plot to the left).
+%[text] The plot below shows both templates for an L-cone-like lambda-max (560 nm). The A2 long-wave flank reaches further into the red, and the short-wavelength shoulder below 450 nm sits higher (this is the right edge of the beta-band; the A2 beta peak lies near 377 nm (216.7 + 0.287 x lambda-max), at the very left edge of the plot; the A1 beta peak is the familiar 365 nm).
 wl_a2 = (380:1:780)';
 absA1 = Nomograms.govardovskii2000(wl_a2, 560);
 absA2 = Nomograms.govardovskii2000A2(wl_a2, 560);
@@ -92,7 +92,7 @@ xlim([380 780])
 %[text] - **Common template** -- absorbance comes straight from `Nomograms.stockmanRiderCommon`
 %[text] - **Govardovskii** -- `Nomograms.govardovskii2000` evaluated at the same lambda-max \
 %[text] The two species-general shapes are close through the central band and diverge mildly on the flanks, as expected for differently derived templates.
-wl_common = (360:1:780)';
+wl_common = (380:1:780)';
 absCommon = 10.^Nomograms.stockmanRiderCommon(wl_common, 'M', 20);
 absGovRef = Nomograms.govardovskii2000(wl_common, 547.3);
 plot(wl_common, absCommon, 'm-'); hold on
@@ -100,7 +100,7 @@ plot(wl_common, absGovRef, '--', 'Color', IndividualCMF.neutralColor()); hold of
 xlabel('Wavelength (nm)'); ylabel('Absorbance')
 title('S-R common (M +20 nm) vs Govardovskii at 547.3 nm')
 legend('S-R common (shifted)', 'Govardovskii (2000)', 'Location', 'bestoutside')
-xlim([360 780])
+xlim([380 780])
 %%
 %[text] ## Key takeaways
 %[text] - Stockman & Rider (2023) is the default -- CIE-compliant, supports human-specific variants
