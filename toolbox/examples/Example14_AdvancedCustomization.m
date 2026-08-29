@@ -27,11 +27,12 @@ obs_custom = IndividualCMF( ...
     OutputFormat="energy")
 %%
 %[text] ## Direct density overrides -- Custom mode in action
-%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived if you later change `Age`, `FieldSize`, or `LensModel`. Precedence here is override, not composition: the assigned value replaces the age / field-size formula result rather than adding to it (contrast Asano, Fairchild & Blonde 2016, where age and a separate density deviation compose).
+%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived when its driving parameter changes -- `FieldSize` for the macular and cone densities, and `Age`, `FieldSize` or `LensModel` for lens density. One subtlety: the auto-engage compares against the CIE standard values, so assigning a density that already equals the standard (`Sod = 0.30` on a 10 deg observer) leaves the algorithm untouched. Assign a genuinely different value to engage `Custom`.
+%[text] Precedence here is override, not composition: the assigned value replaces the age / field-size formula result rather than adding to it (contrast Asano, Fairchild & Blonde 2016, where age and a separate density deviation compose).
 obs_override = IndividualCMF();
 obs_override.LensDensity    = 2.5;
 obs_override.MacularDensity = 0.6;
-obs_override.Lod = 0.35; obs_override.Mod = 0.35; obs_override.Sod = 0.30;
+obs_override.Lod = 0.35; obs_override.Mod = 0.35; obs_override.Sod = 0.25;
 table(obs_override.LensDensity,    string(obs_override.LensDensityAlgorithm), ...
       obs_override.MacularDensity, string(obs_override.MacularDensityAlgorithm), ...
       obs_override.Lod,            string(obs_override.PhotopigmentDensityAlgorithm), ...
@@ -118,10 +119,19 @@ table(loaded.obs_full.Age == obs_full.Age, ...
       maxAbsDiff < 1e-12, ...
       maxAbsDiff, ...
       'VariableNames', {'DirectSave_AgeMatches', 'RoundTrip_LMS_within_tol', 'MaxAbsDiff'})
+%[text] What the snapshot does *not* carry is the output-shape settings. `ObserverParameters` holds the biophysics -- who the observer is -- not how their numbers are reported. Give the source a non-default `OutputFormat` and the round trip no longer reproduces the same array:
+obs_shaped = IndividualCMF(Age=55, OutputFormat="quantal", NormalizeOutput=false);
+obs_reshaped = IndividualCMF();
+obs_reshaped.setParameters(obs_shaped.getParameters());
+table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
+      obs_shaped.Age == obs_reshaped.Age, ...
+      isequal(obs_shaped.LMS(wl_check), obs_reshaped.LMS(wl_check)), ...
+      'VariableNames', {'Source_Format', 'Restored_Format', 'Age_Matches', 'LMS_Identical'})
+%[text] Age transfers; the format does not, so the arrays differ. Set the output-shape properties explicitly on the receiving observer when you need them to match.
 %%
 %[text] ## Key takeaways
 %[text] - **Direct save** of the whole `IndividualCMF` object -- opaque, but simple
-%[text] - **`getParameters`** / **`setParameters`** round-trip via the `ObserverParameters` value class -- preserves *every* field that affects LMS output (physiological values, `LensModel`, `PhotopigmentModel`, opsin templates, all algorithm modes including `LensDensityAlgorithm`)
+%[text] - **`getParameters`** / **`setParameters`** round-trip via the `ObserverParameters` value class -- preserves every *biophysical* field (physiological values, `LensModel`, `PhotopigmentModel`, opsin templates, all algorithm modes including `LensDensityAlgorithm`)
 %[text] - Many constructor arguments allow fine-grained observer modeling
 %[text] - Direct density assignments auto-engage `"Custom"` mode, protecting overrides from re-derivation
 %[text] - `LensDensityAlgorithm`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` are the three Custom-mode toggles
