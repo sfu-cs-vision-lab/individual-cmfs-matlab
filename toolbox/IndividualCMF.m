@@ -2890,8 +2890,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Parent = []
             end
 
-            if isempty(options.Parent)
-                layout = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
+            ownsFigure = isempty(options.Parent);
+            if ownsFigure
+                % Three panels side by side need a wide, short figure. A
+                % default figure is usually taller than a third of its
+                % width, which squeezes each tile to roughly 1:2.5 and
+                % turns the curves into spikes. Only resize when this
+                % method created the layout: with Parent= the caller owns
+                % the figure and its shape is not ours to change.
+                fig = gcf;
+                fig.Position(3:4) = [1000 380];
+                layout = tiledlayout(fig, 1, 3, TileSpacing="compact", Padding="compact");
                 title(layout, "IndividualCMF Diagnostics");
             else
                 layout = options.Parent;
@@ -2925,6 +2934,23 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                         'LineWidth', 2, 'DisplayName', names(k));
                 end
                 obj.finalizeLinePlot(ax(s), p{s}, cfg.Title, cfg.YLabel, wasHeld);
+
+                % All three panels carry the same L/M/S curves, so three
+                % identical legends are redundant and each one costs about
+                % a third of its panel's width. Keep the last.
+                if s < 3
+                    lgd = get(ax(s), 'Legend');
+                    if ~isempty(lgd), lgd.Visible = "off"; end
+                end
+
+                % Pin a common y scale so the three stages are comparable.
+                % Stages 2 and 3 are normalized and autoscale to exactly 1,
+                % but stage 1 is raw absorbance peaking near 0.995, which
+                % autoscales to 1.2 and made panel 1 read on a different
+                % scale from its neighbours. Take the ceiling rather than a
+                % literal 1: Govardovskii A2 absorbance peaks at 1.035, and
+                % a hard [0 1] would clip it.
+                ylim(ax(s), [0, max(1, max(LMS, [], "all"))]);
             end
 
             outputs = {p, ax};

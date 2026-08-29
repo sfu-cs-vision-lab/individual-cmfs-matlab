@@ -23,24 +23,22 @@ energy      = obs_e.L(wl);
 %%
 %[text] ## Visualizing the four stages
 %[text] One panel per stage; each is the L-cone evaluated at the same wavelengths. Note the y-axis units differ -- only the *shape* is meaningful in this view.
-f = gcf;
-f.Position(3:4) = [800 900];
-tiledlayout(f, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
-xlabel('Wavelength (nm)'); ylabel('Absorbance (linear)')
-title('Stage 1: Photopigment absorbance'); xlim([390 700])
+ylabel('Absorbance')
+title('Stage 1: Photopigment absorbance (linear)'); xlim([390 700])
 nexttile
 plot(wl, absorptance, 'r-')
-xlabel('Wavelength (nm)'); ylabel('Absorptance (fraction)')
-title('Stage 2: Retinal absorptance'); xlim([390 700])
+ylabel('Absorptance')
+title('Stage 2: Retinal absorptance (fraction)'); xlim([390 700])
 nexttile
 plot(wl, quantal, 'r-')
-xlabel('Wavelength (nm)'); ylabel('Relative Sensitivity')
+ylabel('Sensitivity')
 title('Stage 3: Corneal quantal'); xlim([390 700])
 nexttile
 plot(wl, energy, 'r-')
-xlabel('Wavelength (nm)'); ylabel('Relative Sensitivity')
+xlabel('Wavelength (nm)'); ylabel('Sensitivity')
 title('Stage 4: Corneal energy (default)'); xlim([390 700])
 %%
 %[text] ## Overlaid normalized comparison
