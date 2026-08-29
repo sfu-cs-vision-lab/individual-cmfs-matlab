@@ -7,7 +7,8 @@
 exampleDefaults();
 %%
 %[text] ## Two normalization methods
-%[text] You can request either method by name. The wavelengths `Sampled` normalizes over live in `NormalizationGrid`, written in MATLAB's `start:step:stop` form.
+%[text] You can request either method by name. The wavelengths `Sampled` normalizes over live in `NormalizationGrid`, which accepts any wavelength vector -- the `start:step:stop` form below is just convenient.
+%[text] Three of the four output formats are normalized. `absorbance` is the exception: it is never normalized, whatever `NormalizeOutput` says, because its absolute scale carries meaning -- `A(lambda_max) = 1` is what makes `Lod`/`Mod`/`Sod` mean peak axial optical density.
 obs_cont = IndividualCMF(NormalizationMethod="Continuous");
 obs_samp = IndividualCMF(NormalizationMethod="Sampled");
 grid_default = obs_samp.NormalizationGrid;
@@ -16,7 +17,7 @@ table(string(obs_cont.NormalizationMethod), string(obs_samp.NormalizationMethod)
       'VariableNames', {'Cont_method', 'Samp_method', 'Grid_min', 'Grid_max', 'Grid_points'})
 %%
 %[text] ## Comparing the two normalizations on the L-cone
-%[text] Side-by-side: the two methods produce nearly identical L-cone curves over the visible range. The difference is in the third decimal place -- significant only when reproducibility against a reference is required.
+%[text] Side-by-side: the two methods produce nearly identical L-cone curves over the visible range. The difference is around 1e-5 -- the fifth decimal place -- significant only when reproducibility against a reference implementation is required.
 wl = (400:5:700)';
 L_cont = obs_cont.L(wl);
 L_samp = obs_samp.L(wl);
@@ -27,8 +28,8 @@ plot(wl, L_samp, 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
 title('L-cone, two methods overlaid'); legend('Continuous', 'Sampled')
 nexttile
-plot(wl, (L_cont - L_samp) * 1000, '-', 'Color', IndividualCMF.neutralColor())
-xlabel('Wavelength (nm)'); ylabel('Difference (x10^{-3})')
+plot(wl, (L_cont - L_samp) * 1e5, '-', 'Color', IndividualCMF.neutralColor())
+xlabel('Wavelength (nm)'); ylabel('Difference (x10^{-5})')
 title('Continuous - Sampled (scaled)')
 table(max(abs(L_cont - L_samp)), mean(abs(L_cont - L_samp)), ...
       'VariableNames', {'MaxAbsDiff', 'MeanAbsDiff'})
@@ -60,28 +61,29 @@ table(max(obs_demo.L(wl_fine)),  max(obs_demo.L(wl_fine))  > 1.0, ...
       'VariableNames', {'Sampled_max', 'Sampled_exceeds_1', 'Continuous_max', 'Continuous_exceeds_1'})
 %%
 %[text] ## Visualizing the exceedance
-%[text] Zooming around the L-cone peak with a deliberately coarse 5 nm Sampled grid shows the curve crossing 1.0 between grid points. Continuous (blue) stays cleanly below 1.0 everywhere.
-wl_zoom = (555:0.01:565)';
+%[text] Zooming around the true L-cone peak (566.7 nm) with a deliberately coarse 5 nm Sampled grid. The sampled maximum is taken at 565 nm, the grid point nearest the peak, so the red curve reaches exactly 1.0 there and then climbs *above* it between the 565 and 570 nm grid points, peaking near 1.00048. Continuous (blue) stays at or below 1.0 everywhere. Note the y-axis spans only 0.004 -- the exceedance is under 5e-4 and is invisible on a normal scale.
+wl_zoom = (560:0.01:576)';
 obs_samp_5 = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=380:5:780);
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl_zoom, obs_cont.L(wl_zoom), 'b-'); hold on
 plot(wl_zoom, obs_samp_5.L(wl_zoom), 'r--')
 plot(wl_zoom, ones(size(wl_zoom)), ':', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1)
-plot((555:5:565)', obs_samp_5.L((555:5:565)'), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
+plot((560:5:575)', obs_samp_5.L((560:5:575)'), 'ro', 'MarkerSize', 8, 'MarkerFaceColor', 'r')
 hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')
 title('Off-grid exceedance (Sampled 5 nm vs Continuous)')
 legend('Continuous', 'Sampled (5 nm)', 'y = 1', 'Sampled grid points', 'Location', 'bestoutside')
-grid on; ylim([0.98 1.01])
+grid on; ylim([0.997 1.001])
 %%
 %[text] ## Reproducing external reference implementations
 %[text] To match an external implementation that normalizes on a discrete wavelength grid, set `NormalizationMethod="Sampled"` and give `NormalizationGrid` the same wavelengths the reference uses, then evaluate at that grid. **Pycone** (the Python reference implementation) is the canonical example: it accepts a user-configurable step size. Because the grid is a plain wavelength vector, one expression serves as both the normalization grid and the evaluation grid.
-wl_pycone = (390:5:830)';
-obs_pycone = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=wl_pycone);
-table(string(obs_pycone.NormalizationMethod), ...
-      min(obs_pycone.NormalizationGrid), ...
-      max(obs_pycone.NormalizationGrid), ...
-      numel(obs_pycone.NormalizationGrid), ...
+%[text] The grid below is a stand-in for some external reference's configuration, not pycone's -- pycone normalizes over 380:1:780, which is exactly why that is this toolbox's default `NormalizationGrid`.
+wl_reference = (390:5:830)';
+obs_reference = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=wl_reference);
+table(string(obs_reference.NormalizationMethod), ...
+      min(obs_reference.NormalizationGrid), ...
+      max(obs_reference.NormalizationGrid), ...
+      numel(obs_reference.NormalizationGrid), ...
       'VariableNames', {'Method', 'Grid_min', 'Grid_max', 'Grid_points'})
 %%
 %[text] ## Recommendations
@@ -93,7 +95,7 @@ table(string(obs_pycone.NormalizationMethod), ...
 %[text] - `Sampled` finds the max over a discrete grid; resolution-dependent; may exceed 1.0 between grid points
 %[text] - Use `NormalizationGrid = a:s:b` for explicit grid control
 %[text] - `obs.getPeak('L')` returns the unnormalised peak (the divisor)
-%[text] - For Pycone parity, set `Step` to match the Pycone session's configuration and evaluate on the same grid \
+%[text] - For pycone parity, keep the default `NormalizationGrid` (380:1:780, which is the grid pycone normalizes over) or set it to the grid the pycone session used, and evaluate on that same grid \
 %[text] **Next:** [Example 17: Publication-Quality Figures](matlab:edit('Example17_PublicationFigures.m')) -- composing multi-panel figures with `tiledlayout` and exporting them for publication.
 
 %[appendix]{"version":"1.0"}
