@@ -51,9 +51,10 @@ age_observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", F
 [age_observers.ModelRangeWarning] = deal(false);
 %%
 %[text] ### Lens density spectrum vs age
-figure;
+plot(wl, age_observers(1).getLensDensitySpectrum(wl), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
+for i = 2:numel(ages)
     plot(wl, age_observers(i).getLensDensitySpectrum(wl), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
@@ -63,11 +64,12 @@ title('Lens density spectrum')
 legend('Location', 'bestoutside'); xlim([390 550])
 %%
 %[text] ### Pre-receptoral transmission vs age
-figure;
+transmission = @(o) 100 * 10.^(-(o.getLensDensitySpectrum(wl) + o.getMacularDensitySpectrum(wl)));
+plot(wl, transmission(age_observers(1)), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
-    od_total = age_observers(i).getLensDensitySpectrum(wl) + age_observers(i).getMacularDensitySpectrum(wl);
-    plot(wl, 100 * 10.^(-od_total), 'Color', agecol(i,:), ...
+for i = 2:numel(ages)
+    plot(wl, transmission(age_observers(i)), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
 hold off
@@ -76,9 +78,10 @@ title('Pre-receptoral transmission (lens + macular)')
 legend('Location', 'bestoutside'); xlim([390 700])
 %%
 %[text] ### S-cone amplitude vs age
-figure;
+plot(wl, age_observers(1).S(wl), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
+for i = 2:numel(ages)
     plot(wl, age_observers(i).S(wl), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
@@ -88,9 +91,10 @@ title('S-cone amplitude')
 legend('Location', 'bestoutside'); xlim([390 520])
 %%
 %[text] ### L-cone vs age (mostly unchanged)
-figure;
+plot(wl, age_observers(1).L(wl), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
+for i = 2:numel(ages)
     plot(wl, age_observers(i).L(wl), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
@@ -100,9 +104,10 @@ title('L-cone amplitude')
 legend('Location', 'bestoutside'); xlim([500 650])
 %%
 %[text] ### V*(lambda) shift across ages
-figure;
+plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
+for i = 2:numel(ages)
     plot(wl, age_observers(i).Luminance(wl), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
@@ -112,9 +117,11 @@ title('Photopic luminance')
 legend('Location', 'bestoutside'); xlim([390 700])
 %%
 %[text] ### Spectral locus shift across ages
-figure;
+chrom = age_observers(1).lmChromaticity(wl);
+plot(chrom(:,1), chrom(:,2), 'Color', agecol(1,:), ...
+    'DisplayName', sprintf('Age %d', ages(1)))
 hold on
-for i = 1:numel(ages)
+for i = 2:numel(ages)
     chrom = age_observers(i).lmChromaticity(wl);
     plot(chrom(:,1), chrom(:,2), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
@@ -205,7 +212,6 @@ sgtitle('L-cone genetic variants', 'FontWeight', 'bold')
 %[text] `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern recommendation for publication figures. The toolbox doesn't manage export paths automatically: write to the path you want.
 obs_pub = IndividualCMF(StandardObserver=10);
 LMS_pub = obs_pub.LMS(wl);
-figure;
 plot(wl, LMS_pub(:,1), 'r-', 'LineWidth', 1.5); hold on
 plot(wl, LMS_pub(:,2), 'Color', [0 0.6 0], 'LineWidth', 1.5)
 plot(wl, LMS_pub(:,3), 'b-', 'LineWidth', 1.5); hold off
@@ -218,8 +224,9 @@ exportgraphics(gcf, pdf_path, 'ContentType', 'vector');
 disp(['Exported: ' pdf_path])
 %%
 %[text] ## Key takeaways
-%[text] - **Inline** sections call `obs.plotLMS`, `obs.compareTo`, etc. directly so the wrapper draws into the Live Editor's current axes
-%[text] - **Standalone publication figures** use `figure; tiledlayout(...); nexttile` to build multi-panel composites in a real figure window
+%[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
+%[text] - **Standalone publication figures** use `figure; tiledlayout(...); nexttile` to build multi-panel composites in a real figure window. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
+%[text] - `gcf` resolves to the Live Editor's own figure, so `exportgraphics(gcf, ...)` works from an inline section without opening a window
 %[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering
 %[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
 %[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
