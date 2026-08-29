@@ -132,8 +132,8 @@ title('Spectral locus (lm chromaticity)')
 legend('Location', 'bestoutside'); axis equal; xlim([0 0.25]); ylim([0 0.25])
 %%
 %[text] ### Composite figure for publication
-%[text] The same six panels assembled into a single 2x3 figure. Inline, this rendering is cramped, but when exported via `exportgraphics` (see "Exporting for publication" below) the figure window scales correctly and produces a clean publication-quality summary.
-figure;
+%[text] The same six panels assembled into a single 2x3 figure. Sizing the figure to match the tile grid keeps the panels roughly square; left at the default size a 2x3 grid comes out cramped and tall. Exported via `exportgraphics` (see "Exporting for publication" below) it scales to a clean publication-quality summary.
+figure(Position=[100 100 1200 640]);
 tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 hold on
@@ -189,7 +189,7 @@ obs_ser  = IndividualCMF(L_OpsinTemplate="Serine");
 obs_mean = IndividualCMF(L_OpsinTemplate="Mean");
 obs_ala  = IndividualCMF(L_OpsinTemplate="Alanine");
 wl_zoom = (520:0.5:620)';
-figure;
+figure(Position=[100 100 1000 420]);
 tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl_zoom, obs_ser.L(wl_zoom),  'r-'); hold on
@@ -212,6 +212,7 @@ sgtitle('L-cone genetic variants', 'FontWeight', 'bold')
 %[text] `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern recommendation for publication figures. The toolbox doesn't manage export paths automatically: write to the path you want.
 obs_pub = IndividualCMF(StandardObserver=10);
 LMS_pub = obs_pub.LMS(wl);
+figure;
 plot(wl, LMS_pub(:,1), 'r-', 'LineWidth', 1.5); hold on
 plot(wl, LMS_pub(:,2), 'Color', [0 0.6 0], 'LineWidth', 1.5)
 plot(wl, LMS_pub(:,3), 'b-', 'LineWidth', 1.5); hold off
@@ -225,8 +226,8 @@ disp(['Exported: ' pdf_path])
 %%
 %[text] ## Key takeaways
 %[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
-%[text] - **Standalone publication figures** use `figure; tiledlayout(...); nexttile` to build multi-panel composites in a real figure window. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
-%[text] - `gcf` resolves to the Live Editor's own figure, so `exportgraphics(gcf, ...)` works from an inline section without opening a window
+%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to match the tile grid -- roughly 500 x 320 px per tile keeps the panels square. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
+%[text] - A section that follows a standalone figure must open its own `figure` before drawing. `gcf` is still the previous section's figure, so a bare `plot` lands in one of its tiles and silently replaces that panel.
 %[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering
 %[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
 %[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
