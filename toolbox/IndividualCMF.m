@@ -369,7 +369,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %
         %   Ignored for OutputFormat="absorbance". Absorbance is always the
         %   raw photopigment template, matching pycone, which never
-        %   renormalizes that stage: the templates carry A(lambda_max) = 1
+        %   renormalizes that stage: the templates are anchored at A(lambda_max) = 1 (a convention; the L fit peaks at 0.995)
         %   in their published constants, and that absolute scale is what
         %   multiplies the optical density in Beer-Lambert self-screening,
         %   so Lod / Mod / Sod mean "peak axial density". Re-dividing by a

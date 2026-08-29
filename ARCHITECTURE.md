@@ -179,7 +179,8 @@ divided by its peak. Three of the four formats are normalized --
 
 `absorbance` is never normalized, whatever `NormalizeOutput` says. Its
 absolute scale is load-bearing: the templates are defined with
-`A(lambda-max) = 1`, which is what makes the `Lod` / `Mod` / `Sod`
+`A(lambda-max) = 1` by convention -- the Fourier fit actually peaks at
+0.9949 for L -- which is what makes the `Lod` / `Mod` / `Sod`
 parameters mean peak *axial* optical density. Divide the spectrum by
 anything and those three stop meaning what the literature says they
 mean. `getPeak(cone, OutputFormat="absorbance")` still reports a
