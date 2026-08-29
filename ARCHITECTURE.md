@@ -209,11 +209,11 @@ published CIE tables:
 | Method | Returns | Definition |
 |---|---|---|
 | `XYZ(wl)` | Nx3 CIE XYZ CMFs | LMS->XYZ matrix from `CIE170` (2-deg under 4 deg FieldSize, otherwise 10-deg). |
-| `RGB(wl)` | Nx3 RGB CMFs | Solve `Primaries * w = LMS` per wavelength, normalize so the primaries sum to white. |
+| `RGB(wl)` | Nx3 RGB CMFs | Solve `Primaries * w = LMS` per wavelength on peak-normalized energy fundamentals. Each cone is divided by its own peak before the solve, so the CMFs come out as the identity at the three primary wavelengths. |
 | `Luminance(wl)` | Nx1 V*(lambda) | y-bar row of the active LMS->XYZ matrix (`a L + b M`). |
 | `lmChromaticity(wl)` | Nx2 (l, m) | LMS divided by L+M+S sum. |
 | `xyChromaticity(wl)` | Nx2 (x, y) | XYZ divided by X+Y+Z sum. |
-| `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | L/(L+M), S/(L+M). |
+| `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | `aL/(aL+bM)`, `S/(aL+bM)`, with `(a, b)` the V* luminance weights -- the denominator is luminance, not the unweighted L+M sum. |
 
 `evaluate(wl, Data=...)` returns any of these as a table -- a
 `Wavelength_nm` column followed by one column per channel -- ready for

@@ -37,7 +37,7 @@ xlim([380 780]); ylim([0 1.05])
 %[text] ## Learn more
 %[text] - The full learning path with time estimates is in the examples folder README \
 %[text] - The public API is documented in the class docstring: run `help IndividualCMF` \
-%[text] - For the internal design (class layering, the four-stage pipeline, how to add a template) see `ARCHITECTURE.md` in the repository
+%[text] - For the internal design (class layering, the four-stage pipeline, how to add a template) see `ARCHITECTURE.md` at [github.com/sfu-cs-vision-lab/individual-cmfs-matlab](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab) -- it lives in the repository, not in the installed toolbox
 
 %[appendix]{"version":"1.0"}
 %---
