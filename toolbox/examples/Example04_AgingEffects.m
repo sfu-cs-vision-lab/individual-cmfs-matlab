@@ -50,14 +50,16 @@ legend('Location', 'bestoutside')
 xlim([380 550])
 %%
 %[text] ## Young vs old: full LMS comparison
-%[text] Stacked comparison of a 20-year-old and a 75-year-old observer (both VanDeKraats2007) via `obs.plotLMS(Parent=ax)`. These panels are peak-normalized, so they show shape only: the S cone's short-wave flank is carved away, while L and M keep almost the same shape. Shape is not amplitude -- all three cones lose sensitivity, and the next section measures how much.
+%[text] Stacked comparison of a 20-year-old and a 75-year-old observer (both VanDeKraats2007) via `obs.plotLMS(Parent=ax)`. These panels are peak-normalized, so they show shape only -- all three cones also lose amplitude, which the next section measures.
+%[text] The S cone changes most, and not simply by losing its blue flank. Its peak sits inside the region the yellowing lens attacks, so dividing by that peak lifts everything on the long side: between 20 and 75 the normalized curve falls from 0.584 to 0.280 at 420 nm but rises from 0.766 to 0.956 at 460 nm, and the peak itself walks 10 nm to the right, 442 to 452 nm. That apparent shift is a normalization artefact, not a change in the S pigment.
+%[text] L and M are less affected but not unaffected: their normalized curves move by up to 0.124 and 0.140 of peak (near 510 and 491 nm) against 0.312 for S. M at 440 nm falls from 0.115 to 0.040, so "almost unchanged" would overstate it.
 obs_young = observers(1);
 obs_old   = observers(end);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs_young.plotLMS(Title=sprintf('Age %d', ages(1)), Wavelength=wl_full, Parent=nexttile);
-xlim([380 780]); ylim([0 1.05])
+xlim([wl_full(1) wl_full(end)]); ylim([0 1.05])
 obs_old.plotLMS(Title=sprintf('Age %d', ages(end)), Wavelength=wl_full, Parent=nexttile);
-xlim([380 780]); ylim([0 1.05])
+xlim([wl_full(1) wl_full(end)]); ylim([0 1.05])
 %%
 %[text] ## Quantifying sensitivity loss
 %[text] To compare aging effects across the three cone types we need **unnormalized** fundamentals; the default `NormalizeOutput=true` renormalizes each curve to peak 1.0 and hides the amplitude change. Integrating each cone's unnormalized response over the visible range gives a single "total catch" number per cone. The S-cone loss dominates because the lens-yellowing region overlaps the S-cone's response.
@@ -93,7 +95,7 @@ table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensit
 %%
 %[text] ## Key takeaways
 %[text] - The crystalline lens yellows progressively with age
-%[text] - S-cone sensitivity is most affected -- by 75 it retains about a third of its age-20 total catch -- but L and M are not spared: they retain about four fifths and three quarters. Their normalized *shape* is nearly age-invariant, which is what the plots show; the amplitude loss needs `NormalizeOutput=false`
+%[text] - S-cone sensitivity is most affected -- by 75 it retains about a third of its age-20 total catch -- but L and M are not spared: L retains about four fifths and M about three quarters. Their normalized *shape* is nearly age-invariant, which is what the plots show; the amplitude loss needs `NormalizeOutput=false`
 %[text] - Pick `LensModel` deliberately: `StockmanRider2023` for CIE-spec compliance, `VanDeKraats2007` (or `Pokorny1987`) for age studies
 %[text] - Setting `LensDensity` directly auto-engages Custom mode and preserves the value across Age changes \
 %[text] **Next:** [Example 05: Genetic Variants and Cone Polymorphisms](matlab:edit('Example05_GeneticVariants.m')). Modeling individual genetic differences via the L-cone Ser180Ala polymorphism and hybrid cone variants.
