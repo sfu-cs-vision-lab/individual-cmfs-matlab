@@ -12,6 +12,12 @@ obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
 obs_ref.compareTo(obs_comp, Title="CIE 10 deg standard vs Age 60 (VanDeKraats2007)", Wavelength=wl);
 %%
+%[text] ## Reading a residual curve
+%[text] The shape of a residual says which mechanism produced it, which is what makes this example more than a difference plot. Four signatures worth recognising:
+%[text] - **Lens density** -- broad, single-signed, growing toward short wavelengths, and present in all three cones at once.
+%[text] - **Macular pigment** -- a narrow band centred near 457 nm, absent above about 530 nm.
+%[text] - **Photopigment optical density** -- a symmetric widening or narrowing about each cone's own peak, from self-screening.
+%[text] - **A lambda-max shift** -- an antisymmetric S-shape through the peak, positive on one flank and negative on the other. That is the signature to look for above: a biphasic residual means the band moved, not that it shrank. \\
 %[text] ## Quantifying the difference
 %[text] Statistics for the reference-vs-comparison pair: maximum absolute difference, the wavelength where it occurs, and RMS difference. The S-cone change dominates because lens yellowing affects short wavelengths most.
 LMS_ref  = obs_ref.LMS(wl);
@@ -23,7 +29,7 @@ table(max_abs', wl(idx), rms(diffs)', ...
       'RowNames', {'L', 'M', 'S'})
 %%
 %[text] ## Overlay and difference plots
-%[text] **Top:** both observers overlaid. **Bottom:** the residual at every wavelength. The 60-year-old observer shows reduced S-cone amplitude across the short-wavelength region.
+%[text] **Top:** both observers overlaid. **Bottom:** the residual at every wavelength. The 60-year-old observer's S cone is not reduced in amplitude -- it cannot be, since both curves are peak-normalized. What the yellowing lens does is tilt and red-shift the normalized S band: the residual is positive below about 447 nm (+0.076 at 420 nm) and negative above it, and the largest residual in the whole comparison, -0.097 at 473 nm, sits in the region where the older observer is *higher*. The normalized S peak moves 445 to 448 nm.
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
 plot(wl, LMS_ref(:,1),  'r-'); hold on
@@ -99,7 +105,10 @@ test_wls = [615, 545, 465];
 resp = zeros(n, 3 * numel(test_wls));
 for i = 1:n
     LMS_test = observers{i, 1}.LMS(test_wls(:));
-    resp(i, :) = reshape(LMS_test, 1, []);
+    % Transpose before flattening: LMS_test is wavelengths-by-cones, and
+    % reshape runs down columns, so the untransposed form would group by
+    % cone while the column names below group by wavelength.
+    resp(i, :) = reshape(LMS_test', 1, []);
 end
 table(string(observers(:,2)), ...
       resp(:,1), resp(:,2), resp(:,3), ...
@@ -128,6 +137,10 @@ table(string(observers(:,2)), peaks(:,1), peaks(:,2), peaks(:,3), ...
 %[text] `plotLens(Compare=...)` and `plotMacular(Compare=...)` overlay two observers' filter spectra in a single call. Use them when you want to see the cause of an LMS difference rather than the LMS itself.
 obs_young = IndividualCMF(LensModel="VanDeKraats2007", Age=25, FieldSize=10);
 obs_old   = IndividualCMF(LensModel="VanDeKraats2007", Age=70, FieldSize=10);
+% plotLens takes no Wavelength argument, so it evaluates on the default
+% 360-830 nm grid, past the VanDeKraats2007 model's 300-700 nm fit. The
+% extrapolation is a smooth bounded decay; the warning is silenced because
+% model range is not what this section is about. See Example 04.
 obs_young.ModelRangeWarning = false;
 obs_old.ModelRangeWarning = false;
 obs_young.plotLens(Compare=obs_old, Title="Lens density -- Age 25 vs Age 70");
