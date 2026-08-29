@@ -8,18 +8,19 @@ exampleDefaults();
 %[text] - **2 deg (foveal)** -- small stimuli, central vision, higher macular pigment, higher photopigment optical density
 %[text] - **10 deg (large-field)** -- larger stimuli, still centrally fixated but extending to 5 deg eccentricity, lower macular pigment, lower photopigment optical density \
 %[text] Both are defined at **age 32**, the approximate mean age of the observer population the fundamentals were derived from.
-%[text] Two screening pigments set these numbers. **Macular pigment** is a yellow filter over the fovea that absorbs roughly 400-530 nm light before it reaches the cones; it thins with eccentricity, so the 10 deg observer sees less of it. **Photopigment optical density** is how much pigment sits in each cone's outer segment: the segments shorten with eccentricity, and a lower density gives a narrower sensitivity curve through reduced self-screening.
+%[text] Two pigment mechanisms set these numbers. **Macular pigment** is a yellow filter over the fovea that absorbs roughly 400-530 nm light before it reaches the cones; it thins with eccentricity, so the 10 deg observer sees less of it. **Photopigment optical density** is how much pigment sits in each cone's outer segment: the segments shorten with eccentricity, and a lower density gives a narrower sensitivity curve through reduced self-screening.
 obs2 = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
 table([obs2.MacularDensity; obs10.MacularDensity], ...
       [obs2.Lod; obs10.Lod], ...
+      [obs2.Mod; obs10.Mod], ...
       [obs2.Sod; obs10.Sod], ...
       [string(obs2.Type); string(obs10.Type)], ...
-      'VariableNames', {'MacularDensity_460nm', 'L_OD', 'S_OD', 'Type'}, ...
+      'VariableNames', {'MacularDensity_460nm', 'L_OD', 'M_OD', 'S_OD', 'Type'}, ...
       'RowNames', {'2-degree', '10-degree'})
 %%
 %[text] ## Visual comparison
-%[text] Stacked plot of the two standard observers' cone fundamentals via `obs.plotLMS(Parent=ax)`. Both panels are peak-normalized (the default `NormalizeOutput=true`): each cone is divided by its own peak, so these figures compare spectral *shape*, not absolute sensitivity. The 2 deg observer's extra macular absorption around 460 nm therefore shows up as a depressed short-wavelength flank rather than a lower S peak -- the peak is pinned to 1.0 in both panels. The difference plot in the next section is where that shows clearly.
+%[text] Stacked plot of the two standard observers' cone fundamentals via `obs.plotLMS(Parent=ax)`. Both panels are peak-normalized (the default `NormalizeOutput=true`): each cone is divided by its own peak, so these figures compare spectral *shape*, not absolute sensitivity. What that does depends on where each cone's peak sits relative to the macular band. L and M peak near 570 and 545 nm, outside it, so their curves come back with a depressed flank around 498 nm. The S cone peaks at 443 nm, *inside* the band, so pinning that peak to 1.0 lifts the rest of the curve instead: its short-wavelength flank ends up slightly higher in the 2 deg observer, with a small dip just long of the peak. The difference plot in the next section shows all three.
 wl = (380:1:780)';
 LMS2 = obs2.LMS(wl);
 LMS10 = obs10.LMS(wl);
@@ -31,7 +32,7 @@ xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Difference analysis
 %[text] Subtracting the 10 deg observer from the 2 deg observer makes the dependency on field size visible. Both mechanisms change together between the two observers: macular density falls from 0.35 to 0.095 at its 460 nm peak, and photopigment optical density falls from 0.50 to 0.38 for L and M and from 0.40 to 0.30 for S.
-%[text] Because both observers are peak-normalized, the optical-density change is largely divided out -- it mostly rescales each curve, and rescaling is what normalization removes. The macular change survives as a genuine shape difference and dominates all three residuals. It dominates so thoroughly that for the L cone it *overshoots*: applying the macular change alone produces a larger difference (0.1173) than both mechanisms together (0.1042), because the two effects partly cancel.
+%[text] Because both observers are peak-normalized, the optical-density change is largely divided out -- it mostly rescales each curve, and rescaling is what normalization removes. The macular change survives as a genuine shape difference and dominates all three residuals. It dominates so thoroughly that it *overshoots* for every cone: starting from the 10 deg observer and raising only its macular density to 0.35 produces larger residuals (L 0.1173, M 0.1774, S 0.0877) than changing both mechanisms together does (0.1042, 0.1681, 0.0788), because the two effects partly cancel.
 diff_LMS = LMS2 - LMS10;
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, diff_LMS(:,1), 'r-'); hold on
@@ -70,7 +71,7 @@ table(typeRestored, soRestored, ageRestored, ...
 %%
 %[text] ## CIE 2015 XYZ color matching functions
 %[text] The toolbox produces CIE 2015 XYZ color matching functions as a linear transform of the LMS cone fundamentals. `obs.plotXYZ()` is the dedicated wrapper; the underlying `obs.XYZ(wl)` returns the raw Nx3 array.
-%[text] The two panels do not share a transform: `XYZ()` selects the 2 deg matrix for a field size up to 4 deg and the 10 deg matrix above it, following CIE 15. So the difference below is the LMS difference *and* a different matrix applied to it.
+%[text] The two panels do not share a transform: `XYZ()` selects the 2 deg matrix for a field size up to 4 deg and the 10 deg matrix above it, following CIE 15. So the difference between the two panels is the LMS difference *and* a different matrix applied to it.
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 obs2.plotXYZ(Title="CIE 2015 XYZ -- 2 deg", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 2.25])
