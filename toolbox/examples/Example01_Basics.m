@@ -8,7 +8,7 @@ exampleDefaults();
 obs = IndividualCMF()
 %%
 %[text] ## Define wavelengths
-%[text] `IndividualCMF` methods expect wavelengths as a column vector.
+%[text] `IndividualCMF` methods accept a scalar or any vector, row or column; results come back with one row per wavelength. These examples use column vectors by convention.
 wl = (380:1:780)';
 size(wl)
 %%
@@ -26,11 +26,12 @@ obs.plotLMS(Title="Human Cone Fundamentals (CIE 2006 10 deg Observer)");
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Peak normalization
-%[text] Output is peak-normalized by default ($\\max = 1.0$). See [Example 08](matlab:edit('Example08_OutputFormats.m')) for un-normalized output and other format controls.
-peakL_wl = wl(L == max(L));
-peakM_wl = wl(M == max(M));
-peakS_wl = wl(S == max(S));
-table([max(L); max(M); max(S)], [peakL_wl; peakM_wl; peakS_wl], ...
+%[text] Output is peak-normalized by default: each cone is divided by the peak of its *continuous* spectral model, found by search rather than read off a grid. The true peak almost never lands on an integer wavelength, so the maximum over a sampled grid comes out a hair under 1.0 -- 0.99999 for L below. See [Example 16](matlab:edit('Example16_NormalizationMethods.m')) for how the peak is located, and [Example 08](matlab:edit('Example08_OutputFormats.m')) for un-normalized output and other format controls.
+%[text] The peak wavelengths below are those of the complete fundamental in energy units, not the photopigment's lambda-max: lens and macular filtering and the quantal-to-energy conversion all move the peak. [Example 07](matlab:edit('Example07_ComputationalPipeline.m')) walks that pipeline.
+[peakL, iL] = max(L);
+[peakM, iM] = max(M);
+[peakS, iS] = max(S);
+table([peakL; peakM; peakS], wl([iL; iM; iS]), ...
     'VariableNames', {'PeakSensitivity', 'PeakWavelength_nm'}, ...
     'RowNames', {'L', 'M', 'S'})
 %%
@@ -55,8 +56,8 @@ LMS_RGB = array2table(obs.LMS(RGB_peaks), ...
 %[text] ## Key takeaways
 %[text] - `IndividualCMF()` with no arguments gives the CIE 2006 10 deg standard observer
 %[text] - Use `obs.L(wl)`, `obs.M(wl)`, `obs.S(wl)` for one cone, or `obs.LMS(wl)` for all three
-%[text] - Wavelengths should be a column vector
-%[text] - Output is normalized (peak = 1.0) by default
+%[text] - Wavelengths can be a scalar or any vector; these examples use columns
+%[text] - Output is normalized by default: 1.0 at the continuous peak, just under 1.0 on any sampled grid
 %[text] - You can evaluate at any wavelength -- not just integer values \
 %[text] **Next:** [Example 02: CIE 2006 Standard Observers](matlab:edit('Example02_StandardObservers.m')) -- the difference between 2 deg and 10 deg observers and CIE standards.
 
