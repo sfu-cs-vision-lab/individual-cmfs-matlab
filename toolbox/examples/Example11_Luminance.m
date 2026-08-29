@@ -1,5 +1,5 @@
 %[text] # Example 11: Photopic Luminance V*(lambda)
-%[text] The **photopic luminous efficiency function** $V^{*}(\\lambda)$ describes how the visual system weights different wavelengths when computing brightness. It is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ transform, i.e. a linear combination of the L- and M-cone fundamentals:
+%[text] The **photopic luminous efficiency function** $V^{*}(\\lambda)$ describes how the visual system weights different wavelengths when computing luminance -- the quantity flicker photometry and additive matching measure. Luminance is not brightness: brightness carries chromatic contributions (the Helmholtz-Kohlrausch effect) that $V^{*}$ deliberately excludes. Nor is $V^{*}$ the 1924 $V(\\lambda)$, which underestimates short-wavelength sensitivity; it is the cone-fundamental-based successor. It is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ transform, i.e. a linear combination of the L- and M-cone fundamentals:
 %[text] $ V^*(\\lambda) = a \\bar{L}(\\lambda) + b \\bar{M}(\\lambda) $
 %[text] where the coefficients $(a, b)$ are field-size dependent: $(0.6899, 0.3483)$ for the 2 deg observer and $(0.6928, 0.3497)$ for the 10 deg observer. Sharpe et al. (2005) measured these directly in 40 genotyped observers; the CIE adopted them in CIE 170-2:2015.
 %[text] **Note on fit residuals:** the toolbox's $V^{*}(\\lambda)$ is constructed from the Stockman & Rider (2023) cone fundamentals; it is *not* a direct fit to the CIE tabulated $V^{*}(\\lambda)$. The two agree to better than 1% at the peak.
@@ -7,7 +7,7 @@
 exampleDefaults();
 %%
 %[text] ## Standard observer V*(lambda)
-%[text] For both standard observers, $V^{*}(\\lambda)$ peaks near 1.0 at 555 nm. The 2-deg and 10-deg curves are nearly identical -- the L:M weighting in luminance is almost field-size invariant.
+%[text] For both standard observers, $V^{*}(\\lambda)$ peaks near 1.0 at 555 nm. The L:M weighting is nearly field-size invariant (0.6899/0.3483 against 0.6928/0.3497), but the curves are not: below 500 nm they diverge by up to about 66% in relative terms, where the 10 deg observer carries far less macular pigment. The linear axis here hides that flank.
 wl = (380:1:780)';
 obs2  = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
@@ -27,7 +27,7 @@ table([peak2; peak10], [wl(idx2); wl(idx10)], ...
       'RowNames', {'2-deg', '10-deg'})
 %%
 %[text] ## Individual variation: L-cone genotype
-%[text] Because $V^{*}(\\lambda)$ depends on the L-cone shape, observers with different L-opsin variants have shifted luminous efficiency functions. The L-Ser180 / L-Ala180 polymorphism produces a ~3 nm shift in the L-cone lambda-max, which translates into a visible shift of the long-wavelength flank of $V^{*}(\\lambda)$. Sharpe et al. (2005) measured $V^{*}$ in 40 genotyped observers and used those data to derive the CIE 170-2:2015 luminance coefficients $(a, b)$.
+%[text] Because $V^{*}(\\lambda)$ depends on the L-cone shape, observers with different L-opsin variants have shifted luminous efficiency functions. The L-Ser180 / L-Ala180 polymorphism produces a 2.7 nm shift in the L-cone photopigment lambda-max, which translates into a visible shift of the long-wavelength flank of $V^{*}(\\lambda)$. Sharpe et al. (2005) measured $V^{*}$ in 40 genotyped observers and used those data to derive the CIE 170-2:2015 luminance coefficients $(a, b)$.
 obs_ser = IndividualCMF(L_OpsinTemplate="Serine");
 obs_ala = IndividualCMF(L_OpsinTemplate="Alanine");
 plot(wl, obs_ser.Luminance(wl), 'r-'); hold on
@@ -78,7 +78,7 @@ legend('Standard 10-deg', 'Protanope (b M-bar)', 'Deuteranope (a L-bar)', ...
 xlim([380 780])
 %%
 %[text] ## MacLeod-Boynton chromaticity
-%[text] MacLeod-Boynton chromaticity belongs with $V^{*}(\\lambda)$ because its denominator *is* $V^{*}(\\lambda)$: $l_{MB} = aL/(aL + bM)$ and $s_{MB} = S/(aL + bM)$ use the same $(a, b)$ luminance coefficients. The result isolates the L-vs-M opponent axis from the S-cone axis, and is widely used in color vision deficiency and post-receptoral processing research. `l_{MB}` is bounded in $[0, 1]$; `s_{MB}` is unbounded and peaks near the S-cone wavelength.
+%[text] MacLeod-Boynton chromaticity belongs with $V^{*}(\\lambda)$ because its denominator *is* $V^{*}(\\lambda)$: $l_{MB} = aL/(aL + bM)$ and $s_{MB} = S/(aL + bM)$ use the same $(a, b)$ luminance coefficients. The result isolates the L-vs-M opponent axis from the S-cone axis, and is widely used in color vision deficiency and post-receptoral processing research. `l_{MB}` is bounded in $[0, 1]$. `s_{MB}` has no upper bound -- its scale depends on an S normalization convention that this toolbox does not apply -- and it climbs toward short wavelengths, reaching its maximum near 417 nm on this grid rather than at the S-cone lambda-max, because the luminance denominator collapses faster than $\\bar{s}$ does. Most published MB diagrams rescale $s$ (often so its maximum is 1), so this one will look taller on the $s$ axis than the textbook version.
 wl_mb = (390:1:700)';
 mb = obs10.MacLeodBoynton(wl_mb);
 l_mb = mb(:,1); s_mb = mb(:,2);
@@ -94,24 +94,24 @@ xlabel('l_{MB} = a L / (a L + b M)'); ylabel('s_{MB} = S / (a L + b M)')
 title('MacLeod-Boynton diagram')
 %%
 %[text] ## Photometric calculations
-%[text] Once you have $V^{*}(\\lambda)$ for an observer, you can compute luminance for an arbitrary spectral power distribution (SPD). For an SPD $\\Phi(\\lambda)$ in watts per nanometer, the luminance is:
-%[text] $ L_v = K_m \\int \\Phi(\\lambda) V^*(\\lambda) d\\lambda $
-%[text] where $K_m = 683$ lm/W is the photopic maximum luminous efficacy. As a quick example, the luminance of a 555 nm monochromatic 1 W source is exactly $K_m$ lumens for the standard observer (by definition); under our SR2023 fit residual it lands within 1% of that.
+%[text] Once you have $V^{*}(\\lambda)$ for an observer, you can compute photometric quantities for an arbitrary spectral power distribution (SPD). For a radiant flux spectrum $\\Phi_e(\\lambda)$ in watts per nanometer, the luminous **flux** is:
+%[text] $ \\Phi_v = K_m \\int \\Phi_e(\\lambda) V^*(\\lambda) d\\lambda $
+%[text] where $K_m = 683$ lm/W is the maximum luminous efficacy. Lumens measure luminous flux, not luminance -- luminance is cd/m$^2$ and needs a geometry this SPD does not carry. A 555 nm monochromatic 1 W source therefore gives a luminous flux of $K_m V^{*}(555)$, about 683 lm. Note "about": the SI fixes 683 lm/W at 540 THz against the 1924 $V(\\lambda)$, so pairing it with $V^{*}$ is a modelling convention rather than a definition, and the SR2023 fit residual puts the result within 1% of $K_m$.
 Km = 683;
 wlFine = (380:0.5:780)';
 Vstar = obs10.Luminance(wlFine);
 % Model a 555 nm 1 W source as a unit-mass delta function at 555 nm.
 spd = double(abs(wlFine - 555) < 0.5);
 spd = spd / sum(spd);
-Lv = Km * sum(spd .* Vstar);
-table(Lv, Km, Lv / Km, ...
-      'VariableNames', {'Lv_lumens', 'Km_lmPerWatt', 'EfficiencyRatio'})
+Phi_v = Km * sum(spd .* Vstar);
+table(Phi_v, Km, Phi_v / Km, ...
+      'VariableNames', {'LuminousFlux_lm', 'Km_lmPerWatt', 'EfficiencyRatio'})
 %%
 %[text] ## Key takeaways
 %[text] - $V^{*}(\\lambda)$ is the y-bar row of the CIE 170-2:2015 LMS-to-XYZ matrix; the `Luminance` method exposes it
 %[text] - It always uses energy-normalized LMS regardless of the observer's `OutputFormat`
 %[text] - Genotype and lens aging produce visible individual differences in $V^{*}(\\lambda)$
-%[text] - For dichromats, $V^{*}(\\lambda)$ reduces to the residual cone's contribution -- protanopes lose roughly two-thirds of standard luminance ($b \\approx 0.35$); deuteranopes lose roughly one-third ($a \\approx 0.69$) \
+%[text] - For dichromats, $V^{*}(\\lambda)$ reduces to the residual cone's contribution -- in this unrenormalized formulation a protanope retains only the $bM$ term (peak $\\approx 0.35$) and a deuteranope only $aL$ (peak $\\approx 0.69$). Real dichromat luminous efficiency is conventionally renormalized, and the loss is concentrated at long wavelengths rather than a uniform dimming \
 %[text] **Next:** [Example 12: Observer Comparison](matlab:edit('Example12_ObserverComparison.m')) -- visual and quantitative observer-vs-observer comparison.
 %[text]
 
