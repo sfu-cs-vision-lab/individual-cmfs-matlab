@@ -77,7 +77,8 @@ table(string({obs_nonhybrid.L_OpsinTemplate; obs_minl.L_OpsinTemplate; obs_linm.
 %[text] Unequal recombination between the adjacent L and M genes on the X chromosome can create hybrid *genes*, and so hybrid pigments. Beyond the per-codon `Genotype=` syntax and `applyGenotype` shown above, two named hybrid templates exist:
 %[text] - **M-in-L** -- M-cone amino acids at L-cone positions 277 and 285. Use `L_OpsinTemplate="MinL"`.
 %[text] - **L-in-M** -- L-cone amino acids at M-cone positions 277 and 285. Use `M_OpsinTemplate="LinM"`. \
-%[text] Selecting a hybrid template on its own only changes the *shape*: `MinL` is the M shape anchored near 553.5 nm, within about half a nanometre of the Serine L peak, so on this plot it nearly overlies the normal L curve and the differences live in the wings. A real hybrid pigment also carries the genotype's lambda-max shift (-16.03 nm for M-in-L, shown in the next section), which is what places it spectrally between M and L.
+%[text] Selecting a hybrid template on its own changes the *shape*, not the position: `MinL` is the M-cone shape anchored at 553.47 nm, only 0.36 nm from the Serine L pigment. The two pigments therefore sit on top of each other, but the plotted fundamentals do not -- a different shape filtered and renormalized lands its peak 4.25 nm short of L's (563.75 against 568.00), and the curves part on the long-wavelength side, reaching a gap of 0.150 near 617 nm.
+%[text] A real M-in-L hybrid also carries the genotype's lambda-max shift, the -16.035 nm shown in the previous section, which is what moves it spectrally between M and L rather than merely reshaping it.
 obs_hybridL = IndividualCMF(L_OpsinTemplate="MinL");
 obs_hybridM = IndividualCMF(M_OpsinTemplate="LinM");
 wl = (480:0.5:620)';
