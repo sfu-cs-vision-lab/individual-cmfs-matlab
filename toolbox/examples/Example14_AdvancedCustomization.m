@@ -7,11 +7,11 @@ exampleDefaults();
 %[text:table]
 %[text] | Group | Arguments |
 %[text] | --- | --- |
-%[text] | Standard configuration | `StandardObserver` (2 or 10 -- locks all other params) |
+%[text] | Standard configuration | `StandardObserver` (2 or 10 -- rejects any conflicting *biophysical* argument; output settings such as `OutputFormat` are still allowed) |
 %[text] | Physiological | `Age`, `FieldSize`, `LensDensity`, `MacularDensity`, `Lod`, `Mod`, `Sod` |
-%[text] | Template & genetics | `PhotopigmentModel`, `LensModel`, `L_OpsinTemplate`, `M_OpsinTemplate`, `L_LambdaMaxShift`, `M_LambdaMaxShift`, `S_LambdaMaxShift`, `Genotype` |
-%[text] | Algorithm selection | `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm`, `LensDensityAlgorithm`, `NormalizationMethod` |
-%[text] | Output configuration | `OutputFormat`, `NormalizeOutput`, `LogOutput`, `Primaries` |
+%[text] | Template & genetics | `PhotopigmentModel`, `LensModel`, `MacularModel`, `L_OpsinTemplate`, `M_OpsinTemplate`, `L_LambdaMaxShift`, `M_LambdaMaxShift`, `S_LambdaMaxShift`, `Genotype` |
+%[text] | Algorithm selection | `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm`, `LensDensityAlgorithm` |
+%[text] | Output configuration | `OutputFormat`, `NormalizeOutput`, `LogOutput`, `Primaries`, `NormalizationMethod`, `NormalizationGrid` |
 %[text:table]
 %%
 %[text] ## Building a custom observer step-by-step
@@ -27,7 +27,7 @@ obs_custom = IndividualCMF( ...
     OutputFormat="energy")
 %%
 %[text] ## Direct density overrides -- Custom mode in action
-%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived when its driving parameter changes -- `FieldSize` for the macular and cone densities, and `Age`, `FieldSize` or `LensModel` for lens density. One subtlety: the auto-engage compares against the CIE standard values, so assigning a density that already equals the standard (`Sod = 0.30` on a 10 deg observer) leaves the algorithm untouched. Assign a genuinely different value to engage `Custom`.
+%[text] Direct assignment to `LensDensity`, `MacularDensity`, `Lod/Mod/Sod` auto-engages the corresponding `*Algorithm` to `"Custom"`. This protects the override from being silently re-derived when its driving parameter changes -- `FieldSize` for the macular and cone densities, and `Age`, `FieldSize` or `LensModel` for lens density. One subtlety, and it differs by property. For the **cone and macular** densities the auto-engage compares against the CIE table, but only at field sizes 2 and 10 -- so `Sod = 0.30` on a 10 deg observer leaves the algorithm at `CIE170`, while the same no-op assignment at 6 deg engages `Custom`, because there is no table to compare against. **Lens** density has no comparison at all: assigning it always engages `Custom`, even at the standard 1.7649.
 %[text] Precedence here is override, not composition: the assigned value replaces the age / field-size formula result rather than adding to it (contrast Asano, Fairchild & Blonde 2016, where age and a separate density deviation compose).
 obs_override = IndividualCMF();
 obs_override.LensDensity    = 2.5;
@@ -37,6 +37,16 @@ table(obs_override.LensDensity,    string(obs_override.LensDensityAlgorithm), ..
       obs_override.MacularDensity, string(obs_override.MacularDensityAlgorithm), ...
       obs_override.Lod,            string(obs_override.PhotopigmentDensityAlgorithm), ...
       'VariableNames', {'LensDensity', 'LensAlg', 'MacularDensity', 'MacAlg', 'Lod', 'PhotoAlg'})
+%%
+%[text] ## Pinning one density pins its whole group
+%[text] Custom mode is granted per *group*, not per property: the three cone densities move together, and pinning any one of them freezes the other two at whatever they held at that moment. That is the number-one surprise in this API, and it bites when a later `FieldSize` change silently fails to reach the cones you did not assign.
+obs_group = IndividualCMF(FieldSize=10);
+mod_before = obs_group.Mod;
+obs_group.Lod = 0.35;
+obs_group.FieldSize = 2;
+table(mod_before, obs_group.Mod, IndividualCMF(FieldSize=2).Mod, ...
+      'VariableNames', {'Mod_at_10deg', 'Mod_after_FieldSize2', 'Mod_a_normal_2deg_has'})
+%[text] Only `Lod` was assigned, yet `Mod` stayed at its 10 deg value instead of recomputing to the 2 deg one. Assigning `[]` to any member reverts the whole group, for the same reason: one formula produces all three.
 %%
 %[text] ## Custom-mode protection across an Age change
 %[text] Setting `Age=80` would normally recalculate `LensDensity` from the active lens model. Because we engaged Custom mode in the previous section, the override sticks.
@@ -59,7 +69,7 @@ obs_normal    = IndividualCMF();
 obs_anomalous = IndividualCMF(L_OpsinTemplate="Serine", L_LambdaMaxShift=-15);
 %%
 %[text] ### Lens density extremes
-%[text] Custom-mode lens density override pushed to the edges of the plausible human range.
+%[text] Custom-mode lens density override pushed to the edges of the plausible human range. Both curves are peak-normalized, so the dense lens's real effect -- absorbing far more short-wavelength light -- appears here as a reshaping rather than a loss: the apparent S peak sits near 455 nm instead of 440, and the long flank rides higher (0.59 against 0.32 at 480 nm). The amplitude difference is divided out.
 plot(wl, obs_low_lens.S(wl),  'b-'); hold on
 plot(wl, obs_high_lens.S(wl), 'b--'); hold off
 xlabel('Wavelength (nm)'); ylabel('S-Cone Sensitivity')
@@ -134,8 +144,8 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
 %[text] - **`getParameters`** / **`setParameters`** round-trip via the `ObserverParameters` value class -- preserves every *biophysical* field (physiological values, `LensModel`, `PhotopigmentModel`, opsin templates, all algorithm modes including `LensDensityAlgorithm`)
 %[text] - Many constructor arguments allow fine-grained observer modeling
 %[text] - Direct density assignments auto-engage `"Custom"` mode, protecting overrides from re-derivation
-%[text] - `LensDensityAlgorithm`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` are the three Custom-mode toggles
-%[text] - `setGenotype`, `applyGenotype`, and the `Genotype=` constructor arg are three equivalent paths to genetic configuration
+%[text] - `LensDensityAlgorithm`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` are the three density-algorithm properties
+%[text] - `setGenotype`, `applyGenotype`, and the `Genotype=` constructor arg are three paths to genetic configuration, differing in granularity
 %[text] - All parameters are validated with helpful error messages \
 %[text] **Next:** [Example 15: Data Export Workflows](matlab:edit('Example15_DataExport.m')) -- exporting cone fundamentals as arrays, tables, structs, CSV, Excel, and MAT files via the `evaluate` method.
 
