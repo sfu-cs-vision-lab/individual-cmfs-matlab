@@ -5,10 +5,10 @@ exampleDefaults();
 %%
 %[text] ## The lens models
 %[text] Three `LensModel` choices:
-%[text] - **`StockmanRider2023`** *(default)*. Flat across age. Returns the standard density (1.7649 at 400 nm) regardless of `Age`. Useful for matching CIE 2006 cone fundamentals exactly.
-%[text] - **`VanDeKraats2007`**. Five-component total-ocular-media model (van de Kraats & van Norren 2007) with quadratic-in-age density coefficients fitted across 74 donor lenses and 23 in vivo / psychophysics datasets, plus explicit Rayleigh-scatter and tryptophan components that extend the model into the near-UV.
-%[text] - **`Pokorny1987`**. Bi-linear age-dependent model from Pokorny, Smith & Lutze (1987). Yellowing accelerates after age 60. Its published age span is 20-80 years and the toolbox errors outside it, because the paper does not sanction extrapolation. Table I is tabulated for a small pupil (<3 mm); scale `LensDensity` by 0.86 for a dilated eye. Below 400 nm the toolbox reports no value rather than flat-extrapolating: `LMS` returns 0 and `getLensDensitySpectrum` returns `NaN`. Prefer `VanDeKraats2007` for sub-400 nm or out-of-span work. \
-%[text] Each template declares a `ValidRange` (where the publication has a basis) and a `Domain` (where the implementation has an admissible answer). Querying outside `ValidRange` warns once per observer and keeps the value; querying outside `Domain` reports nothing. `VanDeKraats2007` is fitted on 300-700 nm, so the 380-780 nm grids below reach 80 nm past the fit and raise `IndividualCMF:WavelengthOutOfRange`. The extrapolation there is a smooth, bounded decay and the values are kept; set `obs.ModelRangeWarning = false` once you have noted it. \
+%[text] - **`StockmanRider2023`** *(default)*. Flat across age. Returns the standard density (1.7649 at 400 nm) regardless of `Age`. Useful for matching the CIE 2006 standard 32-year-old fundamentals exactly.
+%[text] - **`VanDeKraats2007`**. Five-component total-ocular-media model (van de Kraats & van Norren 2007) with quadratic-in-age density coefficients fitted across 74 donor lenses from 20 sources, 17 psychophysical sensitivity curves and 23 spectral-reflection measurements, plus explicit Rayleigh-scatter and tryptophan components that extend the model into the near-UV.
+%[text] - **`Pokorny1987`**. Piecewise-linear in age (Pokorny, Smith & Lutze 1987), with a knee at 60 after which yellowing accelerates. Its published age span is 20-80 years and the toolbox errors outside it, because the paper does not sanction extrapolation. Table I is tabulated for a small pupil (<3 mm); scale `LensDensity` by 0.86 for a dilated eye. Below 400 nm the toolbox reports no value rather than flat-extrapolating: `LMS` returns 0 and `getLensDensitySpectrum` returns `NaN`. Prefer `VanDeKraats2007` for sub-400 nm or out-of-span work. \
+%[text] Each template declares a `ValidRange` (where the publication has a basis) and a `Domain` (where the implementation has an admissible answer). Querying outside `ValidRange` warns once per observer and keeps the value; querying outside `Domain` reports nothing. `VanDeKraats2007` is fitted on 300-700 nm, so the 380-780 nm grid in the quantification section below reaches 80 nm past the fit and raises `IndividualCMF:WavelengthOutOfRange`; the extrapolation there is a smooth bounded decay and the values are kept. The three-model figure at the end is the other case: `Pokorny1987` has no value below 400 nm, so its curve simply starts 20 nm after the others. Set `obs.ModelRangeWarning = false` once you have noted either. \
 %[text] This example focuses on `StockmanRider2023` vs `VanDeKraats2007`; `Pokorny1987` follows the same usage pattern. \\
 %[text] **Important:** with the default `StockmanRider2023` model, changing `Age` does **not** change `LensDensity`. To study aging, opt into `VanDeKraats2007` or `Pokorny1987`. Conversely, if you assign `LensDensity` directly (say a measured value), it pins to `Custom` mode and then tracks neither `Age` nor `LensModel` until you reassign it or clear it with `obs.LensDensity = []`.
 ages = [20, 32, 45, 60, 75];
@@ -34,13 +34,13 @@ title('Lens yellowing with age (VanDeKraats2007 model)')
 legend('Location', 'bestoutside')
 %%
 %[text] ## Impact on S-cone sensitivity
-%[text] Because S-cones are most sensitive to short wavelengths, the lens yellowing hits them hardest. Each curve is the S-cone fundamental for a VanDeKraats2007 observer at the indicated age.
+%[text] Because S-cones are most sensitive to short wavelengths, the lens yellowing hits them hardest. Each curve is the S-cone fundamental for a VanDeKraats2007 observer at the indicated age, plotted **unnormalized** (`NormalizeOutput=false`) so the amplitude loss is visible -- under the default normalization every curve would be pinned to 1.0 and this figure would show only a shape change.
 wl_full = (380:1:700)';
-plot(wl_full, observers(1).S(wl_full), 'Color', colors(1,:), ...
+plot(wl_full, observers(1).S(wl_full, NormalizeOutput=false), 'Color', colors(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)));
 hold on
 for i = 2:numel(ages)
-    plot(wl_full, observers(i).S(wl_full), 'Color', colors(i,:), ...
+    plot(wl_full, observers(i).S(wl_full, NormalizeOutput=false), 'Color', colors(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)));
 end
 hold off
@@ -50,7 +50,7 @@ legend('Location', 'bestoutside')
 xlim([380 550])
 %%
 %[text] ## Young vs old: full LMS comparison
-%[text] Stacked comparison of a 20-year-old and a 75-year-old observer (both VanDeKraats2007) via `obs.plotLMS(Parent=ax)`. The L and M cones change relatively little; the S-cone amplitude visibly decreases.
+%[text] Stacked comparison of a 20-year-old and a 75-year-old observer (both VanDeKraats2007) via `obs.plotLMS(Parent=ax)`. These panels are peak-normalized, so they show shape only: the S cone's short-wave flank is carved away, while L and M keep almost the same shape. Shape is not amplitude -- all three cones lose sensitivity, and the next section measures how much.
 obs_young = observers(1);
 obs_old   = observers(end);
 tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
@@ -93,7 +93,7 @@ table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensit
 %%
 %[text] ## Key takeaways
 %[text] - The crystalline lens yellows progressively with age
-%[text] - S-cone sensitivity is most affected; L and M are nearly age-invariant
+%[text] - S-cone sensitivity is most affected -- by 75 it retains about a third of its age-20 total catch -- but L and M are not spared: they retain about four fifths and three quarters. Their normalized *shape* is nearly age-invariant, which is what the plots show; the amplitude loss needs `NormalizeOutput=false`
 %[text] - Pick `LensModel` deliberately: `StockmanRider2023` for CIE-spec compliance, `VanDeKraats2007` (or `Pokorny1987`) for age studies
 %[text] - Setting `LensDensity` directly auto-engages Custom mode and preserves the value across Age changes \
 %[text] **Next:** [Example 05: Genetic Variants and Cone Polymorphisms](matlab:edit('Example05_GeneticVariants.m')). Modeling individual genetic differences via the L-cone Ser180Ala polymorphism and hybrid cone variants.
