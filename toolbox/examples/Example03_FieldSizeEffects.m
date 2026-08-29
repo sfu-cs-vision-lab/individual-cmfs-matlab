@@ -2,7 +2,7 @@
 %[text] Field size -- the visual angle of the stimulus -- affects cone fundamentals via two physiological mechanisms:
 %[text] - **Macular pigment density**: macular pigment is concentrated in the central fovea; larger field sizes include more peripheral retina with less pigment
 %[text] - **Photopigment optical density**: foveal cones have longer outer segments (higher OD); peripheral cones have shorter outer segments (lower OD) \
-%[text] CIE 170-1:2006 tabulates standard observers at 2 deg and 10 deg, and specifies decay formulas covering the 1-10 deg continuum between them. The toolbox exposes those as `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`, and selects them automatically for any non-standard field size -- you do not have to ask.
+%[text] CIE 170-1:2006 tabulates standard observers at 2 deg and 10 deg, and specifies decay formulas covering the 1-10 deg continuum. The toolbox exposes those as `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`, and selects them automatically for any non-standard field size -- you do not have to ask.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
@@ -46,7 +46,7 @@ table(obs4.FieldSize, obs4.MacularDensity, obs4.Lod, ...
 %%
 %[text] ## Field size sweep -- density vs size
 %[text] Sweep across field sizes from 1 deg to 20 deg using the continuous algorithms. Both densities decrease monotonically with field size, and the CIE 2 deg / 10 deg tabulated values (black diamonds) land on the formula curves rather than beside them -- that agreement is the point of the figure, and it is why the algorithms are passed explicitly here: without them the 2 and 10 deg observers would snap to the CIE table and the sweep would not be one continuous curve.
-%[text] The 15 and 20 deg points are outside the formulas' published 1-10 deg range and are shown as extrapolation.
+%[text] The 15 and 20 deg points are outside the formulas' published 1-10 deg range: they are extrapolation, drawn on the same curve but not backed by the fitted data.
 field_sizes = [1, 2, 4, 6, 8, 10, 15, 20]';
 fs_observers = IndividualCMF.across('FieldSize', field_sizes, ...
     Age=32, MacularDensityAlgorithm="MorelandAlexander", ...
@@ -71,7 +71,9 @@ title('Photopigment optical density')
 legend('Pokorny-Smith', 'CIE anchor (2 deg / 10 deg)', 'Location', 'bestoutside')
 %%
 %[text] ## S-cone sensitivity across field sizes
-%[text] Smaller (more foveal) field sizes carry more macular pigment and a higher photopigment optical density. Every curve here is peak-normalized, so the amplitude change is divided out and what remains is a shape change: the macular pigment carves down the short-wavelength flank, and the 1-2 deg curves visibly part from the 10 deg+ curves around 460 nm. The higher optical density pulls the other way -- through self-screening it *broadens* the normalized curve rather than narrowing it -- so the visible narrowing on the blue side is the macular pigment's doing alone.
+%[text] Smaller (more foveal) field sizes carry more macular pigment and a higher photopigment optical density. Every curve here is peak-normalized, so the amplitude change is divided out and only a shape change remains.
+%[text] Where that shape change lands follows a simple rule: after dividing by the peak, a wavelength only drops if the added absorber takes more light there than it does at the peak itself. The S cone peaks at 443 nm, which is already deep inside the macular band (macular OD 0.30 there, against a maximum of 0.354 at 457 nm), so only the narrow 445-470 nm window loses ground -- the 1 deg curve sits about 0.055 below the 10 deg one at 454 nm -- while both flanks are *lifted*, by as much as 0.09 around 420 nm. The visible effect is a pinch near 460 nm with raised shoulders, not a carved-down blue flank.
+%[text] The higher photopigment optical density works on the whole band, broadening the curve through self-screening. Both effects widen rather than narrow: at half maximum the 1 deg curve spans 419-477 nm against 422-474 nm at 10 deg.
 fscol = parula(numel(field_sizes));
 tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
 plot(wl, fs_observers(1).S(wl), 'Color', fscol(1,:), 'LineWidth', 1.5, ...
@@ -101,10 +103,10 @@ table([obs_CIE.MacularDensity; obs_formula.MacularDensity], ...
 table(100*abs(obs_formula.MacularDensity - obs_CIE.MacularDensity)/obs_CIE.MacularDensity, ...
       100*abs(obs_formula.Lod - obs_CIE.Lod)/obs_CIE.Lod, ...
       'VariableNames', {'MacularDensity_pct_diff', 'Lod_pct_diff'})
-%[text] These formulas are the field-size model CIE 170-1:2006 itself specifies for 1-10 deg, built on the Moreland-Alexander and Pokorny-Smith measurements, not third-party smoothing fitted to two table points. They reproduce both tabulated anchors to well under a tenth of a percent -- macular 0.350020 against 0.350 at 2 deg, L density 0.380298 against 0.38 at 10 deg -- which is what the small residuals above are measuring.
+%[text] These formulas are the field-size model CIE 170-1:2006 itself specifies for 1-10 deg, built on the Moreland-Alexander and Pokorny-Smith measurements, not third-party smoothing fitted to two table points. They reproduce the tabulated anchors to within a tenth of a percent -- macular 0.350020 against 0.350 at 2 deg, and at 10 deg the residuals tabulated above, 0.0052% for macular and 0.078% for L density.
 %%
 %[text] ## Manual density overrides
-%[text] You can override densities directly. Doing so auto-engages the corresponding algorithm to `"Custom"` (see `ex14`), so the override is preserved across subsequent field-size or age changes.
+%[text] You can override densities directly. Doing so auto-engages the corresponding algorithm to `"Custom"` (see [Example 14](matlab:edit('Example14_AdvancedCustomization.m'))), so the override is preserved across subsequent field-size or age changes.
 obs_manual = IndividualCMF();
 obs_manual.MacularDensity = 0.5;
 obs_manual.Lod = 0.6;
@@ -128,7 +130,7 @@ grid on; xlim([380 520])
 %[text] - Larger fields -\> less macular pigment, lower OD (peripheral)
 %[text] - CIE defines exact values for 2 deg and 10 deg only; for everything else use the formula-based algorithms
 %[text] - `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"` give continuous formulas
-%[text] - Direct assignment to `MacularDensity`, `Lod`, etc. auto-engages Custom mode (see `ex14`) \
+%[text] - Direct assignment to `MacularDensity`, `Lod`, etc. auto-engages Custom mode (see [Example 14](matlab:edit('Example14_AdvancedCustomization.m'))) \
 %[text] **Next:** [Example 04: Aging Effects on Color Vision](matlab:edit('Example04_AgingEffects.m')) -- how age and the choice of `LensModel` affect color vision.
 
 %[appendix]{"version":"1.0"}
