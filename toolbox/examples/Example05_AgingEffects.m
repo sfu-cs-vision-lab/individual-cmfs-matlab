@@ -21,6 +21,7 @@ table(ages', [obs_SR.LensDensity]', [observers.LensDensity]', ...
 %[text] The lens absorbs most strongly at short wavelengths, and the density at those wavelengths increases with age.
 wl = (380:1:550)';
 colors = lines(numel(ages));
+tiledlayout(1, 1); nexttile
 plot(wl, observers(1).getLensDensitySpectrum(wl), 'Color', colors(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)));
 hold on
@@ -37,6 +38,7 @@ legend('Location', 'bestoutside')
 %[text] The S cone is most sensitive at short wavelengths, which is where the lens absorbs most, so the S cone is affected most.
 %[text] The curves below are plotted with `NormalizeOutput=false`, so they show the actual loss of sensitivity. Under the default normalization each curve would reach 1.0 at its own peak and the loss would not be visible.
 wl_full = (380:1:700)';
+tiledlayout(1, 1); nexttile
 plot(wl_full, observers(1).S(wl_full, NormalizeOutput=false), 'Color', colors(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)));
 hold on
@@ -56,7 +58,7 @@ xlim([380 550])
 %[text] The L and M cones change less. Their normalized curves move by at most 0.124 and 0.140 near 510 and 491 nm, against 0.312 for S. The change is not negligible. The normalized M sensitivity at 440 nm falls from 0.115 to 0.040.
 obs_young = observers(1);
 obs_old   = observers(end);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs_young.plotLMS(Title=sprintf('Age %d', ages(1)), Wavelength=wl_full, Parent=nexttile);
 xlim([wl_full(1) wl_full(end)]); ylim([0 1.05])
 obs_old.plotLMS(Title=sprintf('Age %d', ages(end)), Wavelength=wl_full, Parent=nexttile);
@@ -82,6 +84,7 @@ wl_lens = (380:1:550)';
 obs70_SR = IndividualCMF(LensModel="StockmanRider2023", Age=70, FieldSize=10);
 obs70_P  = IndividualCMF(LensModel="Pokorny1987",       Age=70, FieldSize=10);
 obs70_VK = IndividualCMF(LensModel="VanDeKraats2007",   Age=70, FieldSize=10);
+tiledlayout(1, 1); nexttile
 plot(wl_lens, obs70_SR.getLensDensitySpectrum(wl_lens), '-', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1.5); hold on
 plot(wl_lens, obs70_P.getLensDensitySpectrum(wl_lens),  'b-', 'LineWidth', 1.5)
 plot(wl_lens, obs70_VK.getLensDensitySpectrum(wl_lens), 'r-', 'LineWidth', 1.5); hold off

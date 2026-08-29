@@ -23,6 +23,7 @@ table(l(idx), m(idx), s(idx), l(idx)+m(idx)+s(idx), ...
 %[text] ## The spectrum locus
 %[text] The solid curve below is the spectrum locus and the dashed line is the line of purples. Together they enclose the chromaticities that a real light can produce.
 mark_wls = [400, 450, 500, 550, 600, 650, 700];
+tiledlayout(1, 1); nexttile
 plot(l, m, '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl == mwl);
@@ -41,6 +42,7 @@ xlim([0 1]); ylim([0 1])
 n = numel(wl);
 colors = zeros(n, 3);
 for i = 1:n, colors(i,:) = wavelengthToRGB(wl(i)); end
+tiledlayout(1, 1); nexttile
 plot([l(1), l(2)], [m(1), m(2)], '-', 'Color', colors(1,:), 'LineWidth', 3)
 hold on
 for i = 2:n-1
@@ -64,6 +66,7 @@ obs2  = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
 chrom2  = obs2.lmChromaticity(wl);
 chrom10 = obs10.lmChromaticity(wl);
+tiledlayout(1, 1); nexttile
 plot(chrom2(:,1),  chrom2(:,2),  'b-'); hold on
 plot(chrom10(:,1), chrom10(:,2), 'r-'); hold off
 xlabel('l'); ylabel('m'); title('Spectrum locus for the 2 deg and 10 deg observers')
@@ -84,6 +87,7 @@ agecol = lines(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 c1 = age_observers(1).lmChromaticity(wl);
+tiledlayout(1, 1); nexttile
 plot(c1(:,1), c1(:,2), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -105,6 +109,7 @@ title('Using plotChromaticity()')
 %[text] ## CIE xy chromaticity
 %[text] The CIE xy diagram is obtained from the XYZ tristimulus values in the same way, by dividing each by the sum of all three. `xyChromaticity` returns an N by 2 array. It calls `XYZ` internally, so the warnings described in [Example 02](matlab:edit('Example02_StandardObservers.m')) apply to it as well.
 xy = obs.xyChromaticity(wl);
+tiledlayout(1, 1); nexttile
 plot(xy(:,1), xy(:,2), '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls
     j = find(wl == mwl);

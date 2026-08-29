@@ -14,7 +14,7 @@ obs_sr  = IndividualCMF(PhotopigmentModel="StockmanRider2023");
 obs_gov = IndividualCMF(PhotopigmentModel="Govardovskii2000");
 LMS_sr  = obs_sr.LMS(wl);
 LMS_gov = obs_gov.LMS(wl);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs_sr.plotLMS(Title="Stockman & Rider (2023)", Wavelength=wl, Parent=nexttile);
 xlim([390 700]); ylim([0 1.05])
 obs_gov.plotLMS(Title="Govardovskii (2000)", Wavelength=wl, Parent=nexttile);
@@ -34,6 +34,7 @@ legend(p_cmp, {'L (S-R)', 'M (S-R)', 'S (S-R)', 'L (Gov)', 'M (Gov)', 'S (Gov)'}
 %[text] The largest single difference is on the M cone, which is -0.112 at 591 nm. A second, smaller one of -0.075 occurs at 477 nm. Each cone shows a positive difference on one side of its peak and a negative difference on the other, which is what a small difference in peak position produces. A difference in the width of the band would not look like this.
 %[text] The M cone differs most because the Stockman and Rider template was fitted to human cone fundamentals, while the Govardovskii template describes a general vertebrate A1 pigment with its beta-band written as a separate Gaussian term.
 residual = LMS_sr - LMS_gov;
+tiledlayout(1, 1); nexttile
 plot(wl, residual(:,1), 'r-'); hold on
 plot(wl, residual(:,2), 'g-')
 plot(wl, residual(:,3), 'b-')
@@ -86,6 +87,7 @@ table(template_before, type_before, template_after, type_after, ...
 wl_a2 = (380:1:780)';
 absA1 = Nomograms.govardovskii2000(wl_a2, 560);
 absA2 = Nomograms.govardovskii2000A2(wl_a2, 560);
+tiledlayout(1, 1); nexttile
 plot(wl_a2, absA1, 'b-'); hold on
 plot(wl_a2, absA2, 'r-'); hold off
 xlabel('Wavelength (nm)'); ylabel('Absorbance')
@@ -101,6 +103,7 @@ xlim([380 780])
 wl_common = (380:1:780)';
 absCommon = 10.^Nomograms.stockmanRiderCommon(wl_common, 'M', 20);
 absGovRef = Nomograms.govardovskii2000(wl_common, 547.3);
+tiledlayout(1, 1); nexttile
 plot(wl_common, absCommon, 'm-'); hold on
 plot(wl_common, absGovRef, '--', 'Color', IndividualCMF.neutralColor()); hold off
 xlabel('Wavelength (nm)'); ylabel('Absorbance')

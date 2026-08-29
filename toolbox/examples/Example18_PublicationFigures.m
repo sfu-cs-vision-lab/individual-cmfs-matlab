@@ -50,6 +50,7 @@ age_observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", F
 [age_observers.ModelRangeWarning] = deal(false);
 %%
 %[text] ### Lens optical density
+tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).getLensDensitySpectrum(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -64,6 +65,7 @@ legend('Location', 'bestoutside'); xlim([390 550])
 %%
 %[text] ### Light reaching the cones
 transmission = @(o) 100 * 10.^(-(o.getLensDensitySpectrum(wl) + o.getMacularDensitySpectrum(wl)));
+tiledlayout(1, 1); nexttile
 plot(wl, transmission(age_observers(1)), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -78,6 +80,7 @@ legend('Location', 'bestoutside'); xlim([390 700])
 %%
 %[text] ### S-cone sensitivity
 %[text] These curves are drawn with `NormalizeOutput=false`. Under the default normalization each age would reach 1.0 at its own peak and the loss this panel exists to show would not appear at all.
+tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).S(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -93,6 +96,7 @@ legend('Location', 'bestoutside'); xlim([390 520])
 %[text] ### L-cone sensitivity
 %[text] Also drawn without normalization. The L cone keeps most of its sensitivity but not all of it. Between ages 25 and 70 it loses about 12%, against 17% for M and 61% for S.
 %[text] The M cone is left out of the six panels for space rather than because it is unaffected. Without normalization it peaks 24 nm short of L and reaches only 92% of L's height, so it would be a clearly separate curve, and its loss with age is of the same kind as L's.
+tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).L(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -108,6 +112,7 @@ legend('Location', 'bestoutside'); xlim([500 650])
 %[text] ### Photopic luminance
 %[text] The axes cover 500 to 620 nm. Over that range the peak of $V^{*}(\\lambda)$ can be seen to move about 5.7 nm towards longer wavelengths between ages 25 and 70, which is not visible across the full spectrum.
 %[text] These curves keep the default normalization, since the movement of the peak is the subject here rather than the height of the curve. Note that $V^{*}$ is a weighted sum of two normalized cones, so its own maximum is slightly above 1, near 1.01.
+tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -122,6 +127,7 @@ legend('Location', 'bestoutside'); xlim([500 620])
 %%
 %[text] ### Spectrum locus
 chrom = age_observers(1).lmChromaticity(wl);
+tiledlayout(1, 1); nexttile
 plot(chrom(:,1), chrom(:,2), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -138,7 +144,7 @@ legend('Location', 'bestoutside'); axis equal; xlim([0 0.30]); ylim([0 0.45])
 %[text] ### The six panels as one figure
 %[text] The figure is sized to its tile grid, at 400 by 320 pixels per tile. Left at the default figure size, a 2 by 3 grid of panels comes out narrow and tall.
 figure(Position=[100 100 1200 640]);
-tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 3, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 hold on
 for i = 1:numel(ages)
@@ -194,7 +200,7 @@ obs_mean = IndividualCMF(L_OpsinTemplate="Mean");
 obs_ala  = IndividualCMF(L_OpsinTemplate="Alanine");
 wl_zoom = (520:0.5:620)';
 figure(Position=[100 100 1000 420]);
-tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(1, 2, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl_zoom, obs_ser.L(wl_zoom),  'r-'); hold on
 plot(wl_zoom, obs_mean.L(wl_zoom), '-', 'Color', IndividualCMF.neutralColor())
@@ -233,7 +239,7 @@ disp(['Exported: ' pdf_path])
 obs4 = IndividualCMF(StandardObserver=10);
 wl4 = (390:1:780)';
 figure(Position=[100 100 1000 750]);
-t4 = tiledlayout(2, 2, TileSpacing="compact", Padding="compact");
+t4 = tiledlayout(2, 2, TileSpacing="loose", Padding="compact");
 title(t4, "CIE 170-1:2006 10-degree observer", FontWeight="bold");
 obs4.plotLMS(Parent=nexttile(t4), Wavelength=wl4, Title="Cone fundamentals");
 obs4.plotRGBCMFs(Parent=nexttile(t4), Wavelength=wl4, Title="RGB CMFs");

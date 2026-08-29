@@ -18,7 +18,7 @@ table([obs2.MacularDensity; obs10.MacularDensity], ...
 %[text] ## Visual comparison
 %[text] `obs2.compareTo(obs10)` draws both observers on the same axes. The lower panel shows the S cone alone, where the macular pigment has most of its effect.
 wl = (380:1:700)';
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 compareAx = nexttile;
 obs2.compareTo(obs10, Title="2 deg (solid) vs 10 deg (dashed)", ...
     Wavelength=wl, Parent=compareAx);
@@ -54,7 +54,7 @@ fs_observers = IndividualCMF.across('FieldSize', field_sizes, ...
     PhotopigmentDensityAlgorithm="PokornySmith");
 mac = [fs_observers.MacularDensity]';
 lod = [fs_observers.Lod]';
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(field_sizes, mac, 'b-o', 'MarkerSize', 6); hold on
 plot([2, 10], [obs2.MacularDensity, obs10.MacularDensity], ...
@@ -76,7 +76,7 @@ legend('Pokorny-Smith', 'CIE value (2 deg and 10 deg)', 'Location', 'bestoutside
 %[text] Both quantities make the S curve wider rather than narrower. At the 1 deg field the macular optical density is 0.4168 at its peak of 457 nm and 0.3537 at the S cone peak of 443 nm. Because those two values are close, dividing by the peak reduces the curve only over the narrow range from 444 to 463 nm, where the 1 deg curve is 0.055 lower than the 10 deg curve at 454.5 nm. At all other wavelengths the normalized sensitivity increases, by as much as 0.092 at 418.5 nm.
 %[text] The higher photopigment optical density widens the curve as well, by self-screening. Measured at half its maximum, the 1 deg curve spans 418.5 to 477.5 nm, a width of 59 nm, against 421.5 to 474 nm and a width of 52 nm at 10 deg.
 fscol = parula(numel(field_sizes));
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, fs_observers(1).S(wl), 'Color', fscol(1,:), 'LineWidth', 1.5, ...
     'DisplayName', sprintf('%d deg', field_sizes(1)))
 hold on
@@ -118,11 +118,12 @@ table(obs_manual.MacularDensity, string(obs_manual.MacularDensityAlgorithm), ...
 %%
 %[text] ## A high-density observer against the standards
 %[text] The figure below compares an observer with deliberately high densities against the two standard observers.
+tiledlayout(1, 1); nexttile
 plot(wl, obs2.S(wl),  'b-'); hold on
 plot(wl, obs10.S(wl), 'g-')
 plot(wl, obs_manual.S(wl), 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('S-Cone Sensitivity')
-title('Custom (Macular=0.5, L_{OD}=0.6) against CIE 2 deg and 10 deg')
+title('High-density observer against the standards')
 legend('2 deg CIE', '10 deg CIE', 'Custom (high density)', 'Location', 'bestoutside')
 grid on; xlim([380 520])
 %%

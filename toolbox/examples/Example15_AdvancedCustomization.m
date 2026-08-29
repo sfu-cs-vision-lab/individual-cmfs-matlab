@@ -75,6 +75,7 @@ obs_anomalous = IndividualCMF(L_OpsinTemplate="Serine", L_LambdaMaxShift=-15);
 %[text] ### Two extreme lens densities
 %[text] The two lens densities below are near the limits of the plausible human range.
 %[text] Both curves are peak-normalized, so the real effect of the denser lens, which is to absorb much more short-wavelength light, appears as a change of shape rather than a loss of sensitivity. The peak of the normalized S curve is near 455 nm instead of 440 nm, and at 480 nm the denser lens gives 0.59 against 0.32. The difference in overall sensitivity has been divided out.
+tiledlayout(1, 1); nexttile
 plot(wl, obs_low_lens.S(wl),  'b-'); hold on
 plot(wl, obs_high_lens.S(wl), 'b--'); hold off
 xlabel('Wavelength (nm)'); ylabel('S-Cone Sensitivity')
@@ -83,6 +84,7 @@ grid on; xlim([390 520])
 %%
 %[text] ### An L cone shifted by -15 nm
 %[text] A shift of this size is associated with strong anomalous trichromacy. [Example 14](matlab:edit('Example14_Dichromacy.m')) compares that condition with dichromacy.
+tiledlayout(1, 1); nexttile
 plot(wl, obs_normal.L(wl),    'r-'); hold on
 plot(wl, obs_anomalous.L(wl), 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('L-Cone Sensitivity')

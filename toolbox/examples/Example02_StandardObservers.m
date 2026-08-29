@@ -26,7 +26,7 @@ table([obs2.MacularDensity; obs10.MacularDensity], ...
 wl = (380:1:780)';
 LMS2 = obs2.LMS(wl);
 LMS10 = obs10.LMS(wl);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs2.plotLMS(Title="2 deg Observer (Foveal)", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 1.05])
 obs10.plotLMS(Title="10 deg Observer (Large Field)", Wavelength=wl, Parent=nexttile);
@@ -37,7 +37,7 @@ xlim([380 780]); ylim([0 1.05])
 %[text] Almost all of the difference plotted below comes from the macular pigment. Because both observers are peak-normalized, a change that rescales a whole curve is divided out again, and the optical density change does mostly that. The macular change alters the shape of each curve instead, so it survives normalization.
 %[text] Normalization also decides which way each curve moves. Dividing by the peak holds the peak at 1.0, so a cone is reduced only at wavelengths where the macular pigment absorbs more than it does at that cone's own peak. The L and M cones peak at 569 and 544 nm, where the macular optical density is 0.0000 and 0.0022, so both are reduced at shorter wavelengths. The S cone peaks at 443 nm, where the macular optical density is 0.3004. Its peak is reduced along with the rest of the curve, so the normalized sensitivity increases at most other wavelengths.
 diff_LMS = LMS2 - LMS10;
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, diff_LMS(:,1), 'r-'); hold on
 plot(wl, diff_LMS(:,2), 'g-')
 plot(wl, diff_LMS(:,3), 'b-')
@@ -76,7 +76,7 @@ table(typeRestored, soRestored, ageRestored, ...
 %[text] ## CIE 2015 XYZ colour matching functions
 %[text] The toolbox produces CIE 2015 XYZ colour matching functions by applying a linear transform to the LMS cone fundamentals. `obs.plotXYZ` plots them and `obs.XYZ(wl)` returns them as an N by 3 array.
 %[text] The two panels below do not use the same transform. Following CIE 15, `XYZ` selects the 2 deg matrix for field sizes up to 4 deg and the 10 deg matrix above that. The difference between the panels is therefore the difference in the cone fundamentals together with the difference in the matrix applied to them.
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs2.plotXYZ(Title="CIE 2015 XYZ, 2 deg", Wavelength=wl, Parent=nexttile);
 xlim([380 780]); ylim([0 2.25])
 obs10.plotXYZ(Title="CIE 2015 XYZ, 10 deg", Wavelength=wl, Parent=nexttile);

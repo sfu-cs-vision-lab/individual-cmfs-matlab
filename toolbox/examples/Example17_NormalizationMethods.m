@@ -21,7 +21,7 @@ table(string(obs_cont.NormalizationMethod), string(obs_samp.NormalizationMethod)
 wl = (400:5:700)';
 L_cont = obs_cont.L(wl);
 L_samp = obs_samp.L(wl);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl, L_cont, 'b-'); hold on
 plot(wl, L_samp, 'r--'); hold off
@@ -66,7 +66,7 @@ table(max(obs_demo.L(wl_fine)),  max(obs_demo.L(wl_fine))  > 1.0, ...
 %[text] Note the range of the y axis, which spans only 0.004. The amount by which the Sampled curve exceeds 1.0 is less than 5e-4 and would not be visible on an ordinary axis.
 wl_zoom = (560:0.01:576)';
 obs_samp_5 = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=380:5:780);
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl_zoom, obs_cont.L(wl_zoom), 'b-'); hold on
 plot(wl_zoom, obs_samp_5.L(wl_zoom), 'r--')
 plot(wl_zoom, ones(size(wl_zoom)), ':', 'Color', IndividualCMF.neutralColor(), 'LineWidth', 1)

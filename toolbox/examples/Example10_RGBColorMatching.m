@@ -46,7 +46,7 @@ LMS_at_primaries = obs.LMS(obs.Primaries')
 %[text] Note that sRGB and Adobe RGB are defined by chromaticity coordinates rather than by single wavelengths, and that real display primaries emit over a band of wavelengths rather than at one. The wavelengths used here only indicate roughly where those primaries fall on the spectrum locus.
 obs_default = IndividualCMF();
 obs_sRGB    = IndividualCMF(Primaries=[615, 545, 465]);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs_default.plotRGBCMFs(Title="Stiles & Burch [645/526/444]", Wavelength=wl, Parent=nexttile);
 xlim([390 700])
 obs_sRGB.plotRGBCMFs(Title="sRGB-like [615/545/465]", Wavelength=wl, Parent=nexttile);
@@ -62,7 +62,7 @@ disp_specs = ["sRGB";           "Adobe RGB";       "Stiles & Burch"];
 disp_R = [611;                  611;               sb(1)];
 disp_G = [549;                  532;               sb(2)];
 disp_B = [464;                  464;               sb(3)];
-tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(3, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 for k = 1:numel(disp_specs)
     prim = [disp_R(k), disp_G(k), disp_B(k)];
     obs_disp = IndividualCMF(Primaries=prim);

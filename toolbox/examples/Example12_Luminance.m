@@ -15,6 +15,7 @@ exampleDefaults();
 wl = (380:1:780)';
 obs2  = IndividualCMF(StandardObserver=2);
 obs10 = IndividualCMF(StandardObserver=10);
+tiledlayout(1, 1); nexttile
 plot(wl, obs2.Luminance(wl),  'b-'); hold on
 plot(wl, obs10.Luminance(wl), 'r-'); hold off
 xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)')
@@ -35,6 +36,7 @@ table([peak2; peak10], [wl(idx2); wl(idx10)], ...
 %[text] This is the individual variation that Sharpe et al. (2005) measured in order to derive the coefficients $(a, b)$ now in CIE 170-2:2015.
 obs_ser = IndividualCMF(L_OpsinTemplate="Serine");
 obs_ala = IndividualCMF(L_OpsinTemplate="Alanine");
+tiledlayout(1, 1); nexttile
 plot(wl, obs_ser.Luminance(wl), 'r-'); hold on
 plot(wl, obs_ala.Luminance(wl), 'r--'); hold off
 xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)')
@@ -51,6 +53,7 @@ agecol = lines(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
+tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -73,6 +76,7 @@ xlim([380 700])
 proto = IndividualCMF(Lod=0);
 deut  = IndividualCMF(Mod=0);
 trit  = IndividualCMF(Sod=0);
+tiledlayout(1, 1); nexttile
 plot(wl, obs10.Luminance(wl), '-', 'Color', IndividualCMF.neutralColor()); hold on
 plot(wl, proto.Luminance(wl), 'r--')
 plot(wl, deut.Luminance(wl),  'g--')
@@ -93,7 +97,7 @@ wl_mb = (390:1:700)';
 mb = obs10.MacLeodBoynton(wl_mb);
 l_mb = mb(:,1); s_mb = mb(:,2);
 mark_wls = [400, 450, 500, 550, 600, 650, 700];
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(l_mb, s_mb, '-', 'Color', IndividualCMF.neutralColor()); hold on
 for mwl = mark_wls

@@ -31,6 +31,7 @@ table(lambdaMax, lambdaMax - lambdaMax(1), ...
 %[text] Plotted on top of one another the serine and alanine curves are almost identical, because the shift between them is small. Subtracting one from the other makes it visible.
 %[text] A small shift along the wavelength axis between two otherwise identical curves produces a difference curve with one positive part, one negative part and a zero crossing near the peak wavelength. That is the shape shown below.
 wl = (520:0.5:640)';
+tiledlayout(1, 1); nexttile
 plot(wl, obs_ser.L(wl) - obs_ala.L(wl), 'r-')
 yline(0, '--', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off')
 xlabel('Wavelength (nm)'); ylabel('L_{Ser} - L_{Ala}')
@@ -89,7 +90,7 @@ table(string({obs_nonhybrid.L_OpsinTemplate; obs_minl.L_OpsinTemplate; obs_linm.
 obs_hybridL = IndividualCMF(L_OpsinTemplate="MinL");
 obs_hybridM = IndividualCMF(M_OpsinTemplate="LinM");
 wl = (480:0.5:620)';
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl, obs_ser.L(wl), 'r-'); hold on
 plot(wl, obs_ser.M(wl), 'g-')

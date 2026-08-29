@@ -32,7 +32,7 @@ table(max_abs', wl(idx), rms(diffs)', ...
 %[text] ## The two observers and their difference
 %[text] The upper panel draws both observers and the lower panel draws the difference between them at every wavelength.
 %[text] The S cone of the 60 year old observer is not lower overall. It cannot be, since both curves are peak-normalized. What the lens does is change the shape of the normalized S curve and move it to longer wavelengths. The difference is positive below about 447 nm, reaching 0.076 at 420 nm, and negative above it. The largest difference in the whole comparison is -0.097 at 473 nm, which lies in the range where the older observer is the more sensitive of the two. The peak of the normalized S curve moves from 445 to 448 nm.
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl, LMS_ref(:,1),  'r-'); hold on
 plot(wl, LMS_ref(:,2),  'g-')
@@ -76,7 +76,7 @@ table(string(observers(:,2)), rms_diffs(:,1), rms_diffs(:,2), rms_diffs(:,3), ..
 %[text] Plotting all six spectrum loci together shows where on the locus the differences appear. The 2 deg observer is separated from the 10 deg observer by its macular pigment. The age and genotype variants lie closer to the standard observer than that.
 obscol = lines(n);
 chrom1 = observers{1, 1}.lmChromaticity(wl);
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(chrom1(:,1), chrom1(:,2), '-', 'Color', obscol(1,:), 'LineWidth', 1.5, ...
     'DisplayName', observers{1, 2})
 hold on

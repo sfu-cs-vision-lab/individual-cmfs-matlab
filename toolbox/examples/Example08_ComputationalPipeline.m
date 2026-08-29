@@ -25,7 +25,7 @@ energy      = obs_e.L(wl);
 %[text] Each panel shows the L cone at the same wavelengths, one panel per stage.
 %[text] The lower three panels are peak-normalized by the default `NormalizeOutput=true`, so each reaches 1.0 and the panels compare shape rather than scale.
 %[text] The first panel is different. Absorbance ignores `NormalizeOutput` and keeps the scale of the template, which is why it peaks at 0.995 rather than at 1.0. That scale carries meaning. The templates are anchored so that absorbance is 1 at lambda-max, and it is that convention which makes `Lod`, `Mod` and `Sod` the peak axial optical density at the next stage. The 0.995 is the residual of the Fourier fit rather than a departure from the convention.
-tiledlayout(4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(4, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl, absorbance, 'r-')
 ylabel('Absorbance')
@@ -45,7 +45,7 @@ title('Stage 4: Corneal energy sensitivity (the default)'); xlim([390 700])
 %%
 %[text] ## The four stages overlaid
 %[text] Dividing each curve by its own peak makes the change of shape between stages comparable. The lens and the macular pigment reduce the sensitivity at short wavelengths, and the conversion to energy units moves the peak to slightly longer wavelengths. The next two sections explain both.
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, absorbance/max(absorbance),  'b-'); hold on
 plot(wl, absorptance/max(absorptance), 'c-')
 plot(wl, quantal/max(quantal),         'g-')
@@ -70,7 +70,7 @@ abs_linear = absorbance;
 od_values = [0.2, 0.5, 1.0];
 odcol = lines(numel(od_values));
 absp_first = pipeline.PhotopigmentStage.absorptanceFromAbsorbance(abs_linear, od_values(1), Normalize=false);
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, absp_first, 'Color', odcol(1,:), ...
     'DisplayName', sprintf('OD = %.1f', od_values(1)))
 hold on
@@ -91,7 +91,7 @@ lens_density    = obs.getLensDensitySpectrum(wl);
 macular_density = obs.getMacularDensitySpectrum(wl);
 total_density   = lens_density + macular_density;
 transmission     = 10 .^ (-total_density);
-tiledlayout(2, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(2, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 nexttile
 plot(wl, lens_density, 'b-'); hold on
 plot(wl, macular_density, 'g-')
@@ -109,7 +109,7 @@ title('Fraction of light reaching the cones'); xlim([390 700])
 %[text] The sensitivity in energy units is the sensitivity in quantal units multiplied by wavelength, as given in Equation 8 of Stockman and Rider (2023):
 %[text] $ \\bar{l}_E(\\lambda) = \\alpha\\,\\lambda\\,\\bar{l}_Q(\\lambda) $
 %[text] The energy of one photon is $E = hc/\\lambda$, so a photon at a long wavelength carries less energy than one at a short wavelength. A fixed amount of radiant energy therefore delivers more photons at longer wavelengths. Expressing the same photon-counting response per unit energy rather than per photon gives a larger value at longer wavelengths, which is why multiplying by wavelength moves the peak in that direction.
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, quantal/max(quantal), 'b-'); hold on
 plot(wl, energy/max(energy),   'r-'); hold off
 xlabel('Wavelength (nm)'); ylabel('Normalised sensitivity')

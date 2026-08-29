@@ -42,7 +42,7 @@ obs_q    = IndividualCMF(OutputFormat="quantal");
 obs_e    = IndividualCMF(OutputFormat="energy");
 f = gcf;
 f.Position(3:4) = [800 900];
-tiledlayout(f, 4, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(f, 4, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs_abs.plotAbsorbance(Title="Absorbance", Wavelength=wl, Parent=nexttile);
 xlim([390 700]); ylim([0 1.1])
 obs_absp.plotAbsorptance(Title="Absorptance, after self-screening", Wavelength=wl, Parent=nexttile);
@@ -58,7 +58,7 @@ xlim([390 700]); ylim([0 1.1])
 %[text] ## Quantal and energy compared
 %[text] The two differ by a factor of wavelength. The sensitivity in energy units is wavelength times the sensitivity in quantal units, from Equation 8 of Stockman and Rider (2023), up to a constant that normalization removes. Multiplying by wavelength moves each peak to slightly longer wavelengths. The movement is small and it is the same for all three cones.
 %[text] `compareTo` draws both observers. The legend is relabelled after the call so that the two formats can be told apart.
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(1, 1);
 p_qe = obs_q.compareTo(obs_e, Title="Quantal (solid) vs Energy (dashed)", Wavelength=wl, Parent=nexttile);
 xlim([520 620]); ylim([0.9 1.02])
 legend(p_qe, {'L (q)', 'M (q)', 'S (q)', 'L (e)', 'M (e)', 'S (e)'}, ...
@@ -92,7 +92,7 @@ table(max(obs_unnorm.L(wl)), max(obs_unnorm.M(wl)), max(obs_unnorm.S(wl)), ...
 %%
 %[text] ## One cone on a logarithmic scale
 %[text] `plotLMS(Cones="L", Log=true)` plots the L cone alone on a base-10 logarithmic axis, where the low sensitivities at each end of the spectrum are visible.
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(1, 1);
 obs_e.plotLMS(Cones="L", Log=true, Title="L-cone energy sensitivity, logarithmic scale", Wavelength=wl, Parent=nexttile);
 xlim([390 700]); ylim([-4 0.25])
 %%

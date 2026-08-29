@@ -14,7 +14,7 @@ exampleDefaults();
 %[text] The photopigment is an absorbance spectrum, scaled so that its largest value is 1.0 at the wavelength of peak absorbance. That wavelength is called lambda-max.
 obs = IndividualCMF();
 wl = (380:1:780)';
-tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
+tiledlayout(3, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
 obs.plotLens(Parent=nexttile, Wavelength=wl, Title="Lens optical density");
 obs.plotMacular(Parent=nexttile, Wavelength=wl, Title="Macular pigment optical density");
 obs.plotAbsorbance(Parent=nexttile, Wavelength=wl, Title="Photopigment absorbance");

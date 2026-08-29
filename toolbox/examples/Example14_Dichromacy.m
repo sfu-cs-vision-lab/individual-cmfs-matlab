@@ -22,7 +22,7 @@ table([obs_proto.Lod; obs_deut.Lod; obs_trit.Lod], ...
 %[text] For a protanope the L column is zero at every wavelength. The M and S columns are the ordinary responses.
 wl = (380:1:780)';
 LMS = obs_proto.LMS(wl);
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl, LMS(:,1), 'r-'); hold on
 plot(wl, LMS(:,2), 'g-')
 plot(wl, LMS(:,3), 'b-'); hold off
@@ -77,7 +77,7 @@ fprintf('XYZ with custom matrix: size=[%d %d], any NaN=%d\n', ...
 obs_normal      = IndividualCMF(L_OpsinTemplate="Serine");
 obs_protan_anom = IndividualCMF(L_OpsinTemplate="Serine", L_LambdaMaxShift=-15);
 wl_zoom = (500:0.5:680)';
-tiledlayout(1, 1, 'TileSpacing', 'compact', 'Padding', 'compact'); nexttile
+tiledlayout(1, 1); nexttile
 plot(wl_zoom, obs_normal.L(wl_zoom), '-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.5); hold on
 plot(wl_zoom, obs_proto.L(wl_zoom),       'r-')
 plot(wl_zoom, obs_protan_anom.L(wl_zoom), 'r--')

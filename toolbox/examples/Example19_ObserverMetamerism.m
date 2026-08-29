@@ -35,6 +35,7 @@ table(XYZTarget, XYZMixture, XYZTarget - XYZMixture, ...
 %[text] The two spectra are quite different. The target is a single broad Gaussian peaking at 555 nm. The mixture is dominated by its 540 nm primary, with a secondary contribution at 620 nm reaching about 35% of that height. The 460 nm primary is effectively absent, since its amount is small and negative.
 %[text] To the CIE 2006 2 deg standard observer these two spectra are indistinguishable.
 f = gcf; f.Position(3:4) = [800 500];
+tiledlayout(1, 1); nexttile
 plot(wl, spdTarget, '-', 'Color', IndividualCMF.neutralColor()); hold on
 plot(wl, spdMixture, 'r--')
 plot(wl, zeros(size(wl)), ':', 'Color', IndividualCMF.neutralColor(), 'HandleVisibility', 'off')
@@ -96,6 +97,7 @@ table([0; shiftAla; shiftAged], ...
 deltaAla  = xyMixAla  - xyTargetAla;
 deltaAged = xyMixAged - xyTargetAged;
 f = gcf; f.Position(3:4) = [800 600];
+tiledlayout(1, 1); nexttile
 plot(0, 0, 'ko', 'MarkerFaceColor', 'k', 'MarkerSize', 10, ...
     'DisplayName', 'Standard 2-deg (zero displacement)');
 hold on
