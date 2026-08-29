@@ -78,11 +78,12 @@ title('Pre-receptoral transmission (lens + macular)')
 legend('Location', 'bestoutside'); xlim([390 700])
 %%
 %[text] ### S-cone amplitude vs age
-plot(wl, age_observers(1).S(wl), 'Color', agecol(1,:), ...
+%[text] Plotted **unnormalized** (`NormalizeOutput=false`). Under the default normalization each age would peak at exactly 1.0 and the amplitude loss this panel exists to show would be invisible.
+plot(wl, age_observers(1).S(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
 for i = 2:numel(ages)
-    plot(wl, age_observers(i).S(wl), 'Color', agecol(i,:), ...
+    plot(wl, age_observers(i).S(wl, NormalizeOutput=false), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
 hold off
@@ -90,12 +91,13 @@ xlabel('Wavelength (nm)'); ylabel('S-Cone Sensitivity')
 title('S-cone amplitude')
 legend('Location', 'bestoutside'); xlim([390 520])
 %%
-%[text] ### L-cone vs age (mostly unchanged)
-plot(wl, age_observers(1).L(wl), 'Color', agecol(1,:), ...
+%[text] ### L-cone vs age
+%[text] Also unnormalized. L keeps most of its amplitude but not all -- about 12% is lost between 25 and 70, against 17% for M (not plotted; its curve sits almost on top of L's) and 61% for S. "Only S ages" would be the wrong reading.
+plot(wl, age_observers(1).L(wl, NormalizeOutput=false), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
 for i = 2:numel(ages)
-    plot(wl, age_observers(i).L(wl), 'Color', agecol(i,:), ...
+    plot(wl, age_observers(i).L(wl, NormalizeOutput=false), 'Color', agecol(i,:), ...
         'DisplayName', sprintf('Age %d', ages(i)))
 end
 hold off
@@ -104,6 +106,7 @@ title('L-cone amplitude')
 legend('Location', 'bestoutside'); xlim([500 650])
 %%
 %[text] ### V*(lambda) shift across ages
+%[text] Zoomed to 500-620 nm: the peak moves about 5.7 nm toward longer wavelengths between 25 and 70, which is invisible across the full visible range. These curves stay peak-normalized -- the shift is the point here, not the amplitude.
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))
 hold on
@@ -114,7 +117,7 @@ end
 hold off
 xlabel('Wavelength (nm)'); ylabel('V^*(\lambda)')
 title('Photopic luminance')
-legend('Location', 'bestoutside'); xlim([390 700])
+legend('Location', 'bestoutside'); xlim([500 620])
 %%
 %[text] ### Spectral locus shift across ages
 chrom = age_observers(1).lmChromaticity(wl);
@@ -132,7 +135,7 @@ title('Spectral locus (lm chromaticity)')
 legend('Location', 'bestoutside'); axis equal; xlim([0 0.25]); ylim([0 0.25])
 %%
 %[text] ### Composite figure for publication
-%[text] The same six panels assembled into a single 2x3 figure. Sizing the figure to match the tile grid keeps the panels roughly square; left at the default size a 2x3 grid comes out cramped and tall. Exported via `exportgraphics` (see "Exporting for publication" below) it scales to a clean publication-quality summary.
+%[text] The same six panels assembled into a single 2x3 figure, sized to the tile grid at 400 x 320 px per tile; left at the default figure size a 2x3 grid comes out cramped and tall. Exported via `exportgraphics` (see "Exporting for publication" below) it scales to a clean publication-quality summary.
 figure(Position=[100 100 1200 640]);
 tiledlayout(2, 3, 'TileSpacing', 'compact', 'Padding', 'compact');
 nexttile
@@ -155,14 +158,14 @@ xlabel('Wavelength (nm)'); ylabel('Transmission (%)'); title('Pre-receptoral tra
 nexttile
 hold on
 for i = 1:numel(ages)
-    plot(wl, age_observers(i).S(wl), 'Color', agecol(i,:))
+    plot(wl, age_observers(i).S(wl, NormalizeOutput=false), 'Color', agecol(i,:))
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('S sensitivity'); title('S-cone'); xlim([390 520])
 nexttile
 hold on
 for i = 1:numel(ages)
-    plot(wl, age_observers(i).L(wl), 'Color', agecol(i,:))
+    plot(wl, age_observers(i).L(wl, NormalizeOutput=false), 'Color', agecol(i,:))
 end
 hold off
 xlabel('Wavelength (nm)'); ylabel('L sensitivity'); title('L-cone'); xlim([500 650])
@@ -226,7 +229,7 @@ disp(['Exported: ' pdf_path])
 %%
 %[text] ## Key takeaways
 %[text] - **Inline** sections draw a single axes and never call `figure`, so the plot renders under its own section in the Live Editor. Build the first line before `hold on` rather than after, so re-running a section replaces the curves instead of stacking a second set on top of them.
-%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to match the tile grid -- roughly 500 x 320 px per tile keeps the panels square. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
+%[text] - **Standalone publication figures** call `figure` first, then `tiledlayout(...); nexttile`, and size the figure to the tile grid: pick a per-tile size and multiply by the column and row counts. The composites here use 400 x 320 and 500 x 375 px per tile, both close to square. Inside a fresh `nexttile` a bare `hold on` is safe, because the tile starts empty.
 %[text] - A section that follows a standalone figure must open its own `figure` before drawing. `gcf` is still the previous section's figure, so a bare `plot` lands in one of its tiles and silently replaces that panel.
 %[text] - Use `parula` (or any sequential colormap) for the age axis; `lines` doesn't suggest ordering
 %[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
