@@ -1,11 +1,14 @@
 %[text] # Getting Started
 %[text] The **Individual Cone Fundamentals Toolbox** computes observer-specific LMS cone spectral sensitivities, and quantities derived from them (RGB color matching functions, CIE XYZ, photopic luminance $V^*(\\lambda)$, chromaticity), from biophysical parameters: opsin genotype, age, retinal field size, and lens / macular / photopigment optical densities.
-%[text] The defaults reproduce the CIE 170-1:2006 physiological standard observers, and every input can be overridden individually to model a specific observer or to study one biophysical parameter in isolation.
+%[text] The defaults reproduce the CIE 170-1:2006 physiological standard observers -- via the Stockman & Rider (2023) analytic model of them, which tracks the published tables to about 0.02 in peak-normalized units rather than matching them digit for digit ([Example 01](matlab:open('Example01_Basics.m')) quantifies this). Every input can be overridden individually to model a specific observer or to study one biophysical parameter in isolation.
 %[text] This guide is a one-minute orientation and a map of the worked examples. Run the cell below, then open whichever example matches what you want to do.
+%[text] These files are plain-text Live Scripts. In R2025a and later the prose renders as formatted text; in earlier releases you see the `%[text]` markers as comments, and every file still runs correctly as an ordinary script.
 %%
 %[text] ## A first observer
-%[text] `IndividualCMF` with no arguments returns the CIE 2006 10 deg standard observer. Evaluate any cone with `obs.L(wl)` / `obs.M(wl)` / `obs.S(wl)`, or all three with `obs.LMS(wl)`, passing wavelengths as a column vector. The `plotLMS` wrapper draws the three peak-normalized fundamentals.
+%[text] `IndividualCMF` with no arguments returns the CIE 2006 10 deg standard observer. Evaluate any cone with `obs.L(wl)` / `obs.M(wl)` / `obs.S(wl)`, or all three with `obs.LMS(wl)`, passing wavelengths as a column vector.
 obs = IndividualCMF();
+obs.LMS((450:50:650)')
+%[text] The `plotLMS` wrapper draws the same three fundamentals. It plots whatever the observer's output settings produce, so the curves are peak-normalized here only because `NormalizeOutput` defaults to true -- see [Example 08](matlab:open('Example08_OutputFormats.m')).
 obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 xlim([380 780]); ylim([0 1.05])
 %%

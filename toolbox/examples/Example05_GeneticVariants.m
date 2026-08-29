@@ -109,7 +109,7 @@ legend('Normal L (Serine)', 'Normal M', 'Hybrid M (L-in-M)', 'Location', 'bestou
 %[text] - `setGenotype(cone, pos, aa)` for amino-acid control; `Genotype=struct(...)` or `Genotype="LSAYT/SAAFA"` in the constructor
 %[text] - `applyGenotype` automatically picks the right templates from a 5-letter genotype string
 %[text] - `L_LambdaMaxShift` allows custom peak adjustments (range -40 to +10 nm) \
-%[text] **Next:** [Example 06: Template Model Comparison](matlab:edit('Example06_PhotopigmentModels.m')) -- comparing the Stockman & Rider (2023) and Govardovskii (2000) photopigment template models.
+%[text] **Next:** [Example 06: Photopigment Template Models](matlab:edit('Example06_PhotopigmentModels.m')) -- comparing the Stockman & Rider (2023) and Govardovskii (2000) photopigment template models.
 
 %[appendix]{"version":"1.0"}
 %---

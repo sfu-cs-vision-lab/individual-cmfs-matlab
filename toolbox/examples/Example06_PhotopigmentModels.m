@@ -1,4 +1,4 @@
-%[text] # Example 06: Template Model Comparison
+%[text] # Example 06: Photopigment Template Models
 %[text] Two photopigment absorbance template families are available via the `PhotopigmentModel` property:
 %[text] - **Stockman & Rider (2023)** *(default)* -- 8th-order shifted Fourier series refit to recover the CIE 2006 cone fundamentals; supports the genetic-variant and hybrid templates from [Example 05](matlab:edit('Example05_GeneticVariants.m')).
 %[text] - **Govardovskii et al. (2000)** -- continuous analytical template based on A1 visual pigments from microspectrophotometry across many species; depends only on lambda-max, so it generalises to non-human eyes. \
