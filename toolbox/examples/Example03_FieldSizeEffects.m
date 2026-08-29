@@ -2,7 +2,8 @@
 %[text] Field size -- the visual angle of the stimulus -- affects cone fundamentals via two physiological mechanisms:
 %[text] - **Macular pigment density**: macular pigment is concentrated in the central fovea; larger field sizes include more peripheral retina with less pigment
 %[text] - **Photopigment optical density**: foveal cones have longer outer segments (higher OD); peripheral cones have shorter outer segments (lower OD) \
-%[text] CIE 170-1:2006 tabulates standard observers at 2 deg and 10 deg, and specifies decay formulas covering the 1-10 deg continuum. The toolbox exposes those as `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`, and selects them automatically for any non-standard field size -- you do not have to ask.
+%[text] CIE 170-1:2006 tabulates standard observers at 2 deg and 10 deg, and specifies decay formulas covering the 1-10 deg continuum. The toolbox exposes those as `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"`, and selects them automatically for any non-standard field size.
+%[text] Every mode handles arbitrary field sizes, so the algorithm choice is narrower than it looks: `CIE170` mode uses the published table at exactly 2 and 10 deg and falls back to these same formulas everywhere else. The two settings therefore give identical numbers at 4, 6 or 15 deg and differ only at the two standard sizes, where the table is preferred over the formula's approximation of it.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
