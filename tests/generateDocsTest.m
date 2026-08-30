@@ -96,7 +96,7 @@ classdef generateDocsTest < matlab.unittest.TestCase
 
         function testEveryHelpTocTargetResolves(testCase)
             testCase.generate(["IndividualCMF", "ObserverParameters", "Genotype", ...
-                               "Nomograms", "CIE170"]);
+                               "Nomograms", "CIE170", "enums.LensModel"]);
             [pages, ids] = testCase.readPages();
             toc = string(fileread(testCase.tocPath()));
             targets = string(regexp(toc, 'target="([^"]+)"', 'tokens'));
@@ -154,6 +154,95 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 "Expected an Outputs section for LMS.");
             testCase.verifyFalse(contains(page, "OUTPUTS:"), ...
                 "A raw uppercase label survived into the rendered body.");
+        end
+
+        function testSectionBodiesAreDedentedNotJustTrimmed(testCase)
+            % strtrim removes leading whitespace from the start of the whole
+            % block, which is only its first line. Every later line then keeps
+            % the indent it had in the source comment, so the first line sits
+            % flush and the rest hang. The common indent must come off all of
+            % them, and relative nesting must survive.
+            testCase.generate("Nomograms");
+            page = string(fileread(fullfile(testCase.OutDir, "Nomograms.stockmanRider.html")));
+            block = regexp(page, '<h2>Inputs</h2>\s*<pre>(.*?)</pre>', 'tokens', 'once');
+            testCase.verifyNotEmpty(block);
+            lines = splitlines(replace(string(block{1}), "&quot;", """"));
+            lines = lines(strlength(strtrim(lines)) > 0);
+            testCase.verifyGreaterThan(numel(lines), 3);
+            testCase.verifyTrue(startsWith(lines(1), "wavelengths"), ...
+                "First line should be flush.");
+            testCase.verifyTrue(startsWith(lines(2), "coneType"), ...
+                "Second line still carries the source indent.");
+            testCase.verifyTrue(startsWith(lines(4), "    "), ...
+                "Nesting under options was flattened.");
+        end
+
+        function testDescriptionDoesNotRepeatTheSummary(testCase)
+            % The summary line appears above as the page purpose. Rendering it
+            % again opened every Description with a sentence just read.
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.applyGenotype.html")));
+            purpose = regexp(page, '<p class="purpose">(.*?)</p>', 'tokens', 'once');
+            testCase.verifySubstring(purpose{1}, "opsin genotype string");
+            description = regexp(page, '<h2>Description</h2>\s*<pre>(.*?)</pre>', ...
+                'tokens', 'once');
+            testCase.verifyNotEmpty(description);
+            testCase.verifyFalse(contains(description{1}, purpose{1}), ...
+                "The Description repeats the summary shown above it.");
+        end
+
+        function testSeeAlsoBecomesItsOwnSection(testCase)
+            % The label carries its content on the same line, so it was being
+            % swallowed by whichever section preceded it, usually Example.
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.applyGenotype.html")));
+            headings = string(regexp(page, '<h2>([^<]+)</h2>', 'tokens'));
+            testCase.verifyTrue(any(headings == "See Also"));
+            example = regexp(page, '<h2>Example</h2>\s*<pre>(.*?)</pre>', 'tokens', 'once');
+            testCase.verifyFalse(contains(example{1}, "See also"), ...
+                "The cross-reference is still inside the Example block.");
+        end
+
+        function testEnumerationPageListsValuesNotBuiltins(testCase)
+            % Every enumeration inherits char, strcmp, ismember and eleven
+            % more from MATLAB. A page for each would bury the values, which
+            % are the only part of an enumeration a caller writes.
+            testCase.generate("enums.LensModel");
+            page = string(fileread(fullfile(testCase.OutDir, "enums.LensModel.html")));
+            testCase.verifySubstring(page, "<h2>Values</h2>");
+            for value = ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"]
+                testCase.verifySubstring(page, value);
+            end
+            testCase.verifyFalse(contains(page, "<h2>Methods</h2>"), ...
+                "Inherited enumeration builtins were documented as methods.");
+            testCase.verifyFalse(isfile(fullfile(testCase.OutDir, "enums.LensModel.strcmp.html")));
+            testCase.verifySubstring(page, "Lens absorption template model selector", ...
+                "The summary should describe the class, not its first value.");
+        end
+
+        function testMethodsAreGroupedByTaskNotAlphabetically(testCase)
+            % Alphabetical order files LMS between lmChromaticity and
+            % Luminance, and scatters the twelve plotting methods through the
+            % middle. Every method must appear under exactly one category, so
+            % that categorising cannot quietly drop one from the reference.
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.html")));
+            categories = string(regexp(page, '<h3>([^<]+)</h3>', 'tokens'));
+            testCase.verifyGreaterThan(numel(categories), 3, ...
+                "The method table was not split into categories.");
+            testCase.verifyTrue(any(categories == "Plot and Compare"));
+
+            mc = meta.class.fromName("IndividualCMF");
+            meths = mc.MethodList;
+            meths = meths(strcmp({meths.Access}, 'public') & ~[meths.Hidden]);
+            expected = setdiff(string({meths.Name}), ...
+                ["IndividualCMF", "empty", "delete", "findobj", "findprop", ...
+                 "addlistener", "notify", "listener", "eq", "ne", "lt", "le", ...
+                 "gt", "ge", "isvalid", "horzcat", "vertcat", "cat"]);
+            listed = string(regexp(page, '<a href="IndividualCMF\.([A-Za-z_0-9]+)\.html">', ...
+                'tokens'));
+            testCase.verifyEqual(sort(listed), sort(expected), ...
+                "The categorised list and the class's methods disagree.");
         end
 
         % Edge Case Tests

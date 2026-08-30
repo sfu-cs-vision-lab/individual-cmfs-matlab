@@ -1,5 +1,5 @@
 classdef StockmanRiderCommonPhotopigmentTemplate < PhotopigmentTemplate
-    % STOCKMANRIDERCOMMONTEMPLATE  Stockman & Rider (2023) common pigment template.
+    % STOCKMANRIDERCOMMONPHOTOPIGMENTTEMPLATE  Stockman & Rider (2023) common pigment template.
     %
     %   This class implements the shape-invariant (common) photopigment
     %   template from Stockman & Rider (2023), Table 4 column 3. A single
