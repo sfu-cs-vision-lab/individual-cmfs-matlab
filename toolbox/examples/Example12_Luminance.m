@@ -5,7 +5,7 @@
 %[text] $ V^{\\ast}(\\lambda) = a \\bar{L}(\\lambda) + b \\bar{M}(\\lambda) $
 %[text] The coefficients depend on field size. They are $(0.6899, 0.3483)$ for the 2 deg observer and $(0.6928, 0.3497)$ for the 10 deg observer. Sharpe et al. (2005) measured them in 40 observers of known genotype, and the CIE adopted them in CIE 170-2:2015.
 %[text] The toolbox computes $V^{\\ast}(\\lambda)$ from the Stockman and Rider (2023) cone fundamentals rather than fitting the tabulated CIE function directly. The two agree to better than 1% at the peak.
-%[text] **Time:** about 8 minutes.
+%[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
 %[text] ## The two standard observers

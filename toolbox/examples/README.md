@@ -32,7 +32,7 @@ Roughly ordered from foundations to advanced usage:
 | **ex09** | Output Formats | ~12 min | `energy` / `quantal` / `absorptance` / `absorbance` and `LogOutput` |
 | **ex10** | RGB Color Matching | ~12 min | RGB CMFs, negative values, custom display primaries |
 | **ex11** | Chromaticity Diagrams | ~10 min | lm and CIE xy chromaticity, spectral locus |
-| **ex12** | Photopic Luminance | ~8 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age, and dichromat reductions |
+| **ex12** | Photopic Luminance | ~12 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age, and dichromat reductions |
 
 ### Observer Comparisons
 | Example | Topic | Time | Description |
@@ -44,9 +44,9 @@ Roughly ordered from foundations to advanced usage:
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
 | **ex15** | Advanced Customization | ~15 min | Every parameter, Custom-mode behaviour, `getParameters` round-trip |
-| **ex16** | Data Export | ~8 min | `evaluate`, CSV / MAT; round-trip pointer to Example 15 |
+| **ex16** | Data Export | ~10 min | `evaluate`, CSV / MAT; round-trip pointer to Example 15 |
 | **ex17** | Normalization Methods | ~10 min | Continuous vs Sampled; reproducing external reference implementations |
-| **ex18** | Publication Figures | ~12 min | Six-panel aging composite; vector export via `exportgraphics` |
+| **ex18** | Publication Figures | ~10 min | Six-panel aging composite; vector export via `exportgraphics` |
 | **ex19** | Observer Metamerism | ~12 min | A metameric pair breaks for individual observers; xy chromaticity shifts from Ser180Ala and lens aging |
 
 ## Running an example
