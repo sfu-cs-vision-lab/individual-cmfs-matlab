@@ -83,32 +83,40 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       Primaries                    - 1x3 RGB primary wavelengths in nm.
     %
     %   IndividualCMF Methods:
-    %       setGenotype            - Set one cone/position/residue and update the shift.
+    %       Grouped and ordered as the reference documentation groups them,
+    %       so that "help IndividualCMF" and the Help Browser agree.
+    %
     %       across                 - (Static) Build an array of observers across a parameter axis.
     %       applyGenotype          - Configure observer from a "L-geno/M-geno" string.
+    %       setGenotype            - Set one cone/position/residue and update the shift.
     %       getParameters          - Snapshot current parameters as ObserverParameters.
     %       setParameters          - Restore parameters from an ObserverParameters object.
-    %       evaluate               - Return a derived quantity as a table.
-    %       L, M, S                - Per-cone sensitivity at the given wavelengths.
+    %       copy                   - (Inherited from matlab.mixin.Copyable)
+    %                                    Independent duplicate of an
+    %                                    observer. See Copy semantics below.
+    %
     %       LMS                    - L, M, S sensitivities as an Nx3 matrix.
+    %       L, M, S                - Per-cone sensitivity at the given wavelengths.
+    %       getPeak                - Peak sensitivity for a given cone.
+    %
     %       XYZ                    - CIE XYZ CMFs (2-deg matrix below 4 deg, else 10-deg).
     %       RGB                    - RGB CMFs for the configured Primaries.
     %       Luminance              - Photopic V*(lambda) (CIE 170-2:2015 y-bar row).
     %       MacLeodBoynton         - MacLeod-Boynton chromaticity (l_MB, s_MB).
     %       lmChromaticity         - LMS-sum chromaticity (l, m).
     %       xyChromaticity         - CIE xy chromaticity (from XYZ).
-    %       getPeak                - Peak sensitivity for a given cone.
+    %       neutralColor           - (Static) Line colour that stays legible in either theme.
+    %       evaluate               - Return a derived quantity as a table.
+    %
     %       getLensDensitySpectrum - Lens optical density at the given wavelengths.
     %       getMacularDensitySpectrum - Macular pigment optical density at the given wavelengths.
+    %
     %       plot, plotLMS, plotXYZ, plotRGBCMFs, plotChromaticity,
     %       plotAbsorbance, plotAbsorptance, plotQuantalEnergy, plotLens,
     %       plotMacular, plotDiagnostics, compareTo - Plotting and
     %                                    comparison. All draw into gca by
     %                                    default; pass Parent=nexttile()
     %                                    to compose a tiled figure.
-    %       copy                   - (Inherited from matlab.mixin.Copyable)
-    %                                    Independent duplicate of an
-    %                                    observer. See Copy semantics below.
     %
     %   Copy semantics:
     %     IndividualCMF is a handle class, so a plain assignment creates a

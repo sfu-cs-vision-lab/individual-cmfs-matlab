@@ -51,25 +51,31 @@ function generateDocs(options)
 
     classes = collectMetadata(options.Classes);
 
-    pageCount = 1;
-    writeIndexPage(outDir, classes);
+    pages = pageLookup(classes);
+
+    % The guide and the examples are exported first so that the landing page
+    % can route to them, and link only to what was actually written.
+    hasGuide = strlength(options.GettingStarted) > 0 && isfile(options.GettingStarted);
+    if hasGuide
+        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), Run=false);
+    end
+    examples = exportExamples(outDir, options.Examples);
+
+    pageCount = 1 + hasGuide + numel(examples);
+    writeIndexPage(outDir, classes, hasGuide, examples);
+    for group = unique(arrayfun(@(c) groupOf(c.Name), classes), "stable")
+        writeGroupPage(outDir, group, classes);
+        pageCount = pageCount + 1;
+    end
     for k = 1:numel(classes)
-        writeClassPage(outDir, classes(k));
+        writeClassPage(outDir, classes(k), pages);
         pageCount = pageCount + 1;
         for m = classes(k).Methods(:)'
-            writeMethodPage(outDir, classes(k), m);
+            writeMethodPage(outDir, classes(k), m, pages);
             pageCount = pageCount + 1;
         end
     end
 
-    hasGuide = strlength(options.GettingStarted) > 0 && isfile(options.GettingStarted);
-    if hasGuide
-        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), Run=false);
-        pageCount = pageCount + 1;
-    end
-
-    examples = exportExamples(outDir, options.Examples);
-    pageCount = pageCount + numel(examples);
     relinkSources(outDir);
 
     docDir = fileparts(outDir);
@@ -154,6 +160,99 @@ function out = shortName(name)
 % Class name without its package, which is also its constructor's name.
     parts = split(string(name), ".");
     out = parts(end);
+end
+
+function pages = pageLookup(classes)
+% Every documented name, mapped to the page that documents it.
+%
+%   Used to turn the names in a See also line into links. Without it a
+%   cross-reference is text the reader has to retype into the search box,
+%   which is the difference between a tree and a web.
+    pages = dictionary(string.empty, string.empty);
+    for k = 1:numel(classes)
+        name = classes(k).Name;
+        pages(name) = name + ".html";
+        for m = classes(k).Methods(:)'
+            pages(name + "." + m.Name) = methodFile(name, m.Name);
+        end
+    end
+end
+
+function out = linkify(text, pages, owner)
+% Link every name in a block that matches a documented page.
+%
+%   Rebuilt by scanning rather than by replacing, so a name inserted as link
+%   text cannot be matched again by a later substitution.
+    escaped = escapeHtml(text);
+    [starts, ends, matches] = regexp(escaped, ...
+        "[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*", "start", "end", "match");
+    chars = char(escaped);
+    pieces = strings(0);
+    last = 0;
+    for k = 1:numel(matches)
+        target = pageFor(string(matches{k}), pages, owner);
+        if strlength(target) == 0
+            continue
+        end
+        pieces(end+1) = string(chars(last+1:starts(k)-1)); %#ok<AGROW>
+        pieces(end+1) = sprintf("<a href=""%s"">%s</a>", target, matches{k}); %#ok<AGROW>
+        last = ends(k);
+    end
+    pieces(end+1) = string(chars(last+1:end));
+    out = strjoin(pieces, "");
+end
+
+function target = pageFor(token, pages, owner)
+% Page documenting a name, resolving a bare method against its own class.
+    target = "";
+    if isKey(pages, token)
+        target = pages(token);
+    elseif strlength(owner) > 0 && isKey(pages, owner + "." + token)
+        target = pages(owner + "." + token);
+    end
+end
+
+function out = renderSections(text, pages, owner, leadHeading)
+% Render a help block as headed sections, linking any cross-references.
+    out = "";
+    for section = helpSections(text)
+        heading = leadHeading;
+        if strlength(section.Heading) > 0
+            heading = titleCase(section.Heading);
+        end
+        out = out + sprintf("<h2>%s</h2>\n", escapeHtml(heading));
+        body = dedent(section.Body);
+        if startsWith(lower(heading), "see also")
+            out = out + sprintf("<p class=""seealso"">%s</p>\n", ...
+                linkify(body, pages, owner));
+        else
+            out = out + sprintf("<pre>%s</pre>\n", escapeHtml(body));
+        end
+    end
+end
+
+function out = memberDescriptions(members, detail)
+% Descriptions for enumeration values, taken from the class help.
+%
+%   The values are the only part of an enumeration a caller writes, and the
+%   help describes each one as "Name - description" with wrapped
+%   continuation lines. Listing bare names leaves the answer sitting in the
+%   raw help block below the table.
+    out = strings(size(members));
+    lines = splitlines(string(detail));
+    current = "";
+    for k = 1:numel(lines)
+        opened = regexp(strtrim(lines(k)), "^(\w+)\s+-\s+(.*)$", "tokens", "once");
+        if ~isempty(opened) && ismember(opened{1}, members)
+            current = opened{1};
+            out(members == current) = strtrim(opened{2});
+        elseif strlength(strtrim(lines(k))) == 0
+            current = "";
+        elseif strlength(current) > 0
+            out(members == current) = strtrim(out(members == current)) + ...
+                " " + strtrim(lines(k));
+        end
+    end
 end
 
 function examples = exportExamples(outDir, folder)
@@ -257,6 +356,7 @@ function spec = referenceSpec()
         "Photopigment Models",  "enums.PhotopigmentDensityAlgorithm"; ...
         "Photopigment Models",  "enums.LOpsinTemplate"; ...
         "Photopigment Models",  "enums.MOpsinTemplate"; ...
+        "Photopigment Models",  "Nomograms"; ...
         "Lens Models",          "LensTemplate"; ...
         "Lens Models",          "StockmanRiderLensTemplate"; ...
         "Lens Models",          "Pokorny1987LensTemplate"; ...
@@ -269,12 +369,10 @@ function spec = referenceSpec()
         "Macular Models",       "enums.MacularDensityAlgorithm"; ...
         "Output and Normalization", "enums.OutputFormat"; ...
         "Output and Normalization", "enums.NormalizationMethod"; ...
-        "Output and Normalization", "NormalizationCache"; ...
         "Pipeline Stages",      "pipeline.PhotopigmentStage"; ...
         "Pipeline Stages",      "pipeline.PreReceptoralStage"; ...
         "Pipeline Stages",      "pipeline.OutputStage"; ...
-        "Reference Data",       "CIE170"; ...
-        "Reference Data",       "Nomograms"];
+        "Reference Data",       "CIE170"];
 end
 
 function spec = methodSpec(className)
@@ -303,7 +401,6 @@ function spec = methodSpec(className)
         "Cone Sensitivities",   "M"; ...
         "Cone Sensitivities",   "S"; ...
         "Cone Sensitivities",   "getPeak"; ...
-        "Cone Sensitivities",   "evaluate"; ...
         "Derived Quantities",   "XYZ"; ...
         "Derived Quantities",   "RGB"; ...
         "Derived Quantities",   "Luminance"; ...
@@ -311,6 +408,7 @@ function spec = methodSpec(className)
         "Derived Quantities",   "lmChromaticity"; ...
         "Derived Quantities",   "xyChromaticity"; ...
         "Derived Quantities",   "neutralColor"; ...
+        "Derived Quantities",   "evaluate"; ...
         "Filter Spectra",       "getLensDensitySpectrum"; ...
         "Filter Spectra",       "getMacularDensitySpectrum"; ...
         "Plot and Compare",     "plot"; ...
@@ -383,20 +481,30 @@ function mc = resolveClass(name)
     end
 end
 
-function writeIndexPage(outDir, classes)
+function writeIndexPage(outDir, classes, hasGuide, examples)
 % Landing page: what the toolbox is, and the classes it exposes.
     body = header("Individual CMF Toolbox");
     body = body + "<h1>Individual CMF Toolbox</h1>" + newline;
     body = body + "<p class=""purpose"">Observer-specific LMS cone spectral " + ...
         "sensitivities from biophysical parameters, and the quantities derived " + ...
         "from them</p>" + newline;
+    routes = strings(0);
+    if hasGuide
+        routes(end+1) = "<a href=""GettingStarted.html"">Getting Started</a>";
+    end
+    if ~isempty(examples)
+        routes(end+1) = sprintf("the <a href=""%s"">worked examples</a>", examples(1).File);
+    end
+    if ~isempty(routes)
+        body = body + "<p class=""routes"">New here? Start with " + ...
+            strjoin(routes, ", then ") + ".</p>" + newline;
+    end
     groups = arrayfun(@(c) groupOf(c.Name), classes);
     for group = unique(groups, "stable")
-        body = body + sprintf("<h2>%s</h2>\n<table>\n", group);
+        body = body + sprintf("<h2><a href=""%s"">%s</a></h2>\n<table>\n", ...
+            groupFile(group), escapeHtml(group));
         for k = find(groups == group)
-            body = body + sprintf("<tr><td class=""name""><a href=""%s.html"">%s</a></td>" + ...
-                "<td>%s</td></tr>\n", classes(k).Name, classes(k).Name, ...
-                escapeHtml(truncate(classes(k).Summary, 170)));
+            body = body + classRow(classes(k));
         end
         body = body + "</table>" + newline;
     end
@@ -404,17 +512,51 @@ function writeIndexPage(outDir, classes)
     writeText(fullfile(outDir, "index.html"), body);
 end
 
-function writeClassPage(outDir, entry)
+function writeGroupPage(outDir, group, classes)
+% One page per group, so a group heading in the contents tree lands
+% somewhere. Every group tocitem otherwise targets the top of the full
+% landing page, and a fragment cannot rescue it inside the Help Browser
+% frame for the same reason method anchors could not.
+    body = header(group);
+    body = body + sprintf("<h1>%s</h1>\n", escapeHtml(group));
+    body = body + "<table>" + newline;
+    groups = arrayfun(@(c) groupOf(c.Name), classes);
+    for k = find(groups == group)
+        body = body + classRow(classes(k));
+    end
+    body = body + "</table>" + newline;
+    body = body + "<p class=""routes""><a href=""index.html"">All groups</a></p>" + newline;
+    body = body + footer();
+    writeText(fullfile(outDir, groupFile(group)), body);
+end
+
+function out = classRow(entry)
+% One row of a class table, shared by the index and the group pages.
+    out = sprintf("<tr><td class=""name""><a href=""%s.html"">%s</a></td>" + ...
+        "<td>%s</td></tr>\n", entry.Name, entry.Name, ...
+        escapeHtml(truncate(entry.Summary, 170)));
+end
+
+function out = groupFile(group)
+% File name for a group page, from the group's own name.
+    out = "group-" + lower(replace(strtrim(string(group)), " ", "-")) + ".html";
+end
+
+function writeClassPage(outDir, entry, pages)
 % Class page: purpose, property table, and a linked list of methods.
     body = header(entry.Name);
     body = body + sprintf("<h1>%s</h1>\n", escapeHtml(entry.Name));
     body = body + sprintf("<p class=""purpose"">%s</p>\n", escapeHtml(entry.Summary));
+    group = groupOf(entry.Name);
+    body = body + sprintf("<p class=""parent"">In <a href=""%s"">%s</a></p>\n", ...
+        groupFile(group), escapeHtml(group));
 
     if ~isempty(entry.Members)
         body = body + "<h2>Values</h2>" + newline + "<table>" + newline;
-        for value = entry.Members
-            body = body + sprintf("<tr><td class=""name"">%s</td></tr>\n", ...
-                escapeHtml(value));
+        described = memberDescriptions(entry.Members, entry.Detail);
+        for k = 1:numel(entry.Members)
+            body = body + sprintf("<tr><td class=""name"">%s</td><td>%s</td></tr>\n", ...
+                escapeHtml(entry.Members(k)), escapeHtml(described(k)));
         end
         body = body + "</table>" + newline;
     end
@@ -450,13 +592,15 @@ function writeClassPage(outDir, entry)
         end
     end
 
-    body = body + "<h2>Details</h2>" + newline;
-    body = body + sprintf("<pre>%s</pre>\n", escapeHtml(dedent(entry.Detail)));
+    % The class help gets the same sectioning the method pages get. For
+    % IndividualCMF it runs to about 170 lines, including the constructor's
+    % Name-Value table, and it was one preformatted block.
+    body = body + renderSections(entry.Detail, pages, entry.Name, "Details");
     body = body + footer();
     writeText(fullfile(outDir, entry.Name + ".html"), body);
 end
 
-function writeMethodPage(outDir, entry, m)
+function writeMethodPage(outDir, entry, m, pages)
 % One page per method, so the table of contents can navigate to it.
     body = header(entry.Name + "." + m.Name);
     body = body + sprintf("<h1>%s</h1>\n", escapeHtml(m.Name));
@@ -485,15 +629,7 @@ function writeMethodPage(outDir, entry, m)
             "<a href=""%s.html"">%s</a> for how it behaves here.</p>\n", ...
             escapeHtml(owner), entry.Name, escapeHtml(entry.Name));
     else
-        for section = helpSections(detail)
-            if strlength(section.Heading) > 0
-                body = body + sprintf("<h2>%s</h2>\n", ...
-                    escapeHtml(titleCase(section.Heading)));
-            else
-                body = body + "<h2>Description</h2>" + newline;
-            end
-            body = body + sprintf("<pre>%s</pre>\n", escapeHtml(dedent(section.Body)));
-        end
+        body = body + renderSections(detail, pages, entry.Name, "Description");
     end
     body = body + footer();
     writeText(fullfile(outDir, methodFile(entry.Name, m.Name)), body);
@@ -537,18 +673,32 @@ function out = helpSections(text)
         % as OUTPUTS: and OPTIONAL INPUTS (Name-Value arguments):, and mixed
         % case ones such as Reference: and Note:. Both become headings.
         isLabel = ~isempty(regexp(trimmed, "^[A-Z][A-Z /-]{2,}(\s*\([^)]*\))?:$", "once")) || ...
-                  ~isempty(regexp(trimmed, "^[A-Z][a-z]+:$", "once"));
-        % A cross-reference line carries its content on the same line as the
-        % label, so it opens a section rather than standing alone as one.
-        seeAlso = regexp(trimmed, "^See also:\s*(.*)$", "tokens", "once");
-        if isLabel || ~isempty(seeAlso)
+                  ~isempty(regexp(trimmed, "^[A-Z][a-z]+(\s+[a-z]+){0,2}:$", "once"));
+        % Some labels carry their content on the same line, so they open a
+        % section rather than standing alone as one. Only at the block's own
+        % indent: "Examples:" appears nested inside an Inputs list, and
+        % promoting that to a heading would break the list apart.
+        inline = cell(0);
+        if strlength(lines(k)) - strlength(strip(lines(k), "left")) <= 4
+            % The colon is what separates a label from a sentence that
+            % happens to open with a capitalised word. Without requiring it,
+            % "IndividualCMF builds an L/M/S spectral sensitivity model"
+            % becomes a heading. See also is the one label written without.
+            inline = regexp(trimmed, "^(See also):?\s+(.*)$", "tokens", "once");
+            if isempty(inline)
+                inline = regexp(trimmed, ...
+                    "^([A-Z][A-Za-z]*(?:\s+[a-z][A-Za-z]*){0,2}):\s+(\S.*)$", ...
+                    "tokens", "once");
+            end
+        end
+        if isLabel || ~isempty(inline)
             out(end+1) = struct("Heading", heading, "Body", strjoin(body, newline)); %#ok<AGROW>
             body = strings(0);
-            if isempty(seeAlso)
+            if isempty(inline)
                 heading = extractBefore(trimmed, strlength(trimmed));
             else
-                heading = "See also";
-                body(end+1) = seeAlso{1}; %#ok<AGROW>
+                heading = inline{1};
+                body(end+1) = inline{2}; %#ok<AGROW>
             end
         else
             body(end+1) = lines(k); %#ok<AGROW>
@@ -580,7 +730,8 @@ function writeHelpToc(tocPath, classes, hasGuide, examples)
     % entry point rather than on an alphabetical run of templates.
     groups = arrayfun(@(c) groupOf(c.Name), classes);
     for group = unique(groups, "stable")
-        lines(end+1) = sprintf("        <tocitem target=""html/index.html"">%s", group); %#ok<AGROW>
+        lines(end+1) = sprintf("        <tocitem target=""html/%s"">%s", ...
+            groupFile(group), group); %#ok<AGROW>
         for k = find(groups == group)
             lines(end+1) = sprintf("            <tocitem target=""html/%s.html"">%s", ...
                 classes(k).Name, classes(k).Name); %#ok<AGROW>
@@ -632,6 +783,9 @@ function out = header(pageTitle)
            "h3{font-size:.95em;font-weight:700;margin:1.4em 0 .1em;color:#404040}", ...
            "p.purpose{font-size:1em;color:#404040;margin:0 0 1.4em}", ...
            "p.parent,p.inherited{color:#666;font-size:.92em;margin:.2em 0 1em}", ...
+           "p.routes{margin:.2em 0 1.6em}", ...
+           "p.seealso{background:#f7f7f7;border:1px solid #e6e6e6;padding:.8em;" + ...
+           "margin:.6em 0}", ...
            "table{border-collapse:collapse;width:100%;margin:.6em 0}", ...
            "td{text-align:left;vertical-align:top;padding:.45em .7em;" + ...
            "border-bottom:1px solid #e6e6e6}", ...

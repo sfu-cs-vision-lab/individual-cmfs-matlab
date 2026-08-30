@@ -277,6 +277,61 @@ classdef generateDocsTest < matlab.unittest.TestCase
             testCase.verifySubstring(toc, "Example 01: The Basics");
         end
 
+        function testSeeAlsoNamesBecomeLinks(testCase)
+            % A See also line naming four classes is text the reader has to
+            % retype into the search box unless the names are linked.
+            testCase.generate(["IndividualCMF", "Genotype", "ObserverParameters"]);
+            page = string(fileread(fullfile(testCase.OutDir, ...
+                "IndividualCMF.applyGenotype.html")));
+            block = regexp(page, '<p class="seealso">(.*?)</p>', 'tokens', 'once');
+            testCase.verifyNotEmpty(block, "See also was not rendered as its own block.");
+            testCase.verifySubstring(block{1}, ...
+                '<a href="Genotype.html">Genotype</a>');
+            testCase.verifySubstring(block{1}, ...
+                '<a href="IndividualCMF.getParameters.html">getParameters</a>', ...
+                "A bare method name should resolve against its own class.");
+        end
+
+        function testClassDetailIsSectionedLikeAMethodPage(testCase)
+            % The class help ran to about 170 lines in one preformatted
+            % block, including the constructor's Name-Value table.
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.html")));
+            headings = string(regexp(page, '<h2>(?:<a[^>]*>)?([^<]+)', 'tokens'));
+            testCase.verifyTrue(any(headings == "Outputs"));
+            testCase.verifyTrue(any(headings == "Copy Semantics"));
+            testCase.verifyFalse(any(startsWith(headings, "Individualcmf")), ...
+                "A prose sentence was promoted to a heading.");
+        end
+
+        function testGroupsGetTheirOwnPage(testCase)
+            % A group heading in the contents tree otherwise targets the top
+            % of the landing page, which a fragment cannot fix inside the
+            % Help Browser frame.
+            root = fileparts(fileparts(string(mfilename("fullpath"))));
+            generateDocs(OutputDir=testCase.OutDir, ...
+                Classes=["IndividualCMF", "enums.LensModel"], ...
+                GettingStarted=fullfile(root, "toolbox", "doc", "GettingStarted.m"), ...
+                Examples="", BuildIndex=false, Verbose=false);
+            testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "group-observers.html")));
+            toc = string(fileread(testCase.tocPath()));
+            testCase.verifySubstring(toc, "html/group-observers.html");
+            index = string(fileread(fullfile(testCase.OutDir, "index.html")));
+            testCase.verifySubstring(index, "GettingStarted.html", ...
+                "The landing page should route to Getting Started.");
+        end
+
+        function testEnumerationValuesCarryTheirDescriptions(testCase)
+            % The values are the only part of an enumeration a caller writes.
+            % Listing bare names leaves the answer in the raw help below.
+            testCase.generate("enums.LensModel");
+            page = string(fileread(fullfile(testCase.OutDir, "enums.LensModel.html")));
+            row = regexp(page, '<tr><td class="name">Pokorny1987</td><td>(.*?)</td>', ...
+                'tokens', 'once');
+            testCase.verifyNotEmpty(row);
+            testCase.verifySubstring(row{1}, "Age-dependent");
+        end
+
         % Edge Case Tests
 
         function testHtmlIsEscaped(testCase)
