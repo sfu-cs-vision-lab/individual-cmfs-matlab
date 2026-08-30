@@ -363,6 +363,89 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 "The export inherited the dark desktop theme.");
         end
 
+        function testNestedLabelDoesNotBecomeAHeading(testCase)
+            % CIE170 lists its constants under indented category labels such
+            % as "Standard observer:". Promoting one of those to a heading
+            % takes the rest of the block with it, which filed the
+            % photopigment, macular and lens densities under Standard
+            % Observer on the generated page.
+            testCase.generate("CIE170");
+            page = string(fileread(fullfile(testCase.OutDir, "CIE170.html")));
+            headings = string(regexp(page, '<h2>(?:<a[^>]*>)?([^<]+)', 'tokens'));
+            testCase.verifyFalse(any(headings == "Standard Observer"), ...
+                "A label nested inside the property listing became a heading.");
+            details = regexp(page, '<h2>Details</h2>\s*<pre>(.*?)</pre>', ...
+                'tokens', 'once');
+            testCase.verifyNotEmpty(details);
+            testCase.verifySubstring(details{1}, "Standard observer:", ...
+                "The nested label should stay in the block it belongs to.");
+            testCase.verifySubstring(details{1}, "STD_2DEG_L_OPTICAL_DENSITY", ...
+                "The constants after it should stay in the same block.");
+        end
+
+        function testBuildLeavesRootGraphicsDefaultsAlone(testCase)
+            % Every example calls exampleDefaults, which sets nine defaults
+            % on groot and never restores them, so running the examples to
+            % capture their figures would otherwise restyle the session.
+            % A one-line probe stands in for the twenty real examples, which
+            % would cost three minutes to re-run for a property this test can
+            % dirty directly.
+            probeDir = fullfile(testCase.DocDir, "defaults");
+            mkdir(probeDir);
+            fid = fopen(fullfile(probeDir, "Example98_Defaults.m"), "w");
+            fprintf(fid, "%%[text] # Example 98\n");
+            fprintf(fid, "set(groot, 'defaultLineLineWidth', 7);\n");
+            fprintf(fid, "set(groot, 'defaultAxesBox', 'on');\n");
+            fprintf(fid, '\n%%[appendix]{"version":"1.0"}\n');
+            fclose(fid);
+
+            kept = 'defaultLineLineWidth';
+            set(groot, kept, 3.5);
+            testCase.addTeardown(@() set(groot, kept, 'remove'));
+
+            generateDocs(OutputDir=testCase.OutDir, Classes="Genotype", ...
+                GettingStarted="", Examples=probeDir, ...
+                RunExamples=true, BuildIndex=false, Verbose=false);
+
+            testCase.verifyEqual(get(groot, kept), 3.5, ...
+                "The build overwrote a default the caller had set.");
+            introduced = string(fieldnames(get(groot)));
+            testCase.verifyFalse(any(introduced == "defaultAxesBox"), ...
+                "A default the examples introduced outlived the build.");
+        end
+
+        function testNoClassPageComesOutBlank(testCase)
+            % Running the examples reloads class definitions, so metadata
+            % read afterwards can come back empty. That shipped a blank
+            % purpose and four blank values for enums.PhotopigmentModel
+            % while the other nine enumerations were fine, and regenerating
+            % in a clean session produced the page correctly, which is what
+            % made it a build-order bug rather than a source one.
+            root = fileparts(fileparts(string(mfilename("fullpath"))));
+            generateDocs(OutputDir=testCase.OutDir, GettingStarted="", ...
+                Examples=fullfile(root, "toolbox", "examples"), ...
+                RunExamples=false, BuildIndex=false, Verbose=false);
+
+            blank = strings(0);
+            listing = dir(fullfile(testCase.OutDir, "*.html"));
+            for item = reshape(listing, 1, [])
+                if startsWith(item.name, ["Example", "GettingStarted", "index", "group-"])
+                    continue
+                end
+                text = string(fileread(fullfile(item.folder, item.name)));
+                if contains(text, "carries no help text of its own")
+                    % copy is sealed by MATLAB and documented as such.
+                    continue
+                end
+                purpose = regexp(text, '<p class="purpose">(.*?)</p>', 'tokens', 'once');
+                if isempty(purpose) || strlength(strtrim(purpose{1})) == 0
+                    blank(end+1) = string(item.name); %#ok<AGROW>
+                end
+            end
+            testCase.verifyEmpty(blank, ...
+                "Pages generated with no summary at all: " + strjoin(blank, ", "));
+        end
+
         % Edge Case Tests
 
         function testHtmlIsEscaped(testCase)

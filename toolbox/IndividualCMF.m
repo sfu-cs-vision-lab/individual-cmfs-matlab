@@ -285,7 +285,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %                           on the CIE parity path.
         PhotopigmentModel
 
-        % Lens template model ("StockmanRider2023" or "Pokorny1987").
+        % Lens template model ("StockmanRider2023", "Pokorny1987", or "VanDeKraats2007").
         %   Determines the spectral shape of lens absorption.
         %   "StockmanRider2023" - Age-invariant 9-term Fourier polynomial
         %                         template (Stockman & Rider 2023, Table 2).

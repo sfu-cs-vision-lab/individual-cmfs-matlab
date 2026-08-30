@@ -56,20 +56,17 @@ function generateDocs(options)
     end
 
     lightFigures = forceLightFigures(); %#ok<NASGU>
+    rootDefaults = preserveGraphicsDefaults(); %#ok<NASGU>
 
-    % The guide and the examples are exported first, so that the landing page
-    % can route to them and link only to what was actually written.
-    %
-    % Metadata is collected afterwards rather than before. Running a script
-    % can make MATLAB reload a class definition, and meta.property objects
-    % gathered beforehand are handles into the old one, which then read as
-    % deleted.
+    % Everything derived from class metadata is read and written before a
+    % single example runs. Running a script makes MATLAB reload class
+    % definitions, which breaks this in both directions: meta.property
+    % handles taken beforehand read as deleted, and metadata taken afterwards
+    % can come back empty, which shipped a blank page for one enumeration
+    % while every other class was fine. The example list is derived from the
+    % filenames, so the landing page can route to pages not yet written.
     hasGuide = strlength(options.GettingStarted) > 0 && isfile(options.GettingStarted);
-    if hasGuide
-        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), ...
-            Run=options.RunExamples);
-    end
-    examples = exportExamples(outDir, options.Examples, options.RunExamples);
+    examples = listExamples(options.Examples);
 
     classes = collectMetadata(options.Classes);
     pages = pageLookup(classes);
@@ -89,6 +86,12 @@ function generateDocs(options)
         end
     end
 
+    % Only now, with every metadata-derived page on disk, run the scripts.
+    if hasGuide
+        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), ...
+            Run=options.RunExamples);
+    end
+    exportExamples(outDir, examples, options.RunExamples);
     relinkSources(outDir);
 
     docDir = fileparts(outDir);
@@ -128,18 +131,18 @@ function classes = collectMetadata(classNames)
     for name = classNames
         mc = resolveClass(name);
         entry.Name = name;
-        entry.Detail = string(mc.DetailedDescription);
+        [described, entry.Detail] = classHelp(name, mc);
         % The summary line of the class help, when there is one. Falling
         % straight to the detail picks up whatever the body happens to open
         % with, which on an enumeration is the first member rather than a
         % description of the class.
-        entry.Summary = summaryOf(string(mc.Description));
+        entry.Summary = summaryOf(described);
         if strlength(entry.Summary) == 0
             entry.Summary = summaryOf(entry.Detail);
         end
         props = mc.PropertyList;
         keep = strcmp({props.GetAccess}, 'public') & ~[props.Hidden];
-        entry.Properties = props(keep);
+        entry.Properties = plainProperties(props(keep));
         entry.Members = strings(0);
         meths = mc.MethodList;
         keep = strcmp({meths.Access}, 'public') & ~[meths.Hidden];
@@ -152,9 +155,67 @@ function classes = collectMetadata(classNames)
             meths = meths(~ismember(string({meths.Name}), enumBuiltins()));
         end
         meths = meths(~ismember(string({meths.Name}), [skip, shortName(name)]));
-        [entry.Methods, entry.MethodGroups] = orderMethods(name, meths);
+        [meths, entry.MethodGroups] = orderMethods(name, meths);
+        entry.Methods = plainMethods(meths);
         % One entry per documented class, so the array stays tiny.
         classes(end+1) = entry; %#ok<AGROW>
+    end
+end
+
+function [summaryText, detailText] = classHelp(name, mc)
+% Class help, read from the file when the metadata has been emptied.
+%
+%   Running a single example through export with Run=true empties
+%   Description and DetailedDescription on every enumeration class for the
+%   rest of the session, and rehash does not bring them back. Class, method
+%   and property help everywhere else survives, and help() reads the file so
+%   it is unaffected. Without this the build shipped an enumeration page with
+%   a blank purpose and blank value descriptions, and which enumerations were
+%   hit varied from run to run.
+    summaryText = string(mc.Description);
+    detailText = string(mc.DetailedDescription);
+    if strlength(summaryText) > 0 || strlength(detailText) > 0
+        return
+    end
+    raw = string(help(char(name)));
+    lines = splitlines(raw);
+    filled = find(strlength(strtrim(lines)) > 0, 1);
+    if isempty(filled)
+        return
+    end
+    % help() prints the summary as "CLASSNAME  Summary text.", the same
+    % shape meta strips before reporting Description.
+    summaryText = regexprep(strtrim(lines(filled)), ...
+        "^" + upper(shortName(name)) + "\s+", "");
+    detailText = strjoin(lines(filled+1:end), newline);
+end
+
+function out = plainProperties(props)
+% Copy what the pages need out of meta.property, as plain strings.
+%
+%   Nothing that came from meta.class may outlive collectMetadata. The
+%   examples run later in the build, and running a script makes MATLAB
+%   reload class definitions, which leaves every handle taken beforehand
+%   reading as a deleted object and every one taken afterwards liable to
+%   come back empty. Both failures were observed: a crash in writeHelpToc,
+%   and a blank page shipped for one enumeration out of ten.
+    out = struct("Name", {}, "Description", {}, "DetailedDescription", {});
+    for p = reshape(props, 1, [])
+        out(end+1) = struct("Name", string(p.Name), ...
+                            "Description", string(p.Description), ...
+                            "DetailedDescription", string(p.DetailedDescription)); %#ok<AGROW>
+    end
+end
+
+function out = plainMethods(meths)
+% Copy what the pages need out of meta.method, as plain strings.
+    out = struct("Name", {}, "Description", {}, "DetailedDescription", {}, ...
+                 "DefiningClass", {});
+    for m = reshape(meths, 1, [])
+        out(end+1) = struct("Name", string(m.Name), ...
+                            "Description", string(m.Description), ...
+                            "DetailedDescription", string(m.DetailedDescription), ...
+                            "DefiningClass", string(m.DefiningClass.Name)); %#ok<AGROW>
     end
 end
 
@@ -173,6 +234,38 @@ function out = shortName(name)
 % Class name without its package, which is also its constructor's name.
     parts = split(string(name), ".");
     out = parts(end);
+end
+
+function restorer = preserveGraphicsDefaults()
+% Put the root graphics defaults back as the build found them.
+%
+%   Every example opens with exampleDefaults, which sets nine defaults on
+%   groot and never restores them. Running the examples to capture their
+%   figures therefore leaves the session styled for this toolbox, and a
+%   "buildtool doc" run from an interactive MATLAB would change the look of
+%   every figure drawn afterwards, including ones unrelated to it.
+%
+%   The whole default set is captured rather than the nine, so this holds
+%   whatever an example decides to set later.
+%
+%   get(groot) does not report defaults at all, only the root's own
+%   properties. get(groot, 'default') is what returns the ones in force.
+    % Captured now, not inside the cleanup closure, where the call would run
+    % after the examples had already changed what it reads.
+    before = get(groot, 'default');
+    restorer = onCleanup(@() restoreGraphicsDefaults(before));
+end
+
+function restoreGraphicsDefaults(before)
+% Drop defaults the build introduced, and put back the ones it overwrote.
+    kept = string(fieldnames(before));
+    current = string(fieldnames(get(groot, 'default')));
+    for name = reshape(setdiff(current, kept), 1, [])
+        set(groot, char(name), 'remove');
+    end
+    for name = reshape(kept, 1, [])
+        set(groot, char(name), before.(name));
+    end
 end
 
 function restorer = forceLightFigures()
@@ -310,13 +403,12 @@ function out = memberDescriptions(members, detail)
     end
 end
 
-function examples = exportExamples(outDir, folder, runThem)
-% Export the worked examples so the Help Browser can show them.
+function examples = listExamples(folder)
+% The worked examples, named and titled from their source files.
 %
-%   The examples are the toolbox's main teaching material and were reachable
-%   only by opening them in the editor. Getting Started links to all twenty
-%   of them, and every one of those links pointed outside the doc folder.
-    examples = struct("File", {}, "Title", {});
+%   Separate from exporting them, so the contents tree and the landing page
+%   can be built before any example is allowed to run.
+    examples = struct("File", {}, "Title", {}, "Source", {});
     if strlength(folder) == 0 || ~isfolder(folder)
         return
     end
@@ -330,11 +422,22 @@ function examples = exportExamples(outDir, folder, runThem)
     end
     [~, order] = sort(string({listing.name}));
     for item = reshape(listing(order), 1, [])
-        source = fullfile(item.folder, item.name);
+        source = string(fullfile(item.folder, item.name));
         [~, stem] = fileparts(item.name);
-        export(source, fullfile(outDir, stem + ".html"), Run=runThem);
         examples(end+1) = struct("File", stem + ".html", ...
-                                 "Title", exampleTitle(source)); %#ok<AGROW>
+                                 "Title", exampleTitle(source), ...
+                                 "Source", source); %#ok<AGROW>
+    end
+end
+
+function exportExamples(outDir, examples, runThem)
+% Render the worked examples so the Help Browser can show them.
+%
+%   The examples are the toolbox's main teaching material and were reachable
+%   only by opening them in the editor. Getting Started links to all twenty
+%   of them, and every one of those links pointed outside the doc folder.
+    for e = reshape(examples, 1, [])
+        export(e.Source, fullfile(outDir, e.File), Run=runThem);
     end
 end
 
@@ -635,9 +738,9 @@ function writeClassPage(outDir, entry, pages)
             for k = find(entry.MethodGroups == group)
                 m = entry.Methods(k);
                 summary = summaryOf(string(m.Description));
-                if string(m.DefiningClass.Name) ~= entry.Name
+                if m.DefiningClass ~= entry.Name
                     summary = summary + " (inherited from " + ...
-                        string(m.DefiningClass.Name) + ")";
+                        m.DefiningClass + ")";
                 end
                 body = body + sprintf("<tr><td class=""name""><a href=""%s"">%s</a></td>" + ...
                     "<td>%s</td></tr>\n", methodFile(entry.Name, m.Name), ...
@@ -664,7 +767,7 @@ function writeMethodPage(outDir, entry, m, pages)
     body = body + sprintf("<p class=""parent"">Method of <a href=""%s.html"">%s</a></p>\n", ...
         entry.Name, escapeHtml(entry.Name));
 
-    owner = string(m.DefiningClass.Name);
+    owner = m.DefiningClass;
     if owner ~= entry.Name
         body = body + sprintf("<p class=""inherited"">Inherited from " + ...
             "<code>%s</code>.</p>\n", escapeHtml(owner));
@@ -724,17 +827,22 @@ function out = helpSections(text)
     body = strings(0);
     for k = 1:numel(lines)
         trimmed = strtrim(lines(k));
-        % Two label styles appear in this toolbox's help. Uppercase ones such
-        % as OUTPUTS: and OPTIONAL INPUTS (Name-Value arguments):, and mixed
-        % case ones such as Reference: and Note:. Both become headings.
-        isLabel = ~isempty(regexp(trimmed, "^[A-Z][A-Z /-]{2,}(\s*\([^)]*\))?:$", "once")) || ...
-                  ~isempty(regexp(trimmed, "^[A-Z][a-z]+(\s+[a-z]+){0,2}:$", "once"));
+        % A label only counts at the block's own indent. "Examples:" appears
+        % nested inside an Inputs list, and "Standard observer:" is nested
+        % inside the CIE170 property listing; promoting either to a heading
+        % takes the rest of the block with it, which filed every CIE170
+        % constant under Standard Observer.
+        atBaseIndent = strlength(lines(k)) - strlength(strip(lines(k), "left")) <= 4;
+        % Two standalone label styles appear in this toolbox's help.
+        % Uppercase ones such as OUTPUTS: and OPTIONAL INPUTS (Name-Value
+        % arguments):, and mixed case ones such as Reference: and Note:.
+        isLabel = atBaseIndent && ( ...
+                  ~isempty(regexp(trimmed, "^[A-Z][A-Z /-]{2,}(\s*\([^)]*\))?:$", "once")) || ...
+                  ~isempty(regexp(trimmed, "^[A-Z][a-z]+(\s+[a-z]+){0,2}:$", "once")));
         % Some labels carry their content on the same line, so they open a
-        % section rather than standing alone as one. Only at the block's own
-        % indent: "Examples:" appears nested inside an Inputs list, and
-        % promoting that to a heading would break the list apart.
+        % section rather than standing alone as one.
         inline = cell(0);
-        if strlength(lines(k)) - strlength(strip(lines(k), "left")) <= 4
+        if atBaseIndent
             % The colon is what separates a label from a sentence that
             % happens to open with a capitalised word. Without requiring it,
             % "IndividualCMF builds an L/M/S spectral sensitivity model"
