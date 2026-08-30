@@ -398,6 +398,18 @@ classdef Nomograms
             %   space, which means wavelength shifts translate to horizontal
             %   translations along the log-wavelength axis.
             %
+            %   This is the per-cone form: L, M and S each have their own
+            %   coefficients, from Table 1 of Stockman & Rider (2023). The three
+            %   cones are not the same shape even on a log-wavelength axis. At
+            %   half maximum they span 0.0821, 0.0738 and 0.0855 in log10
+            %   wavelength for L, M and S, so the M cone is the narrowest by
+            %   about 16 percent. Fitting each cone separately is what keeps the
+            %   resulting fundamentals on the CIE parity path.
+            %
+            %   See also Nomograms.stockmanRiderCommon, which fits all three
+            %   cones with a single translated shape and is the right choice for
+            %   an arbitrary lambda-max.
+            %
             %   INPUTS:
             %       wavelengths - Wavelengths in nm (column vector) (vector)
             %       coneType - Cone type: 'L', 'M', or 'S' (char)
@@ -456,6 +468,15 @@ classdef Nomograms
             %
             %   This ports pycone's LMSconelogcommon. It is a cross-species /
             %   arbitrary lambda-max model and is NOT on the CIE parity path.
+            %
+            %   Both this and Nomograms.stockmanRider exist because shape
+            %   invariance is only approximate. One shape cannot reproduce all
+            %   three CIE cone absorbances exactly, and using it here costs up
+            %   to 0.056, 0.083 and 0.058 of peak for L, M and S respectively,
+            %   the largest error being on the narrowest cone. What is bought
+            %   with that error is a template that can be placed at any
+            %   lambda-max, including pigments of other species, which the
+            %   per-cone templates of Table 1 cannot do.
             %
             %   INPUTS:
             %       wavelengths - Wavelengths in nm (column vector) (vector)
