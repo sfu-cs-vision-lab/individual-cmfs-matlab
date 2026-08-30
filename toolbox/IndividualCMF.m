@@ -1216,6 +1216,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       cone - Cone type: "L" or "M" (string)
             %       position - Amino acid position (e.g., 180) (int)
             %       amino_acid - Amino acid code (e.g., "Ser", "Ala") (string)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.setGenotype('L', 180, 'Ala');
+            %       disp(obs.L_LambdaMaxShift);
             arguments
                 obj
                 cone (1,1) string {mustBeMember(cone, ["L", "M"])}
@@ -1613,6 +1618,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       NormalizeOutput - Peak-normalize. Default:
             %                         obj.NormalizeOutput. Ignored when
             %                         OutputFormat is "absorbance".
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       peak = obs.L(555);
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1643,6 +1652,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       NormalizeOutput - Peak-normalize. Default:
             %                         obj.NormalizeOutput. Ignored when
             %                         OutputFormat is "absorbance".
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       peak = obs.M(543);
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1673,6 +1686,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       NormalizeOutput - Peak-normalize. Default:
             %                         obj.NormalizeOutput. Ignored when
             %                         OutputFormat is "absorbance".
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       peak = obs.S(442);
             arguments
                 obj
                 wl double = IndividualCMF.DEFAULT_WL
@@ -1797,6 +1814,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OUTPUTS:
             %       RGB - Nx3 matrix [R, G, B] containing tristimulus values.
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       RGB = obs.RGB((400:10:700)');
             arguments
                 obj
                 wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
@@ -1888,6 +1909,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %             (Lod, Mod, or Sod) is zero, i.e. the cone is
             %             absent (gene-deletion dichromacy).
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       LMS = obs.LMS((400:10:700)');
+            %       disp(size(LMS));
             arguments
                 obj
                 wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
@@ -1918,6 +1944,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OUTPUTS:
             %       spectrum - Lens optical density at each wavelength (vector)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(Age=70, LensModel="VanDeKraats2007");
+            %       density = obs.getLensDensitySpectrum((400:10:700)');
             arguments
                 obj
                 wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
@@ -1957,6 +1987,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OUTPUTS:
             %       spectrum - Macular optical density at each wavelength (vector)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(FieldSize=2);
+            %       density = obs.getMacularDensitySpectrum((400:10:700)');
             arguments
                 obj
                 wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
@@ -2003,6 +2037,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OUTPUTS:
             %       XYZ - Nx3 matrix
             %       wl  - Nx1 vector of wavelengths
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(StandardObserver=2);
+            %       XYZ = obs.XYZ((400:10:700)');
 
             arguments
                 obj
@@ -2438,6 +2476,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: "Chromaticity Diagram" (string)
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotChromaticity(Title="Spectral locus in lm");
             arguments
                 obj
                 options.Title (1,1) string = "Chromaticity Diagram"
@@ -2485,6 +2527,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Cones - Subset of cones to plot. Default: ["L" "M" "S"] (string array)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotLMS(Title="CIE 2006 2-degree observer");
             arguments
                 obj
                 options.Title (1,1) string = "LMS Cone Fundamentals"
@@ -2538,6 +2584,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       TransformationMatrix - 3x3 LMS->XYZ matrix override (double)
             %       ChannelColors - 3x3 [X; Y; Z] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(StandardObserver=10);
+            %       obs.plotXYZ();
             arguments
                 obj
                 options.Title (1,1) string = "CIE XYZ CMFs"
@@ -2579,6 +2629,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       ConeColors - 3x3 [R; G; B] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotRGBCMFs();
             arguments
                 obj
                 options.Title (1,1) string = "RGB CMFs"
@@ -2622,6 +2676,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Log - Plot log10 absorbance. Default: false (logical)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotAbsorbance();
             arguments
                 obj
                 options.Title (1,1) string = "Photopigment Absorbance"
@@ -2676,6 +2734,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Log - Plot log10 absorptance. Default: false (logical)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotAbsorptance();
             arguments
                 obj
                 options.Title (1,1) string = "Retinal Absorptance"
@@ -2722,6 +2784,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: "Quantal vs Energy" (string)
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotQuantalEnergy();
             arguments
                 obj
                 options.Title (1,1) string = "Quantal vs Energy"
@@ -2769,6 +2835,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title. Default: "Observer Comparison" (string)
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.compareTo(IndividualCMF(Age=70), Title="Age 32 against age 70");
             arguments
                 obj
                 otherObs (1,1) IndividualCMF
@@ -2811,6 +2881,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title (string)
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(Age=70, LensModel="VanDeKraats2007");
+            %       obs.plotLens();
             arguments
                 obj
                 options.Compare = []
@@ -2864,6 +2938,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Title - Custom title (string)
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF(FieldSize=10);
+            %       obs.plotMacular();
             arguments
                 obj
                 options.Compare = []
@@ -2927,6 +3005,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target TiledChartLayout. Default: a new 1x3 layout
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       obs.plotDiagnostics();
+            %       obs.plotDiagnostics(Parent=tiledlayout(3, 1));
             arguments
                 obj
                 options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
