@@ -245,6 +245,38 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 "The categorised list and the class's methods disagree.");
         end
 
+        function testExamplesAreExportedAndCrossLinksResolve(testCase)
+            % Getting Started links to all twenty examples with
+            % matlab:open('ExampleNN_Name.m'). Exporting drops the scheme and
+            % leaves a relative link to a source file that is not in the doc
+            % folder, so every one of them was dead in the Help Browser.
+            % Resolved from this file rather than from the working directory,
+            % which the test runner does not guarantee.
+            root = fileparts(fileparts(string(mfilename("fullpath"))));
+            outDir = testCase.OutDir;
+            generateDocs(OutputDir=outDir, Classes="Genotype", BuildIndex=false, ...
+                Verbose=false, Examples=fullfile(root, "toolbox", "examples"));
+            testCase.verifyTrue(isfile(fullfile(outDir, "Example01_Basics.html")));
+            testCase.verifyFalse(isfile(fullfile(outDir, "exampleDefaults.html")), ...
+                "exampleDefaults is a plain function, not an example page.");
+
+            listing = dir(fullfile(outDir, "*.html"));
+            dead = strings(0);
+            for item = reshape(listing, 1, [])
+                text = string(fileread(fullfile(item.folder, item.name)));
+                left = regexp(text, "href\s*=\s*""([^""]+\.m)""", "tokens");
+                for target = reshape(left, 1, [])
+                    dead(end+1) = item.name + " -> " + string(target{1}); %#ok<AGROW>
+                end
+            end
+            testCase.verifyEmpty(dead, ...
+                "Links still point at source files: " + strjoin(dead, "; "));
+
+            toc = string(fileread(testCase.tocPath()));
+            testCase.verifySubstring(toc, ">Examples");
+            testCase.verifySubstring(toc, "Example 01: The Basics");
+        end
+
         % Edge Case Tests
 
         function testHtmlIsEscaped(testCase)
@@ -269,7 +301,7 @@ classdef generateDocsTest < matlab.unittest.TestCase
 
         function generate(testCase, classNames)
             generateDocs(OutputDir=testCase.OutDir, Classes=classNames, ...
-                GettingStarted="", BuildIndex=false, Verbose=false);
+                GettingStarted="", Examples="", BuildIndex=false, Verbose=false);
         end
 
         function p = tocPath(testCase)

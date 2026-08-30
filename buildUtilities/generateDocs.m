@@ -39,6 +39,7 @@ function generateDocs(options)
         options.OutputDir (1,1) string = fullfile("toolbox", "doc", "html")
         options.Classes (1,:) string = defaultClasses()
         options.GettingStarted (1,1) string = fullfile("toolbox", "doc", "GettingStarted.m")
+        options.Examples (1,1) string = fullfile("toolbox", "examples")
         options.BuildIndex (1,1) logical = true
         options.Verbose (1,1) logical = true
     end
@@ -67,8 +68,12 @@ function generateDocs(options)
         pageCount = pageCount + 1;
     end
 
+    examples = exportExamples(outDir, options.Examples);
+    pageCount = pageCount + numel(examples);
+    relinkSources(outDir);
+
     docDir = fileparts(outDir);
-    writeHelpToc(fullfile(docDir, "helptoc.xml"), classes, hasGuide);
+    writeHelpToc(fullfile(docDir, "helptoc.xml"), classes, hasGuide, examples);
 
     if options.Verbose
         fprintf("Wrote %d pages to %s\n", pageCount, outDir);
@@ -149,6 +154,75 @@ function out = shortName(name)
 % Class name without its package, which is also its constructor's name.
     parts = split(string(name), ".");
     out = parts(end);
+end
+
+function examples = exportExamples(outDir, folder)
+% Export the worked examples so the Help Browser can show them.
+%
+%   The examples are the toolbox's main teaching material and were reachable
+%   only by opening them in the editor. Getting Started links to all twenty
+%   of them, and every one of those links pointed outside the doc folder.
+    examples = struct("File", {}, "Title", {});
+    if strlength(folder) == 0 || ~isfolder(folder)
+        return
+    end
+    listing = dir(fullfile(folder, "*.m"));
+    % dir matches without regard to case on macOS and Windows, so a pattern
+    % of Example*.m also picks up exampleDefaults.m, which is a plain
+    % function and not something export accepts.
+    listing = listing(startsWith(string({listing.name}), "Example"));
+    if isempty(listing)
+        return
+    end
+    [~, order] = sort(string({listing.name}));
+    for item = reshape(listing(order), 1, [])
+        source = fullfile(item.folder, item.name);
+        [~, stem] = fileparts(item.name);
+        export(source, fullfile(outDir, stem + ".html"), Run=false);
+        examples(end+1) = struct("File", stem + ".html", ...
+                                 "Title", exampleTitle(source)); %#ok<AGROW>
+    end
+end
+
+function out = exampleTitle(path)
+% The heading a plain-text Live Script opens with, for its contents entry.
+    lines = splitlines(string(fileread(path)));
+    hit = find(startsWith(strtrim(lines), "%[text] # "), 1);
+    if isempty(hit)
+        [~, out] = fileparts(path);
+        return
+    end
+    out = strtrim(extractAfter(strtrim(lines(hit)), "%[text] # "));
+end
+
+function relinkSources(outDir)
+% Point cross-references at the exported pages rather than at source files.
+%
+%   The examples and Getting Started link to each other with
+%   matlab:open('Example08_AgingEffects.m'). Exporting drops the scheme and
+%   leaves a relative link to a source file that is not in the doc folder, so
+%   every one of them is dead in the Help Browser. Rewriting the extension
+%   only where the page exists leaves any other .m reference alone.
+    listing = dir(fullfile(outDir, "*.html"));
+    available = string({listing.name});
+    for item = reshape(listing, 1, [])
+        path = fullfile(item.folder, item.name);
+        text = string(fileread(path));
+        found = regexp(text, "href\s*=\s*""([^""]+\.m)""", "tokens");
+        if isempty(found)
+            continue
+        end
+        original = text;
+        for target = unique(string([found{:}]))
+            page = regexprep(target, "\.m$", ".html");
+            if ismember(page, available)
+                text = replace(text, """" + target + """", """" + page + """");
+            end
+        end
+        if text ~= original
+            writeText(path, text);
+        end
+    end
 end
 
 function spec = referenceSpec()
@@ -485,13 +559,21 @@ function out = helpSections(text)
     out = out(keep);
 end
 
-function writeHelpToc(tocPath, classes, hasGuide)
+function writeHelpToc(tocPath, classes, hasGuide, examples)
 % Generate helptoc.xml so the Help Browser shows the reference tree.
     lines = "<?xml version='1.0' encoding='UTF-8'?>";
     lines(end+1) = "<toc version=""2.0"">";
     lines(end+1) = "<tocitem target=""html/index.html"">Individual CMF Toolbox";
     if hasGuide
         lines(end+1) = "    <tocitem target=""html/GettingStarted.html"">Getting Started</tocitem>";
+    end
+    if ~isempty(examples)
+        lines(end+1) = sprintf("    <tocitem target=""html/%s"">Examples", examples(1).File);
+        for e = reshape(examples, 1, [])
+            lines(end+1) = sprintf("        <tocitem target=""html/%s"">%s</tocitem>", ...
+                e.File, escapeHtml(e.Title)); %#ok<AGROW>
+        end
+        lines(end+1) = "    </tocitem>";
     end
     lines(end+1) = "    <tocitem target=""html/index.html"">Reference";
     % One line per class and per method, grouped so the tree opens on the
