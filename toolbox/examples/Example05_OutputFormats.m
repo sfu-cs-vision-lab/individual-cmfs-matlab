@@ -1,5 +1,5 @@
-%[text] # Example 09: Output Formats and Units
-%[text] A cone sensitivity can be reported at any of the four stages described in [Example 08](matlab:edit('Example08_ComputationalPipeline.m')). The `OutputFormat` property chooses between them.
+%[text] # Example 05: Output Formats and Units
+%[text] A cone sensitivity can be reported at any of the four stages described in [Example 04](matlab:edit('Example04_ComputationalPipeline.m')). The `OutputFormat` property chooses between them.
 %[text:table]
 %[text] | Format | Stage | Units |
 %[text] | --- | --- | --- |
@@ -8,7 +8,7 @@
 %[text] | `"quantal"` | Sensitivity at the cornea in photon units | Unitless relative sensitivity |
 %[text] | `"energy"`, the default | Sensitivity at the cornea in energy units | Unitless relative sensitivity |
 %[text:table]
-%[text] This example is about the property that selects between the stages. [Example 08](matlab:edit('Example08_ComputationalPipeline.m')) explains what happens at each one.
+%[text] This example is about the property that selects between the stages. [Example 04](matlab:edit('Example04_ComputationalPipeline.m')) explains what happens at each one.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
@@ -103,7 +103,7 @@ xlim([390 700]); ylim([-4 0.25])
 %[text] - Set `OutputFormat` in the constructor, assign it later, or pass it to a single call as `obs.LMS(wl, OutputFormat=...)`
 %[text] - `OutputFormat` affects `L`, `M`, `S` and `LMS` only. `RGB`, `XYZ` and the chromaticity methods always compute from normalized fundamentals in energy units, so changing the format does not alter them
 %[text] - `NormalizeOutput` and `LogOutput` act independently, except that `NormalizeOutput` is ignored for `absorbance` \
-%[text] **Next:** [Example 10: RGB Color Matching Functions](matlab:edit('Example10_RGBColorMatching.m')). RGB colour matching functions and how to choose the primaries.
+%[text] **Next:** [Example 06: Normalization Methods](matlab:edit('Example06_NormalizationMethods.m')). RGB colour matching functions and how to choose the primaries.
 
 %[appendix]{"version":"1.0"}
 %---

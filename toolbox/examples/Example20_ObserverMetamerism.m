@@ -1,4 +1,4 @@
-%[text] # Example 19: Observer Metamerism
+%[text] # Example 20: Observer Metamerism
 %[text] Two lights with different spectra are **metameric** for a given observer if they produce the same responses in that observer's three cones, and therefore look identical.
 %[text] The CIE 2006 standard observer sees a great many such pairs. Those same pairs are not metameric for every real observer, and that is what **observer metamerism** means. A match made for one observer fails for another. If every observer saw the same matches, one standard observer would be enough, and in practice it is not.
 %[text] This is a different phenomenon from illuminant metamerism, in which two surfaces match under one illuminant and not under another, for one observer. That is not covered here.
@@ -49,7 +49,7 @@ xlim([380 780])
 %%
 %[text] ## Step 3: an observer for whom the match fails
 %[text] The observer built below carries the alanine variant of the L-opsin, which is one of the two common alleles and is present in about 44% of the population.
-%[text] The alanine and serine templates lie 2.7 nm apart, but the standard observer uses neither of them. It uses the population mean, which is a weighted average of the two. Relative to that, pure alanine moves the L photopigment lambda-max by 1.5 nm and the peak of the L cone fundamental by 1.6 nm. See [Example 06](matlab:edit('Example06_GeneticVariants.m')).
+%[text] The alanine and serine templates lie 2.7 nm apart, but the standard observer uses neither of them. It uses the population mean, which is a weighted average of the two. Relative to that, pure alanine moves the L photopigment lambda-max by 1.5 nm and the peak of the L cone fundamental by 1.6 nm. See [Example 09](matlab:edit('Example09_GeneticVariants.m')).
 %[text] Nothing else about the observer changes. The M and S cones come back identical to the standard observer's, so every difference below is due to the L-cone variant alone.
 obsAla = IndividualCMF(L_OpsinTemplate="Alanine", FieldSize=2);
 XYZCmfsAla = obsAla.XYZ(wl);
@@ -90,7 +90,7 @@ table([0; shiftAla; shiftAged], ...
       'VariableNames', {'Euclidean_dxy'}, ...
       'RowNames', {'CIE 2-deg standard', 'Ser180Ala variant', '70 yr lens aging'})
 %[text] The separation for the 70 year old is roughly three to four times that for the polymorphism. An absorbing lens is therefore a substantial source of observer metamerism among older viewers.
-%[text] Note that the `VanDeKraats2007` model was fitted over 300 to 700 nm and is evaluated to 780 nm here, so its range warning is switched off above. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
+%[text] Note that the `VanDeKraats2007` model was fitted over 300 to 700 nm and is evaluated to 780 nm here, so its range warning is switched off above. See [Example 08](matlab:edit('Example08_AgingEffects.m')).
 %%
 %[text] ## Step 6: the three cases compared
 %[text] Plotting the displacement $(\\Delta x, \\Delta y) = xy_\\mathrm{mixture} - xy_\\mathrm{target}$ from a common origin puts the three observers on the same axes. The length of each arrow is the separation measured in Step 5.
@@ -123,7 +123,7 @@ xlim([-lim lim]); ylim([-lim lim])
 %[text] - Build any individual observer and integrate a spectrum against `obs.XYZ(wl)` to obtain its tristimulus response
 %[text] - `XYZ` applied to an individual observer uses the standard LMS to XYZ matrix and warns accordingly. That is the right choice for comparing observers, but the results are individual colorimetric values and not CIE tristimulus values
 %[text] - Observer metamerism is one of the reasons individual cone fundamentals matter in applied colour science. A match verified on the standard observer is not guaranteed to hold for the person who will actually look at it \
-%[text] This is the last example in the series. For related material see [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')), which compares observers at the level of the cone fundamentals, and [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')), which covers $V^{\\ast}(\\lambda)$ under genotype and age.
+%[text] This is the last example in the series. For related material see [Example 14: Observer Comparison](matlab:edit('Example14_ObserverComparison.m')), which compares observers at the level of the cone fundamentals, and [Example 13: Photopic Luminance](matlab:edit('Example13_Luminance.m')), which covers $V^{\\ast}(\\lambda)$ under genotype and age.
 
 %[appendix]{"version":"1.0"}
 %---

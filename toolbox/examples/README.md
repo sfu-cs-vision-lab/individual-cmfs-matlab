@@ -1,6 +1,6 @@
 # Individual CMF Toolbox Examples
 
-This folder contains 19 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
+This folder contains 20 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
 
 For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`) -- it is also the guide registered with the Add-On Manager.
 
@@ -14,40 +14,45 @@ Roughly ordered from foundations to advanced usage:
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
 | **ex01** | The Basics | ~5 min | Create your first observer, evaluate cones, and plot the fundamentals |
-| **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ color matching functions |
-| **ex03** | How an Observer Is Assembled | ~10 min | The three components; shape vs magnitude controls; what `CIE170` actually selects |
+| **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ colour matching functions |
+| **ex03** | How an Observer Is Assembled | ~10 min | The three components; shape vs magnitude controls; what `CIE170` selects |
+
+### Output and Normalization
+| Example | Topic | Time | Description |
+|---------|-------|------|-------------|
+| **ex04** | Computational Pipeline | ~12 min | Four stages from photopigment absorbance to corneal sensitivity |
+| **ex05** | Output Formats | ~12 min | `energy` / `quantal` / `absorptance` / `absorbance` and `LogOutput` |
+| **ex06** | Normalization Methods | ~10 min | Continuous vs Sampled; reproducing another implementation exactly |
 
 ### Physiological Variations
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex04** | Field Size Effects | ~12 min | Macular pigment + photopigment OD vs field size; algorithm choice |
-| **ex05** | Aging Effects | ~12 min | Lens yellowing, the `LensModel` choice, and Custom-mode protection |
-| **ex06** | Genetic Variants | ~12 min | Ser180Ala polymorphism, hybrid cones, `Genotype` and `applyGenotype` |
-| **ex07** | Photopigment Models | ~10 min | Stockman-Rider 2023 vs Govardovskii 2000 photopigment templates |
+| **ex07** | Field Size Effects | ~12 min | Macular pigment + photopigment OD vs field size; algorithm choice |
+| **ex08** | Aging Effects | ~12 min | Lens changes with age and the three `LensModel` choices |
+| **ex09** | Genetic Variants | ~12 min | Ser180Ala polymorphism, hybrid cones, `Genotype` and `applyGenotype` |
+| **ex10** | Photopigment Models | ~10 min | Stockman-Rider 2023 vs Govardovskii 2000 photopigment templates |
 
-### Pipeline & Outputs
+### Derived Colorimetry
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex08** | Computational Pipeline | ~12 min | Four-stage pipeline using only the public API |
-| **ex09** | Output Formats | ~12 min | `energy` / `quantal` / `absorptance` / `absorbance` and `LogOutput` |
-| **ex10** | RGB Color Matching | ~12 min | RGB CMFs, negative values, custom display primaries |
-| **ex11** | Chromaticity Diagrams | ~10 min | lm and CIE xy chromaticity, spectral locus |
-| **ex12** | Photopic Luminance | ~12 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age, and dichromat reductions |
+| **ex11** | RGB Color Matching | ~12 min | RGB CMFs, negative values, custom display primaries |
+| **ex12** | Chromaticity Diagrams | ~10 min | lm and CIE xy chromaticity, spectrum locus |
+| **ex13** | Photopic Luminance | ~12 min | `Luminance` / V*(lambda); MacLeod-Boynton; genotype, age and dichromat reductions |
 
 ### Observer Comparisons
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex13** | Observer Comparison | ~12 min | `compareTo`, RMS metrics, multi-observer comparison |
-| **ex14** | Dichromacy | ~10 min | Protan/deutan/tritan via `Lod`/`Mod`/`Sod` = 0; XYZ/RGB error path |
+| **ex14** | Observer Comparison | ~12 min | `compareTo`, difference measures, multiple observers at once |
+| **ex15** | Dichromacy | ~10 min | Protan/deutan/tritan via `Lod`/`Mod`/`Sod` = 0; XYZ/RGB error paths |
 
-### Reference & Reproducibility
+### Reference and Application
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
-| **ex15** | Advanced Customization | ~15 min | Every parameter, Custom-mode behaviour, `getParameters` round-trip |
-| **ex16** | Data Export | ~10 min | `evaluate`, CSV / MAT; round-trip pointer to Example 15 |
-| **ex17** | Normalization Methods | ~10 min | Continuous vs Sampled; reproducing external reference implementations |
-| **ex18** | Publication Figures | ~10 min | Six-panel aging composite; vector export via `exportgraphics` |
-| **ex19** | Observer Metamerism | ~12 min | A metameric pair breaks for individual observers; xy chromaticity shifts from Ser180Ala and lens aging |
+| **ex16** | Advanced Customization | ~15 min | Every parameter, the full Custom-mode rules, `getParameters` round trip |
+| **ex17** | Data Export | ~10 min | `evaluate`, CSV / MAT, and the metadata a file needs |
+| **ex18** | Publication Figures | ~8 min | Composing multi-panel figures and exporting them |
+| **ex19** | Working with Measured Spectra | ~12 min | Reading an instrument file, missing samples, model ranges, integration |
+| **ex20** | Observer Metamerism | ~12 min | A match for one observer failing for another; xy shifts from genotype and age |
 
 ## Running an example
 

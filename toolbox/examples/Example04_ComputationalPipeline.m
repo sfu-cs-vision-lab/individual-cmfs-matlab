@@ -1,4 +1,4 @@
-%[text] # Example 08: Computational Pipeline
+%[text] # Example 04: Computational Pipeline
 %[text] A cone fundamental is computed in four stages, which follow the light from the photopigment back out to the cornea:
 %[text] 1. **Photopigment absorbance.** The absorbance of the visual pigment itself, set by the opsin protein. It is anchored by the convention that absorbance is 1 at lambda-max, which the fitted templates approximate rather than meet exactly. Pass `LogOutput=true` for base-10 logarithmic values.
 %[text] 2. **Retinal absorptance.** The fraction of light the cone actually absorbs, which depends on the amount of pigment present.
@@ -9,7 +9,7 @@
 exampleDefaults();
 %%
 %[text] ## Reading each stage
-%[text] Setting `OutputFormat` to one of the four stage names makes `L`, `M`, `S` and `LMS` return that stage. A cone with an optical density of zero returns zero absorbance, which [Example 14](matlab:edit('Example14_Dichromacy.m')) covers.
+%[text] Setting `OutputFormat` to one of the four stage names makes `L`, `M`, `S` and `LMS` return that stage. A cone with an optical density of zero returns zero absorbance, which [Example 15](matlab:edit('Example15_Dichromacy.m')) covers.
 obs = IndividualCMF();
 wl = (390:1:700)';
 obs_abs  = IndividualCMF(OutputFormat="absorbance");
@@ -135,7 +135,7 @@ table(max(obs.L(wl)), max(obs_raw.L(wl)), ...
 %[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` return the two filter spectra
 %[text] - `obs.plotDiagnostics()` draws the absorbance, absorptance and corneal sensitivity stages in one call
 %[text] - `NormalizeOutput=false` returns the values without dividing by the peak \
-%[text] **Next:** [Example 09: Output Formats and Units](matlab:edit('Example09_OutputFormats.m')). Choosing between the `energy`, `quantal`, `absorptance` and `absorbance` outputs.
+%[text] **Next:** [Example 05: Output Formats](matlab:edit('Example05_OutputFormats.m')). Choosing between the `energy`, `quantal`, `absorptance` and `absorbance` outputs.
 
 %[appendix]{"version":"1.0"}
 %---

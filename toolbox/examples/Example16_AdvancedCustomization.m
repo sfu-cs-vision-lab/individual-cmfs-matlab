@@ -1,4 +1,4 @@
-%[text] # Example 15: Advanced Customization
+%[text] # Example 16: Advanced Customization
 %[text] This example covers every parameter the constructor accepts, the rules that decide when an assigned value is kept, and how to save an observer and restore it later.
 %[text] **Time:** about 15 minutes.
 exampleDefaults();
@@ -28,7 +28,9 @@ obs_custom = IndividualCMF( ...
 %%
 %[text] ## Assigning a density directly
 %[text] Assigning `LensDensity`, `MacularDensity`, `Lod`, `Mod` or `Sod` selects `"Custom"` for the matching algorithm property. The assigned value is then kept when the parameter that would otherwise determine it changes. That parameter is `FieldSize` for the macular and cone densities, and `Age`, `FieldSize` or `LensModel` for the lens density.
-%[text] The rule for when Custom mode is selected differs between the properties. For the cone and macular densities the toolbox compares the assigned value against the CIE table, and it has a table to compare against only at 2 and 10 deg. Assigning `Sod = 0.30` to a 10 deg observer therefore leaves the algorithm at `CIE170`, since that is the tabulated value, while the same assignment at 6 deg selects `Custom`. The lens density is compared against nothing, so assigning it always selects `Custom`, even at the standard value of 1.7649.
+%[text] This example is the one place the rules are stated in full. Earlier examples note only the fact that an assignment is normally kept.
+%[text] When Custom mode is selected differs between the components. For the cone and macular densities the toolbox compares the assigned value against the CIE table, and it has a table to compare against only at 2 and 10 deg. Assigning `Sod = 0.30` to a 10 deg observer therefore leaves the algorithm at `CIE170`, since that is the tabulated value, while the same assignment at 6 deg selects `Custom`. The lens density is compared against nothing, so assigning it always selects `Custom`, even at the standard value of 1.7649.
+%[text] Three further rules complete the picture. Custom mode applies to a group rather than a single property, so assigning one cone density holds all three. Assigning `[]` returns a density to its model. And `"Custom"` cannot be requested directly, since it is a state that follows from an assignment rather than a setting.
 %[text] An assigned density replaces the value the formula would have produced. It is not added to it. This differs from the model of Asano, Fairchild and Blonde (2016), in which an age term and a separate deviation term are combined.
 obs_override = IndividualCMF();
 obs_override.LensDensity    = 2.5;
@@ -83,7 +85,7 @@ title('S cone at two extreme lens densities'); legend('LensDensity = 1.2', 'Lens
 grid on; xlim([390 520])
 %%
 %[text] ### An L cone shifted by -15 nm
-%[text] A shift of this size is associated with strong anomalous trichromacy. [Example 14](matlab:edit('Example14_Dichromacy.m')) compares that condition with dichromacy.
+%[text] A shift of this size is associated with strong anomalous trichromacy. [Example 15](matlab:edit('Example15_Dichromacy.m')) compares that condition with dichromacy.
 tiledlayout(1, 1); nexttile
 plot(wl, obs_normal.L(wl),    'r-'); hold on
 plot(wl, obs_anomalous.L(wl), 'r--'); hold off
@@ -97,7 +99,7 @@ obs_normal.compareTo(obs_anomalous, Title="Normal (solid) and anomalous (dashed)
 xlim([390 700])
 %%
 %[text] ## Genotype and primaries
-%[text] The `Genotype` argument, `setGenotype` and `applyGenotype` are covered in [Example 06](matlab:edit('Example06_GeneticVariants.m')). Choosing `Primaries` is covered in [Example 10](matlab:edit('Example10_RGBColorMatching.m')).
+%[text] The `Genotype` argument, `setGenotype` and `applyGenotype` are covered in [Example 09](matlab:edit('Example09_GeneticVariants.m')). Choosing `Primaries` is covered in [Example 11](matlab:edit('Example11_RGBColorMatching.m')).
 %%
 %[text] ## Many parameters in one call
 %[text] The property listing that MATLAB prints for the result records the whole parameter set, including the parameters not named in the call and the values derived from those that were.
@@ -145,7 +147,7 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
       obs_shaped.Age == obs_reshaped.Age, ...
       isequal(obs_shaped.LMS(wl_check), obs_reshaped.LMS(wl_check)), ...
       'VariableNames', {'Source_Format', 'Restored_Format', 'Age_Matches', 'LMS_Identical'})
-%[text] The age transfers and the format does not, so the two arrays differ. Set the output settings on the receiving observer as well when they need to match. `NormalizationMethod` and `NormalizationGrid` behave the same way. See [Example 17](matlab:edit('Example17_NormalizationMethods.m')).
+%[text] The age transfers and the format does not, so the two arrays differ. Set the output settings on the receiving observer as well when they need to match. `NormalizationMethod` and `NormalizationGrid` behave the same way. See [Example 06](matlab:edit('Example06_NormalizationMethods.m')).
 %%
 %[text] ## Key takeaways
 %[text] - Saving the object with `save` preserves everything about an observer
@@ -155,7 +157,7 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
 %[text] - Assigning `[]` returns a density to the model and issues no warning. For lens density only, setting `LensDensityAlgorithm="Auto"` does the same and warns. The macular and photopigment algorithms have no `"Auto"` value, so `[]` is the only route back for those
 %[text] - The three density algorithm properties are `LensDensityAlgorithm`, `MacularDensityAlgorithm` and `PhotopigmentDensityAlgorithm`
 %[text] - `setGenotype`, `applyGenotype` and the `Genotype` argument are three ways to set a genotype, differing in how much they set at once \
-%[text] **Next:** [Example 16: Data Export Workflows](matlab:edit('Example16_DataExport.m')). Exporting cone fundamentals as tables, CSV and MAT files.
+%[text] **Next:** [Example 17: Data Export](matlab:edit('Example17_DataExport.m')). Exporting cone fundamentals as tables, CSV and MAT files.
 
 %[appendix]{"version":"1.0"}
 %---

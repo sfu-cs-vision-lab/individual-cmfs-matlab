@@ -868,98 +868,98 @@
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example04_FieldSizeEffects.m">
+                <File Location="Example07_FieldSizeEffects.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example05_AgingEffects.m">
+                <File Location="Example08_AgingEffects.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example06_GeneticVariants.m">
+                <File Location="Example09_GeneticVariants.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example07_PhotopigmentModels.m">
+                <File Location="Example10_PhotopigmentModels.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example08_ComputationalPipeline.m">
+                <File Location="Example04_ComputationalPipeline.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example09_OutputFormats.m">
+                <File Location="Example05_OutputFormats.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example10_RGBColorMatching.m">
+                <File Location="Example11_RGBColorMatching.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example11_ChromaticityDiagrams.m">
+                <File Location="Example12_ChromaticityDiagrams.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example12_Luminance.m">
+                <File Location="Example13_Luminance.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example13_ObserverComparison.m">
+                <File Location="Example14_ObserverComparison.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example14_Dichromacy.m">
+                <File Location="Example15_Dichromacy.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example15_AdvancedCustomization.m">
+                <File Location="Example16_AdvancedCustomization.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example16_DataExport.m">
+                <File Location="Example17_DataExport.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example17_NormalizationMethods.m">
+                <File Location="Example06_NormalizationMethods.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
@@ -973,7 +973,14 @@
                         </Category>
                     </Info>
                 </File>
-                <File Location="Example19_ObserverMetamerism.m">
+                <File Location="Example19_MeasuredSpectra.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="Example20_ObserverMetamerism.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>

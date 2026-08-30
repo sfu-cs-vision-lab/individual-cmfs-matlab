@@ -91,7 +91,7 @@ edit toolbox/doc/GettingStarted.m
 
 ### Note on Example Files
 
-The Getting Started guide lives at `toolbox/doc/GettingStarted.m`, and the 19 worked examples live in `toolbox/examples/`. All are authored as **Plain Text Live Scripts** (R2025a or newer): they render with rich formatting in the Live Editor while remaining standard executable `.m` scripts in older MATLAB releases. Open one in the Editor for the rich-text view, or read it directly as commented code.
+The Getting Started guide lives at `toolbox/doc/GettingStarted.m`, and the 20 worked examples live in `toolbox/examples/`. All are authored as **Plain Text Live Scripts** (R2025a or newer): they render with rich formatting in the Live Editor while remaining standard executable `.m` scripts in older MATLAB releases. Open one in the Editor for the rich-text view, or read it directly as commented code.
 
 ## Usage
 
@@ -203,7 +203,7 @@ individual-cmfs-matlab/
 |   |-- +enums/                                  Strategy / algorithm-mode enum types
 |   |-- +validators/                             Reusable mustBe* validators
 |   |-- doc/                                     GettingStarted.m (plain-text Live Script; registered as the toolbox Getting Started guide)
-|   `-- examples/                                19 plain-text Live Scripts Example01_Basics.m ... Example19_ObserverMetamerism.m (+ utils/)
+|   `-- examples/                                20 plain-text Live Scripts Example01_Basics.m ... Example20_ObserverMetamerism.m (+ utils/)
 |-- tests/                                       Unit, integration, and parity tests (matlab.unittest)
 |   |-- data/                                    CSV reference data (incl. cvrl/ Stockman-Sharpe tables)
 |   `-- parity/                                  Pycone parity adapter (compare.m, configs.json, run_pycone.py)

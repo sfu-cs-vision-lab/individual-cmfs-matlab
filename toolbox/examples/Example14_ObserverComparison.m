@@ -1,12 +1,12 @@
-%[text] # Example 13: Observer Comparison
+%[text] # Example 14: Observer Comparison
 %[text] This example compares two or more observers and measures the differences between them.
-%[text] Note that age has no effect on `LensDensity` under the default `LensModel="StockmanRider2023"`. The sections below use `LensModel="VanDeKraats2007"` wherever an age difference is needed. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
+%[text] Note that age has no effect on `LensDensity` under the default `LensModel="StockmanRider2023"`. The sections below use `LensModel="VanDeKraats2007"` wherever an age difference is needed. See [Example 08](matlab:edit('Example08_AgingEffects.m')).
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
 %[text] ## Overlaying two observers
 %[text] `compareTo` draws the reference observer with solid lines and the comparison observer with dashed lines, on one set of axes.
-%[text] Every comparison in this example uses peak-normalized fundamentals, which is the default. The measures reported below, the maximum absolute difference, the root mean square difference and the peak wavelengths, therefore describe differences of shape and not of overall sensitivity. Two observers can differ considerably in how much light they absorb and still show almost no difference here. [Example 05](matlab:edit('Example05_AgingEffects.m')) measures that separately.
+%[text] Every comparison in this example uses peak-normalized fundamentals, which is the default. The measures reported below, the maximum absolute difference, the root mean square difference and the peak wavelengths, therefore describe differences of shape and not of overall sensitivity. Two observers can differ considerably in how much light they absorb and still show almost no difference here. [Example 08](matlab:edit('Example08_AgingEffects.m')) measures that separately.
 wl = (390:1:700)';
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
@@ -143,7 +143,7 @@ obs_old   = IndividualCMF(LensModel="VanDeKraats2007", Age=70, FieldSize=10);
 % plotLens takes no Wavelength argument, so it evaluates on the default
 % 360-830 nm grid, past the VanDeKraats2007 model's 300-700 nm fit. The
 % extrapolation is a smooth bounded decay and the warning is switched off
-% because model range is not the subject here. See Example 05.
+% because model range is not the subject here. See Example 08.
 obs_young.ModelRangeWarning = false;
 obs_old.ModelRangeWarning = false;
 obs_young.plotLens(Compare=obs_old, Title="Lens density at age 25 and age 70");
@@ -160,7 +160,7 @@ obs2.plotMacular(Compare=obs10, Title="Macular pigment at 2 deg and 10 deg");
 %[text] - All of these measures use peak-normalized fundamentals, so they describe differences of shape rather than of overall sensitivity
 %[text] - The shape of a difference curve indicates its cause. A difference that changes sign at the peak means the curve moved along the wavelength axis
 %[text] - Age comparisons need `LensModel="VanDeKraats2007"`, since the default model does not depend on age \
-%[text] **Next:** [Example 14: Dichromacy](matlab:edit('Example14_Dichromacy.m')). Modelling a missing cone class with an optical density of zero.
+%[text] **Next:** [Example 15: Dichromacy](matlab:edit('Example15_Dichromacy.m')). Modelling a missing cone class with an optical density of zero.
 
 %[appendix]{"version":"1.0"}
 %---

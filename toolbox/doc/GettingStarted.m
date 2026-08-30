@@ -12,34 +12,35 @@ obs = IndividualCMF();
 obs.evaluate((450:50:650)', Data='LMS')
 %[text] The toolbox exists to build observers other than the standard one. Any biophysical parameter can be set in the constructor, and the result reports itself as individualized.
 IndividualCMF(Age=70, LensModel="VanDeKraats2007")
-%[text] `plotLMS` draws the same three cone fundamentals. It plots whatever the observer's output settings produce, so the curves reach 1.0 here only because `NormalizeOutput` is true by default. See [Example 09](matlab:open('Example09_OutputFormats.m')).
+%[text] `plotLMS` draws the same three cone fundamentals. It plots whatever the observer's output settings produce, so the curves reach 1.0 here only because `NormalizeOutput` is true by default. See [Example 05](matlab:open('Example05_OutputFormats.m')).
 obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## The examples
-%[text] The toolbox includes 19 worked examples, ordered roughly from the basics to more specialized topics. Click one to open it.
+%[text] The toolbox includes 20 worked examples, ordered roughly from the basics to more specialized topics. Click one to open it.
 %[text:table]
 %[text] | # | Example | What it covers |
 %[text] | --- | --- | --- |
 %[text] | 01 | [The Basics](matlab:open('Example01_Basics.m')) | Create an observer, evaluate the cones, plot them, and see what normalization does |
 %[text] | 02 | [Standard Observers](matlab:open('Example02_StandardObservers.m')) | The CIE 2006 2 deg and 10 deg observers, and the XYZ colour matching functions |
 %[text] | 03 | [How an Observer Is Assembled](matlab:open('Example03_HowAnObserverIsAssembled.m')) | The three components, the two controls each one has, and what `CIE170` selects |
-%[text] | 04 | [Field Size Effects](matlab:open('Example04_FieldSizeEffects.m')) | Macular pigment and photopigment density as functions of field size |
-%[text] | 05 | [Aging Effects](matlab:open('Example05_AgingEffects.m')) | How the lens changes with age, and the three `LensModel` choices |
-%[text] | 06 | [Genetic Variants](matlab:open('Example06_GeneticVariants.m')) | The Ser180Ala polymorphism, hybrid cones, and the `Genotype` argument |
-%[text] | 07 | [Photopigment Models](matlab:open('Example07_PhotopigmentModels.m')) | Stockman & Rider 2023 and Govardovskii 2000 compared |
-%[text] | 08 | [Computational Pipeline](matlab:open('Example08_ComputationalPipeline.m')) | The four stages from absorbance to corneal sensitivity |
-%[text] | 09 | [Output Formats](matlab:open('Example09_OutputFormats.m')) | `energy`, `quantal`, `absorptance` and `absorbance`, and `LogOutput` |
-%[text] | 10 | [RGB Color Matching](matlab:open('Example10_RGBColorMatching.m')) | RGB colour matching functions, negative values, and custom primaries |
-%[text] | 11 | [Chromaticity Diagrams](matlab:open('Example11_ChromaticityDiagrams.m')) | lm and CIE xy chromaticity, and the spectrum locus |
-%[text] | 12 | [Photopic Luminance](matlab:open('Example12_Luminance.m')) | $V^{\\ast}(\\lambda)$ and MacLeod-Boynton coordinates |
-%[text] | 13 | [Observer Comparison](matlab:open('Example13_ObserverComparison.m')) | `compareTo`, difference measures, and several observers at once |
-%[text] | 14 | [Dichromacy](matlab:open('Example14_Dichromacy.m')) | Modelling a missing cone with an optical density of zero |
-%[text] | 15 | [Advanced Customization](matlab:open('Example15_AdvancedCustomization.m')) | Every parameter, and saving and restoring an observer |
-%[text] | 16 | [Data Export](matlab:open('Example16_DataExport.m')) | `evaluate`, and writing CSV and MAT files |
-%[text] | 17 | [Normalization Methods](matlab:open('Example17_NormalizationMethods.m')) | The two ways of locating the peak, and matching another implementation |
+%[text] | 04 | [Computational Pipeline](matlab:open('Example04_ComputationalPipeline.m')) | The four stages from absorbance to corneal sensitivity |
+%[text] | 05 | [Output Formats](matlab:open('Example05_OutputFormats.m')) | `energy`, `quantal`, `absorptance` and `absorbance`, and `LogOutput` |
+%[text] | 06 | [Normalization Methods](matlab:open('Example06_NormalizationMethods.m')) | The two ways of locating the peak, and matching another implementation |
+%[text] | 07 | [Field Size Effects](matlab:open('Example07_FieldSizeEffects.m')) | Macular pigment and photopigment density as functions of field size |
+%[text] | 08 | [Aging Effects](matlab:open('Example08_AgingEffects.m')) | How the lens changes with age, and the three `LensModel` choices |
+%[text] | 09 | [Genetic Variants](matlab:open('Example09_GeneticVariants.m')) | The Ser180Ala polymorphism, hybrid cones, and the `Genotype` argument |
+%[text] | 10 | [Photopigment Models](matlab:open('Example10_PhotopigmentModels.m')) | Stockman & Rider 2023 and Govardovskii 2000 compared |
+%[text] | 11 | [RGB Color Matching](matlab:open('Example11_RGBColorMatching.m')) | RGB colour matching functions, negative values, and custom primaries |
+%[text] | 12 | [Chromaticity Diagrams](matlab:open('Example12_ChromaticityDiagrams.m')) | lm and CIE xy chromaticity, and the spectrum locus |
+%[text] | 13 | [Photopic Luminance](matlab:open('Example13_Luminance.m')) | $V^{\\ast}(\\lambda)$ and MacLeod-Boynton coordinates |
+%[text] | 14 | [Observer Comparison](matlab:open('Example14_ObserverComparison.m')) | `compareTo`, difference measures, and several observers at once |
+%[text] | 15 | [Dichromacy](matlab:open('Example15_Dichromacy.m')) | Modelling a missing cone with an optical density of zero |
+%[text] | 16 | [Advanced Customization](matlab:open('Example16_AdvancedCustomization.m')) | Every parameter, the Custom-mode rules, and saving and restoring an observer |
+%[text] | 17 | [Data Export](matlab:open('Example17_DataExport.m')) | `evaluate`, and writing CSV and MAT files |
 %[text] | 18 | [Publication Figures](matlab:open('Example18_PublicationFigures.m')) | Multi-panel figures and how to export them |
-%[text] | 19 | [Observer Metamerism](matlab:open('Example19_ObserverMetamerism.m')) | How a match made for one observer fails for another |
+%[text] | 19 | [Working with Measured Spectra](matlab:open('Example19_MeasuredSpectra.m')) | Reading a measured spectrum and integrating it against an observer |
+%[text] | 20 | [Observer Metamerism](matlab:open('Example20_ObserverMetamerism.m')) | How a match made for one observer fails for another |
 %[text:table]
 %%
 %[text] ## Further reading

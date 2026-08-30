@@ -622,7 +622,7 @@ the comparison protocol.
   `Lens` (e.g., `StockmanRiderPhotopigmentTemplate.m`,
   `Pokorny1987LensTemplate.m`).
 - Tests: `<ClassName>Test.m`.
-- Examples: `Example<NN>_<TitleCase>.m` where `<NN>` is a 2-digit sequence number (e.g., `Example06_GeneticVariants.m`).
+- Examples: `Example<NN>_<TitleCase>.m` where `<NN>` is a 2-digit sequence number (e.g., `Example09_GeneticVariants.m`).
 
 ## Public vs internal
 

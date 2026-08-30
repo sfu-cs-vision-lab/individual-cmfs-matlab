@@ -1,4 +1,4 @@
-%[text] # Example 16: Data Export Workflows
+%[text] # Example 17: Data Export Workflows
 %[text] This example shows how to get data out of an observer in a form other tools can read, as a MATLAB table or struct, as a CSV file, or as a MAT file. `writetable` also writes `.xlsx` files if given that extension, and works the same way.
 %[text] The main method is `obs.evaluate(wl, Data=...)`, which always returns a table. The first column is `Wavelength_nm` and the rest hold one channel each. The `Data` argument chooses the quantity. For a plain numeric array, call the named method such as `obs.LMS(wl)` instead.
 %[text] **Time:** about 10 minutes.
@@ -79,7 +79,7 @@ whos('-file', mat_path)
 %[text] ## Exporting several observers together
 %[text] The example below builds one observer per age, takes the L cone from each, and writes them to a single CSV file with the age in each column name. A recipient can then tell which column belongs to which observer without a separate metadata file.
 ages = [25, 50, 75];
-%[text] The `VanDeKraats2007` model was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
+%[text] The `VanDeKraats2007` model was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. See [Example 08](matlab:edit('Example08_AgingEffects.m')).
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
 [age_observers.ModelRangeWarning] = deal(false);
@@ -91,7 +91,7 @@ writetable(comparison, fullfile(tempdir, 'L_cone_by_age.csv'));
 head(comparison, 5)
 %%
 %[text] ## Saving the observer rather than its data
-%[text] To store the configuration of an observer rather than the numbers it produces, use `getParameters` to obtain an `ObserverParameters` object, save that, and restore it later with `setParameters`. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) works through it in full.
+%[text] To store the configuration of an observer rather than the numbers it produces, use `getParameters` to obtain an `ObserverParameters` object, save that, and restore it later with `setParameters`. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) works through it in full.
 %%
 %[text] ## The two routes agree
 %[text] `evaluate` calls the named methods rather than repeating their work, so the two give identical results. Use whichever suits the surrounding code.
@@ -105,7 +105,7 @@ isequal(LMS_direct, LMS_via_evaluate)
 %[text] - `writetable` writes CSV and Excel files, and `save` writes MAT files
 %[text] - A CSV file carries the numbers alone. Record the observer's parameters in a MAT file alongside, including `NormalizeOutput`, `NormalizationMethod` and `Primaries`, or put the varying parameter in the column names as the multi-observer export does
 %[text] - `getParameters` and `setParameters` transfer the observer itself. They do not transfer the output settings, which have to be recorded separately \
-%[text] **Next:** [Example 17: Normalization Methods](matlab:edit('Example17_NormalizationMethods.m')). The two ways of locating the peak, and reproducing another implementation exactly.
+%[text] **Next:** [Example 18: Publication Figures](matlab:edit('Example18_PublicationFigures.m')). The two ways of locating the peak, and reproducing another implementation exactly.
 
 %[appendix]{"version":"1.0"}
 %---

@@ -1,4 +1,4 @@
-%[text] # Example 04: Field Size Effects
+%[text] # Example 07: Field Size Effects
 %[text] Field size is the visual angle of the stimulus. It changes the cone fundamentals through two quantities:
 %[text] - **Macular pigment density.** The macular pigment lies over the fovea and thins with distance from it, so a larger field includes more retina carrying less pigment.
 %[text] - **Photopigment optical density.** Foveal cones have long outer segments and a high optical density. Cones further out have shorter segments and a lower density. \
@@ -108,7 +108,7 @@ table(100*abs(obs_formula.MacularDensity - obs_CIE.MacularDensity)/obs_CIE.Macul
 %[text] These formulae are the field size model that CIE 170-1:2006 specifies for 1 to 10 deg, based on the Moreland and Alexander and the Pokorny, Smith and Lutze measurements. They reproduce the tabulated values to within a tenth of a percent. At 2 deg the macular formula gives 0.350020 against a tabulated 0.350, and at 10 deg the differences are those tabulated above, 0.052% for macular density and 0.078% for L-cone optical density.
 %%
 %[text] ## Setting a density directly
-%[text] A density can also be assigned directly. Doing so selects `"Custom"` for the corresponding algorithm, so the assigned value is kept through later changes to field size or age. Assigning the value the CIE table already specifies is the exception and leaves the algorithm alone. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) gives the full rules.
+%[text] A density can also be assigned directly. Doing so normally selects `"Custom"` for the corresponding algorithm, so the assigned value is kept through later changes to field size or age. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) states the rules and their exceptions in full.
 obs_manual = IndividualCMF();
 obs_manual.MacularDensity = 0.5;
 obs_manual.Lod = 0.6;
@@ -134,8 +134,8 @@ grid on; xlim([380 520])
 %[text] - CIE defines exact values at 2 and 10 deg only. The formula-based algorithms cover the range in between
 %[text] - `MacularDensityAlgorithm="MorelandAlexander"` and `PhotopigmentDensityAlgorithm="PokornySmith"` select those formulae, and the toolbox selects them for you at any non-standard field size
 %[text] - Both quantities widen the S-cone curve at small field sizes rather than narrowing it
-%[text] - Assigning `MacularDensity`, `Lod` or a related property selects Custom mode for that component, unless the assigned value is the tabulated CIE one \
-%[text] **Next:** [Example 05: Aging Effects on Color Vision](matlab:edit('Example05_AgingEffects.m')). How age and the choice of `LensModel` affect the cone fundamentals.
+%[text] - Assigning `MacularDensity`, `Lod` or a related property normally selects Custom mode for that component. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) covers the exceptions \
+%[text] **Next:** [Example 08: Aging Effects](matlab:edit('Example08_AgingEffects.m')). How age and the choice of `LensModel` affect the cone fundamentals.
 
 %[appendix]{"version":"1.0"}
 %---

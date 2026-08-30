@@ -65,12 +65,12 @@ table([obs.Age; obsOld.Age; obsOldVdK.Age], ...
       [obs.LensDensity; obsOld.LensDensity; obsOldVdK.LensDensity], ...
       'VariableNames', {'Age', 'LensModel', 'LensDensity'}, ...
       'RowNames', {'Default age 32', 'Age 70, default model', 'Age 70, VanDeKraats2007'})
-%[text] At age 70 the default model returns the same lens density as at age 32. The `VanDeKraats2007` model returns 2.8084. [Example 05](matlab:edit('Example05_AgingEffects.m')) compares the three lens models properly.
+%[text] At age 70 the default model returns the same lens density as at age 32. The `VanDeKraats2007` model returns 2.8084. [Example 08](matlab:edit('Example08_AgingEffects.m')) compares the three lens models properly.
 %%
 %[text] ## Directly specified densities
 %[text] The density algorithms determine how each density is obtained. `CIE170` and the named formulae compute it from age and field size. `Custom` takes it as given.
-%[text] Assigning a value to `LensDensity`, `MacularDensity`, `Lod`, `Mod` or `Sod` normally selects `Custom` for the corresponding component. A density specified this way is then held constant, since the computation that would otherwise supply it is no longer performed. Later changes to `Age`, `FieldSize` or the associated model leave it unaltered.
-%[text] Assigning a cone or macular density that equals the tabulated CIE value is the exception. `Sod = 0.30` on a 10 deg observer leaves the algorithm at `CIE170`, since the assignment asks for the value the standard already specifies. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) gives the full rule.
+%[text] Assigning a value to `LensDensity`, `MacularDensity`, `Lod`, `Mod` or `Sod` normally selects `Custom` for the corresponding component, and the assigned value is then held constant against later changes to `Age`, `FieldSize` or the associated model.
+%[text] The rules have exceptions, and they differ between the components. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) states them in full and is the only place that does.
 obsPinned = IndividualCMF();
 algoBefore = string(obsPinned.LensDensityAlgorithm);
 obsPinned.LensDensity = 1.7;
@@ -81,21 +81,21 @@ table([algoBefore; algoAfter; string(obsPinned.LensDensityAlgorithm)], ...
       [obs.LensDensity; 1.7; obsPinned.LensDensity], ...
       'VariableNames', {'LensDensityAlgorithm', 'LensDensity'}, ...
       'RowNames', {'Before assignment', 'After assigning 1.7', 'After LensModel + Age=70'})
-%[text] The lens density stays at 1.7 after the model is changed to `VanDeKraats2007` and the age to 70, a combination that would otherwise give 2.8084. This is intended, since a directly specified density describes a particular observer and should not be replaced by a value computed for the mean. No warning accompanies the change, so an age series built from such an observer will show no variation in lens density. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) gives the full precedence rules.
+%[text] The lens density stays at 1.7 after the model is changed to `VanDeKraats2007` and the age to 70, a combination that would otherwise give 2.8084. This is intended, since a directly specified density describes a particular observer and should not be replaced by a value computed for the mean. No warning accompanies the change, so an age series built from such an observer will show no variation in lens density. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) gives the full precedence rules.
 %%
 %[text] ## Putting it together
 %[text] The components act in a fixed order. Light passes through the lens, then through the macular pigment, and what remains is absorbed by the photopigment. The absorbed light is converted to a sensitivity and then normalized. `plotDiagnostics` shows these parts for the assembled observer.
 obs.plotDiagnostics();
-%[text] Each of the remaining examples changes one of these parts. The physiological examples select a different model or density. The pipeline and output examples change how the result is reported. [Example 08](matlab:edit('Example08_ComputationalPipeline.m')) works through the same assembly one stage at a time using only public methods.
+%[text] Each of the remaining examples changes one of these parts. The physiological examples select a different model or density. The pipeline and output examples change how the result is reported. [Example 04](matlab:edit('Example04_ComputationalPipeline.m')) works through the same assembly one stage at a time using only public methods.
 %%
 %[text] ## Key takeaways
 %[text] - Three components combine to give a cone fundamental: the lens, the macular pigment and the photopigment
 %[text] - Each has two controls. A `...Model` property sets the shape of the spectrum, and a `...DensityAlgorithm` property sets the number that shape is scaled to
 %[text] - `CIE170` accepts any field size. It uses the same published formulae as the named alternatives and substitutes the tabulated value at 2 and 10 deg, which are the only field sizes where the two settings differ
 %[text] - Change a model when a different published curve is needed, for age work, for wavelengths outside the fitted range, or for non-human pigments
-%[text] - Assigning a density selects `Custom` for that component and holds the value constant against later changes, unless the value assigned is the one the CIE table already specifies
+%[text] - Assigning a density normally selects `Custom` for that component and holds the value constant against later changes. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) gives the exact rules
 %[text] - The default `LensModel="StockmanRider2023"` does not depend on age, so setting `Age` alone changes nothing \
-%[text] **Next:** [Example 04: Field Size Effects](matlab:edit('Example04_FieldSizeEffects.m')). Macular pigment and photopigment density as functions of field size.
+%[text] **Next:** [Example 04: Computational Pipeline](matlab:edit('Example04_ComputationalPipeline.m')). Macular pigment and photopigment density as functions of field size.
 
 %[appendix]{"version":"1.0"}
 %---

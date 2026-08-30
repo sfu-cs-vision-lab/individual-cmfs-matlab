@@ -1,4 +1,4 @@
-%[text] # Example 06: Genetic Variants and Cone Polymorphisms
+%[text] # Example 09: Genetic Variants and Cone Polymorphisms
 %[text] Differences in the L- and M-opsin genes shift the lambda-max of the photopigment they produce. The most common of these is the **Ser180Ala** substitution at codon 180 of the L-opsin gene. About 56% of the population carries serine at that position and about 44% carries alanine, and the alanine pigment peaks about 2.7 nm shorter than the serine pigment.
 %[text] That 2.7 nm figure is the shift in the photopigment lambda-max. The peak of the cone fundamental moves by a different amount, because the lens and the macular pigment filter the light before it reaches the cone.
 %[text] This example covers three ways of specifying a genotype, and the named hybrid templates.
@@ -107,7 +107,7 @@ title('L-in-M hybrid M cone')
 legend('Normal L (Serine)', 'Normal M', 'Hybrid M (L-in-M)', 'Location', 'bestoutside')
 %%
 %[text] ## Why this matters
-%[text] - **Metameric matching.** Two lights that match for one observer need not match for another with a different genotype at codon 180. [Example 19](matlab:edit('Example19_ObserverMetamerism.m')) works through an example.
+%[text] - **Metameric matching.** Two lights that match for one observer need not match for another with a different genotype at codon 180. [Example 20](matlab:edit('Example20_ObserverMetamerism.m')) works through an example.
 %[text] - **Colour discrimination.** The 2.7 nm shift changes the separation between the L and M cones slightly. Whether that produces a measurable difference in discrimination depends on the task, and remains an open question.
 %[text] - **Individual calibration.** Knowing an observer's genotype improves the accuracy of colorimetric predictions made for that observer.
 %[text] - **Population work.** Use `"Mean"` for population averages and a specific variant when modelling an individual. \
@@ -119,7 +119,7 @@ legend('Normal L (Serine)', 'Normal M', 'Hybrid M (L-in-M)', 'Location', 'bestou
 %[text] - `applyGenotype` chooses the templates and shifts from a five-letter string. It selects serine rather than mean for a normal L genotype, so it moves the observer away from the CIE standard even when the shifts are zero
 %[text] - A hybrid template changes the shape of the pigment. The lambda-max shift that comes with a real hybrid genotype is what moves it spectrally
 %[text] - `L_LambdaMaxShift` sets the peak directly, over the range -40 to +10 nm \
-%[text] **Next:** [Example 07: Photopigment Template Models](matlab:edit('Example07_PhotopigmentModels.m')). Comparing the Stockman and Rider (2023) and Govardovskii (2000) template models.
+%[text] **Next:** [Example 10: Photopigment Models](matlab:edit('Example10_PhotopigmentModels.m')). Comparing the Stockman and Rider (2023) and Govardovskii (2000) template models.
 
 %[appendix]{"version":"1.0"}
 %---

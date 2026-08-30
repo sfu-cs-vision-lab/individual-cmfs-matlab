@@ -1,4 +1,4 @@
-%[text] # Example 12: Photopic Luminance V*(lambda)
+%[text] # Example 13: Photopic Luminance V*(lambda)
 %[text] The photopic luminous efficiency function $V^{\\ast}(\\lambda)$ gives the weight the visual system attaches to each wavelength when luminance is computed. Luminance is the quantity that flicker photometry and additive matching measure.
 %[text] Luminance is not brightness. Brightness includes a contribution from the colour of the light, known as the Helmholtz-Kohlrausch effect, which $V^{\\ast}$ deliberately leaves out.
 %[text] $V^{\\ast}(\\lambda)$ is also not the 1924 $V(\\lambda)$ function, which underestimates sensitivity at short wavelengths. It is the later function based on the cone fundamentals, and it is the y-bar row of the CIE 170-2:2015 transform from LMS to XYZ. That makes it a weighted sum of the L and M cone fundamentals:
@@ -47,7 +47,7 @@ xlim([500 700])
 %[text] ## The effect of age
 %[text] As the lens absorbs more short-wavelength light with age, $V^{\\ast}(\\lambda)$ decreases at short wavelengths.
 %[text] At long wavelengths it increases instead, by 7 to 11 percent between ages 25 and 75. The lens absorbs almost nothing there, so normalization raises those wavelengths relative to the short ones that were reduced. The peak of $V^{\\ast}$ also moves from 551 to 558 nm.
-%[text] The `VanDeKraats2007` model is used because the default lens model does not depend on age. It was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. [Example 05](matlab:edit('Example05_AgingEffects.m')) describes the `ValidRange` and `Domain` behaviour.
+%[text] The `VanDeKraats2007` model is used because the default lens model does not depend on age. It was fitted over 300 to 700 nm, so evaluating it beyond 700 nm raises `IndividualCMF:WavelengthOutOfRange` once for each observer. The extrapolation is a smooth decay of bounded size and the values are kept. The warning is switched off below because the range of the model is not the subject here. [Example 08](matlab:edit('Example08_AgingEffects.m')) describes the `ValidRange` and `Domain` behaviour.
 ages = [25, 50, 75];
 agecol = lines(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, ...
@@ -140,8 +140,8 @@ table(Phi_v, Km, Phi_v / Km, ...
 %[text] - Genotype and age both produce differences in $V^{\\ast}(\\lambda)$ between individuals
 %[text] - For a dichromat, $V^{\\ast}(\\lambda)$ keeps only the term for the cone that is present. Without rescaling, a protanope peaks near 0.35 and a deuteranope near 0.69
 %[text] - Published dichromat luminous efficiency functions are usually rescaled to a peak of 1, which changes the comparison. A rescaled protanope is less sensitive than the standard observer at long wavelengths, at 0.13 of standard at 650 nm, while a rescaled deuteranope is more sensitive, at 1.39. The difference is a change of shape rather than an overall reduction
-%[text] - Dichromacy is covered in [Example 14](matlab:edit('Example14_Dichromacy.m')) \
-%[text] **Next:** [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')). Comparing two observers, visually and numerically.
+%[text] - Dichromacy is covered in [Example 15](matlab:edit('Example15_Dichromacy.m')) \
+%[text] **Next:** [Example 14: Observer Comparison](matlab:edit('Example14_ObserverComparison.m')). Comparing two observers, visually and numerically.
 
 %[appendix]{"version":"1.0"}
 %---

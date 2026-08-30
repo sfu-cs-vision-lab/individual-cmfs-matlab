@@ -1,9 +1,9 @@
-%[text] # Example 07: Photopigment Template Models
+%[text] # Example 10: Photopigment Template Models
 %[text] The `PhotopigmentModel` property selects the formula used for the photopigment absorbance spectrum. Two families are available:
-%[text] - **Stockman & Rider (2023)**, the default. An 8th-order Fourier series in log wavelength, fitted so that the resulting cone fundamentals reproduce the CIE 2006 standard. It supports the genetic variant and hybrid templates described in [Example 06](matlab:edit('Example06_GeneticVariants.m')).
+%[text] - **Stockman & Rider (2023)**, the default. An 8th-order Fourier series in log wavelength, fitted so that the resulting cone fundamentals reproduce the CIE 2006 standard. It supports the genetic variant and hybrid templates described in [Example 09](matlab:edit('Example09_GeneticVariants.m')).
 %[text] - **Govardovskii et al. (2000)**. An analytical template for A1 visual pigments, derived from microspectrophotometry across many species. It depends only on lambda-max, so it applies to non-human eyes as well. \
 %[text] Both act at the first stage of the calculation. Only the absorbance spectrum differs. The later stages, which apply the lens and macular pigment and convert to energy units, are the same in both cases.
-%[text] This example is about photopigment templates. The choice of lens template is covered in [Example 05](matlab:edit('Example05_AgingEffects.m')).
+%[text] This example is about photopigment templates. The choice of lens template is covered in [Example 08](matlab:edit('Example08_AgingEffects.m')).
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
@@ -117,7 +117,7 @@ xlim([380 780])
 %[text] - A1 is the human and mammalian chromophore. A2 is found in freshwater fish and larval amphibians, and its sensitivity decreases more slowly at long wavelengths with a stronger beta-band
 %[text] - The two models agree closely near each cone peak. The differences are small, systematic, and largest on the M cone at 591 nm
 %[text] - Assigning `obs.PhotopigmentModel` changes the template at any time and sets `Type` to `"Individualized"` \
-%[text] **Next:** [Example 08: Computational Pipeline](matlab:edit('Example08_ComputationalPipeline.m')). The four stages from photopigment absorbance to corneal sensitivity.
+%[text] **Next:** [Example 11: RGB Color Matching](matlab:edit('Example11_RGBColorMatching.m')). The four stages from photopigment absorbance to corneal sensitivity.
 
 %[appendix]{"version":"1.0"}
 %---

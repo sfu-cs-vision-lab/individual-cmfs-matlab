@@ -1,4 +1,4 @@
-%[text] # Example 05: Aging Effects on Color Vision
+%[text] # Example 08: Aging Effects on Color Vision
 %[text] The crystalline lens absorbs more short-wavelength light as a person ages. This example compares the three `LensModel` choices and measures the effect on the cone fundamentals.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
@@ -95,7 +95,7 @@ legend('StockmanRider2023 (no age dependence)', 'Pokorny1987', 'VanDeKraats2007'
 grid on
 %%
 %[text] ## Setting the lens density directly
-%[text] The density computed by the lens model can be replaced with a value of your own. Doing so selects `LensDensityAlgorithm="Custom"`, so the value is kept through later changes to `Age`. Assigning `obs.LensDensity = []` returns control to the model. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) covers this in full.
+%[text] The density computed by the lens model can be replaced with a value of your own. Doing so selects `LensDensityAlgorithm="Custom"`, so the value is kept through later changes to `Age`. Assigning `obs.LensDensity = []` returns control to the model. [Example 16](matlab:edit('Example16_AdvancedCustomization.m')) covers this in full.
 obs_override = IndividualCMF(LensModel="VanDeKraats2007", Age=55, LensDensity=2.0);
 table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensityAlgorithm), ...
       'VariableNames', {'Age', 'LensDensity', 'Algorithm'})
@@ -106,7 +106,7 @@ table(obs_override.Age, obs_override.LensDensity, string(obs_override.LensDensit
 %[text] - The normalized shape of the L and M curves changes little with age, which is what the peak-normalized plots show. Measuring the loss of sensitivity requires `NormalizeOutput=false`
 %[text] - Choose `LensModel` deliberately. Use `StockmanRider2023` to match the CIE standard, and `VanDeKraats2007` or `Pokorny1987` to study age
 %[text] - Assigning `LensDensity` directly selects Custom mode and keeps the value through later `Age` changes \
-%[text] **Next:** [Example 06: Genetic Variants and Cone Polymorphisms](matlab:edit('Example06_GeneticVariants.m')). The L-cone Ser180Ala polymorphism and the hybrid cone variants.
+%[text] **Next:** [Example 09: Genetic Variants](matlab:edit('Example09_GeneticVariants.m')). The L-cone Ser180Ala polymorphism and the hybrid cone variants.
 
 %[appendix]{"version":"1.0"}
 %---

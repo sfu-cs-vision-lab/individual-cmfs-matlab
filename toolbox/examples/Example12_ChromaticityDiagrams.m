@@ -1,9 +1,9 @@
-%[text] # Example 11: Chromaticity Diagrams
+%[text] # Example 12: Chromaticity Diagrams
 %[text] Chromaticity coordinates describe a colour independently of how intense it is. They are obtained by dividing each tristimulus value by the sum of all three:
 %[text] $ l = L / (L + M + S) $
 %[text] $ m = M / (L + M + S) $
 %[text] $ s = S / (L + M + S) = 1 - l - m $
-%[text] Because the three coordinates sum to 1, only two of them are needed. Note that this removes intensity rather than luminance. Luminance is the weighted sum $aL + bM$, which is a different quantity, and [Example 12](matlab:edit('Example12_Luminance.m')) covers it.
+%[text] Because the three coordinates sum to 1, only two of them are needed. Note that this removes intensity rather than luminance. Luminance is the weighted sum $aL + bM$, which is a different quantity, and [Example 13](matlab:edit('Example13_Luminance.m')) covers it.
 %[text] The **spectrum locus** is the curve traced out by monochromatic lights. Colours that can be produced by real lights fill the region bounded by that curve together with the **line of purples**, which joins its two ends and represents mixtures of long and short wavelengths.
 %[text] The spectrum locus is slightly concave at its short-wavelength end, so the line of purples is drawn by convention between the two endpoints rather than between the outermost points of the region. This leaves the stretch from 391 to 425 nm a little outside the drawn boundary, by at most 0.010.
 %[text] **Time:** about 10 minutes.
@@ -81,7 +81,7 @@ table(maxDiff, wl(iMax), mean(locus_diff), ...
 %[text] ## The effect of age
 %[text] With age, the short-wavelength end of the locus moves to lower values of $l$. At 400 nm, $l$ falls from about 0.065 at age 25 to 0.027 at age 75.
 %[text] The reason this happens at all is worth setting out. For a light of a single wavelength, the lens and the macular pigment reduce L, M and S by the same factor, and that factor cancels exactly in a ratio such as $L/(L+M+S)$. Filtering alone therefore has no effect on chromaticity. What does have an effect is the peak normalization applied to each cone separately, which divides the three cones by three different numbers.
-%[text] The `VanDeKraats2007` lens model is used here because the default model does not depend on age. See [Example 05](matlab:edit('Example05_AgingEffects.m')).
+%[text] The `VanDeKraats2007` lens model is used here because the default model does not depend on age. See [Example 08](matlab:edit('Example08_AgingEffects.m')).
 ages = [25, 50, 75];
 agecol = lines(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, ...
@@ -126,7 +126,7 @@ xlim([-0.05 0.8]); ylim([0 0.9])
 %[text] ## Why xy is undefined for a dichromat
 %[text] CIE xy is computed from XYZ, and XYZ is computed from LMS by a fixed matrix. That matrix is perfectly invertible. The difficulty lies with the observer rather than with the matrix.
 %[text] An observer missing one class of cone produces responses that vary in only two dimensions. Passing them through a transform built for three cone types returns three numbers, but those numbers describe a two-dimensional set of colours using three-dimensional coordinates, and the result cannot be interpreted as a tristimulus value.
-%[text] The toolbox raises `IndividualCMF:XYZUndefinedForDichromat` rather than returning it. Supplying a transformation matrix of your own overrides this. See [Example 14](matlab:edit('Example14_Dichromacy.m')).
+%[text] The toolbox raises `IndividualCMF:XYZUndefinedForDichromat` rather than returning it. Supplying a transformation matrix of your own overrides this. See [Example 15](matlab:edit('Example15_Dichromacy.m')).
 obs_protan = IndividualCMF(); obs_protan.Lod = 0;
 try
     obs_protan.xyChromaticity(wl);
@@ -142,7 +142,7 @@ end
 %[text] - Real colours fill the region bounded by the spectrum locus and the line of purples, which is drawn between the two endpoints by convention
 %[text] - The 2 deg and 10 deg observers differ slightly. Age moves the short-wavelength end of the locus, and requires `LensModel="VanDeKraats2007"` to have any effect at all
 %[text] - CIE xy raises an error for a dichromat. The reason is that a dichromat's responses span two dimensions, not that the transformation matrix is singular \
-%[text] **Next:** [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')). The luminous efficiency function for individual observers.
+%[text] **Next:** [Example 13: Photopic Luminance](matlab:edit('Example13_Luminance.m')). The luminous efficiency function for individual observers.
 
 %[appendix]{"version":"1.0"}
 %---

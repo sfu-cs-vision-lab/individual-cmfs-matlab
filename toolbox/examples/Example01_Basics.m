@@ -28,9 +28,9 @@ obs.plotLMS(Title="Human Cone Fundamentals (CIE 2006 10 deg Observer)");
 xlim([380 780]); ylim([0 1.05])
 %%
 %[text] ## Peak normalization
-%[text] The output is peak-normalized by default. Each cone is divided by its own largest value, so every curve reaches 1.0 at its peak. [Example 17](matlab:edit('Example17_NormalizationMethods.m')) describes how the peak is found, and [Example 09](matlab:edit('Example09_OutputFormats.m')) shows how to turn normalization off.
+%[text] The output is peak-normalized by default. Each cone is divided by its own largest value, so every curve reaches 1.0 at its peak. [Example 06](matlab:edit('Example06_NormalizationMethods.m')) describes how the peak is found, and [Example 05](matlab:edit('Example05_OutputFormats.m')) shows how to turn normalization off.
 %[text] The peak sensitivities in the table below are slightly less than 1.0. This is because the true peak of each cone falls between the 1 nm points sampled here rather than on one of them.
-%[text] The peak wavelengths are those of the complete cone fundamental in energy units. They are not the lambda-max values of the photopigments. The lens, the macular pigment and the conversion from quantal to energy units all move the peak away from lambda-max. [Example 08](matlab:edit('Example08_ComputationalPipeline.m')) works through those stages.
+%[text] The peak wavelengths are those of the complete cone fundamental in energy units. They are not the lambda-max values of the photopigments. The lens, the macular pigment and the conversion from quantal to energy units all move the peak away from lambda-max. [Example 04](matlab:edit('Example04_ComputationalPipeline.m')) works through those stages.
 [peakL, iL] = max(L);
 [peakM, iM] = max(M);
 [peakS, iS] = max(S);
@@ -63,7 +63,7 @@ LMS_RGB = array2table(obs.LMS(RGB_peaks), ...
 %[text] - Wavelengths can be a single value or a vector. These examples use columns
 %[text] - Output is normalized by default. It reaches 1.0 at the true peak and slightly less on a sampled grid
 %[text] - Wavelengths need not be whole numbers \
-%[text] **Next:** [Example 02: CIE 2006 Standard Observers](matlab:edit('Example02_StandardObservers.m')). The 2 deg and 10 deg observers, and how the toolbox records CIE compliance.
+%[text] **Next:** [Example 02: Standard Observers](matlab:edit('Example02_StandardObservers.m')). The 2 deg and 10 deg observers, and how the toolbox records CIE compliance.
 
 %[appendix]{"version":"1.0"}
 %---
