@@ -23,6 +23,11 @@ function generateDocs(options)
 %                   enumerations that name their legal settings.
 %       GettingStarted - plain-text Live Script to export alongside the
 %                   reference (string). Pass "" to skip it.
+%       Examples  - folder of worked examples to export (string). Pass ""
+%                   to skip them.
+%       RunExamples - run the examples and the guide while exporting, so
+%                   that their figures and printed output appear in the
+%                   pages (logical). Default true.
 %       BuildIndex - build the help search database (logical). Default true.
 %       Verbose   - print progress (logical). Default true.
 %
@@ -40,6 +45,7 @@ function generateDocs(options)
         options.Classes (1,:) string = defaultClasses()
         options.GettingStarted (1,1) string = fullfile("toolbox", "doc", "GettingStarted.m")
         options.Examples (1,1) string = fullfile("toolbox", "examples")
+        options.RunExamples (1,1) logical = true
         options.BuildIndex (1,1) logical = true
         options.Verbose (1,1) logical = true
     end
@@ -49,17 +55,24 @@ function generateDocs(options)
         mkdir(outDir);
     end
 
-    classes = collectMetadata(options.Classes);
+    lightFigures = forceLightFigures(); %#ok<NASGU>
 
-    pages = pageLookup(classes);
-
-    % The guide and the examples are exported first so that the landing page
-    % can route to them, and link only to what was actually written.
+    % The guide and the examples are exported first, so that the landing page
+    % can route to them and link only to what was actually written.
+    %
+    % Metadata is collected afterwards rather than before. Running a script
+    % can make MATLAB reload a class definition, and meta.property objects
+    % gathered beforehand are handles into the old one, which then read as
+    % deleted.
     hasGuide = strlength(options.GettingStarted) > 0 && isfile(options.GettingStarted);
     if hasGuide
-        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), Run=false);
+        export(options.GettingStarted, fullfile(outDir, "GettingStarted.html"), ...
+            Run=options.RunExamples);
     end
-    examples = exportExamples(outDir, options.Examples);
+    examples = exportExamples(outDir, options.Examples, options.RunExamples);
+
+    classes = collectMetadata(options.Classes);
+    pages = pageLookup(classes);
 
     pageCount = 1 + hasGuide + numel(examples);
     writeIndexPage(outDir, classes, hasGuide, examples);
@@ -162,6 +175,48 @@ function out = shortName(name)
     out = parts(end);
 end
 
+function restorer = forceLightFigures()
+% Pin figure output to the light theme for as long as the caller holds the
+% returned object.
+%
+%   Figures follow the desktop theme, and IndividualCMF.neutralColor reads
+%   the theme to choose black or white for its lines. Building the pages on
+%   a dark desktop would therefore ship dark plots onto a light page. The
+%   release build runs on a headless CI runner, whose theme is not something
+%   this toolbox controls, so the theme is pinned rather than assumed.
+%
+%   A temporary value lasts for the session and never touches the saved
+%   preference, and it is cleared when the caller releases the object.
+    restorer = [];
+    try
+        pref = settings().matlab.appearance.figure.GraphicsTheme;
+    catch
+        % Figures gained a theme in R2025a. Before that the output is light.
+        return
+    end
+    hadTemporary = hasTemporaryValue(pref);
+    previous = "";
+    if hadTemporary
+        previous = string(pref.TemporaryValue);
+    end
+    pref.TemporaryValue = "light";
+    restorer = onCleanup(@() restoreFigureTheme(hadTemporary, previous));
+end
+
+function restoreFigureTheme(hadTemporary, previous)
+% Put the figure theme back as it was, rather than merely clearing it.
+%
+%   Clearing unconditionally would discard a temporary value the caller had
+%   set for its own reasons, which is a session setting this function
+%   borrows rather than owns.
+    pref = settings().matlab.appearance.figure.GraphicsTheme;
+    if hadTemporary
+        pref.TemporaryValue = previous;
+    else
+        clearTemporaryValue(pref);
+    end
+end
+
 function pages = pageLookup(classes)
 % Every documented name, mapped to the page that documents it.
 %
@@ -255,7 +310,7 @@ function out = memberDescriptions(members, detail)
     end
 end
 
-function examples = exportExamples(outDir, folder)
+function examples = exportExamples(outDir, folder, runThem)
 % Export the worked examples so the Help Browser can show them.
 %
 %   The examples are the toolbox's main teaching material and were reachable
@@ -277,7 +332,7 @@ function examples = exportExamples(outDir, folder)
     for item = reshape(listing(order), 1, [])
         source = fullfile(item.folder, item.name);
         [~, stem] = fileparts(item.name);
-        export(source, fullfile(outDir, stem + ".html"), Run=false);
+        export(source, fullfile(outDir, stem + ".html"), Run=runThem);
         examples(end+1) = struct("File", stem + ".html", ...
                                  "Title", exampleTitle(source)); %#ok<AGROW>
     end

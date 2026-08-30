@@ -255,7 +255,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             root = fileparts(fileparts(string(mfilename("fullpath"))));
             outDir = testCase.OutDir;
             generateDocs(OutputDir=outDir, Classes="Genotype", BuildIndex=false, ...
-                Verbose=false, Examples=fullfile(root, "toolbox", "examples"));
+                Verbose=false, Examples=fullfile(root, "toolbox", "examples"), ...
+                RunExamples=false);
             testCase.verifyTrue(isfile(fullfile(outDir, "Example01_Basics.html")));
             testCase.verifyFalse(isfile(fullfile(outDir, "exampleDefaults.html")), ...
                 "exampleDefaults is a plain function, not an example page.");
@@ -312,7 +313,7 @@ classdef generateDocsTest < matlab.unittest.TestCase
             generateDocs(OutputDir=testCase.OutDir, ...
                 Classes=["IndividualCMF", "enums.LensModel"], ...
                 GettingStarted=fullfile(root, "toolbox", "doc", "GettingStarted.m"), ...
-                Examples="", BuildIndex=false, Verbose=false);
+                Examples="", RunExamples=false, BuildIndex=false, Verbose=false);
             testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "group-observers.html")));
             toc = string(fileread(testCase.tocPath()));
             testCase.verifySubstring(toc, "html/group-observers.html");
@@ -330,6 +331,36 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 'tokens', 'once');
             testCase.verifyNotEmpty(row);
             testCase.verifySubstring(row{1}, "Age-dependent");
+        end
+
+        function testExampleFiguresAreRenderedInTheLightTheme(testCase)
+            % Figures follow the desktop theme, and neutralColor reads the
+            % theme to choose black or white lines. The release build runs on
+            % a CI runner whose theme this toolbox does not control, so a
+            % dark one would ship white-on-white plots onto a light page.
+            pref = settings().matlab.appearance.figure.GraphicsTheme;
+            testCase.assumeTrue(isprop(pref, "TemporaryValue"), ...
+                "Figures gained a theme in R2025a.");
+            pref.TemporaryValue = "dark";
+            testCase.addTeardown(@() clearTemporaryValue( ...
+                settings().matlab.appearance.figure.GraphicsTheme));
+            % generateDocs restores the value it found rather than clearing
+            % it, so the teardown above still has something to clear.
+
+            probeDir = fullfile(testCase.DocDir, "probe");
+            mkdir(probeDir);
+            fid = fopen(fullfile(probeDir, "Example99_Theme.m"), "w");
+            fprintf(fid, "%%[text] # Example 99\n");
+            fprintf(fid, "disp(""STYLE="" + string(get(gcf, 'Theme').BaseColorStyle))\n");
+            fprintf(fid, "\n%%[appendix]{""version"":""1.0""}\n");
+            fclose(fid);
+
+            generateDocs(OutputDir=testCase.OutDir, Classes="Genotype", ...
+                GettingStarted="", Examples=probeDir, RunExamples=true, ...
+                BuildIndex=false, Verbose=false);
+            page = string(fileread(fullfile(testCase.OutDir, "Example99_Theme.html")));
+            testCase.verifySubstring(page, "STYLE=light", ...
+                "The export inherited the dark desktop theme.");
         end
 
         % Edge Case Tests

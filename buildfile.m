@@ -155,9 +155,15 @@ function docTask(context)
 %
 %   The pages are build output and are not checked in. "package" depends on
 %   this task so a packaged .mltbx always ships current documentation.
+%
+%   Paths are absolute because the release build runs this task in CI, where
+%   the working directory is not something this file should assume.
     rootDir = context.Plan.RootFolder;
     outDir = fullfile(rootDir, 'toolbox', 'doc', 'html');
-    generateDocs(OutputDir=string(outDir), BuildIndex=true, Verbose=true);
+    generateDocs(OutputDir=string(outDir), ...
+        GettingStarted=string(fullfile(rootDir, 'toolbox', 'doc', 'GettingStarted.m')), ...
+        Examples=string(fullfile(rootDir, 'toolbox', 'examples')), ...
+        BuildIndex=true, Verbose=true);
 end
 
 function packageTask(context)
