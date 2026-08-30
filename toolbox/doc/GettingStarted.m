@@ -1,5 +1,5 @@
 %[text] # Getting Started
-%[text] The **Individual Cone Fundamentals Toolbox** computes the LMS cone spectral sensitivities of a particular observer, and the quantities derived from them. Those include the RGB colour matching functions, the CIE XYZ colour matching functions, photopic luminance $V^*(\\lambda)$ and the chromaticity coordinates.
+%[text] The **Individual Cone Fundamentals Toolbox** computes the LMS cone spectral sensitivities of a particular observer, and the quantities derived from them. Those include the RGB colour matching functions, the CIE XYZ colour matching functions, photopic luminance $V^{\\ast}(\\lambda)$ and the chromaticity coordinates.
 %[text] The observer is described by biophysical parameters: the opsin genotype, the age, the retinal field size, and the optical densities of the lens, the macular pigment and the photopigment.
 %[text] The defaults reproduce the CIE 170-1:2006 standard observers. They do so through the Stockman & Rider (2023) formulae rather than the published tables, which the formulae follow to about 0.02 in units where the peak sensitivity is 1.0. [Example 01](matlab:open('Example01_Basics.m')) gives the exact figures. Every parameter can be set individually, to model a particular observer or to vary one quantity at a time.
 %[text] This guide is a short orientation and a map of the worked examples. Run the cell below, then open whichever example covers what you need.
@@ -29,7 +29,7 @@ xlim([380 780]); ylim([0 1.05])
 %[text] | 09 | [Output Formats](matlab:open('Example09_OutputFormats.m')) | `energy`, `quantal`, `absorptance` and `absorbance`, and `LogOutput` |
 %[text] | 10 | [RGB Color Matching](matlab:open('Example10_RGBColorMatching.m')) | RGB colour matching functions, negative values, and custom primaries |
 %[text] | 11 | [Chromaticity Diagrams](matlab:open('Example11_ChromaticityDiagrams.m')) | lm and CIE xy chromaticity, and the spectrum locus |
-%[text] | 12 | [Photopic Luminance](matlab:open('Example12_Luminance.m')) | $V^*(\\lambda)$ and MacLeod-Boynton coordinates |
+%[text] | 12 | [Photopic Luminance](matlab:open('Example12_Luminance.m')) | $V^{\\ast}(\\lambda)$ and MacLeod-Boynton coordinates |
 %[text] | 13 | [Observer Comparison](matlab:open('Example13_ObserverComparison.m')) | `compareTo`, difference measures, and several observers at once |
 %[text] | 14 | [Dichromacy](matlab:open('Example14_Dichromacy.m')) | Modelling a missing cone with an optical density of zero |
 %[text] | 15 | [Advanced Customization](matlab:open('Example15_AdvancedCustomization.m')) | Every parameter, and saving and restoring an observer |

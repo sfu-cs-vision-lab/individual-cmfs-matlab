@@ -110,8 +110,8 @@ title('L-cone sensitivity')
 legend('Location', 'bestoutside'); xlim([500 650])
 %%
 %[text] ### Photopic luminance
-%[text] The axes cover 500 to 620 nm. Over that range the peak of $V^{*}(\\lambda)$ can be seen to move about 5.7 nm towards longer wavelengths between ages 25 and 70, which is not visible across the full spectrum.
-%[text] These curves keep the default normalization, since the movement of the peak is the subject here rather than the height of the curve. Note that $V^{*}$ is a weighted sum of two normalized cones, so its own maximum is slightly above 1, near 1.01.
+%[text] The axes cover 500 to 620 nm. Over that range the peak of $V^{\\ast}(\\lambda)$ can be seen to move about 5.7 nm towards longer wavelengths between ages 25 and 70, which is not visible across the full spectrum.
+%[text] These curves keep the default normalization, since the movement of the peak is the subject here rather than the height of the curve. Note that $V^{\\ast}$ is a weighted sum of two normalized cones, so its own maximum is slightly above 1, near 1.01.
 tiledlayout(1, 1); nexttile
 plot(wl, age_observers(1).Luminance(wl), 'Color', agecol(1,:), ...
     'DisplayName', sprintf('Age %d', ages(1)))

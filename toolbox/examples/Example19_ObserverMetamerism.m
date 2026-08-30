@@ -122,7 +122,7 @@ xlim([-lim lim]); ylim([-lim lim])
 %[text] - Build any individual observer and integrate a spectrum against `obs.XYZ(wl)` to obtain its tristimulus response
 %[text] - `XYZ` applied to an individual observer uses the standard LMS to XYZ matrix and warns accordingly. That is the right choice for comparing observers, but the results are individual colorimetric values and not CIE tristimulus values
 %[text] - Observer metamerism is one of the reasons individual cone fundamentals matter in applied colour science. A match verified on the standard observer is not guaranteed to hold for the person who will actually look at it \
-%[text] This is the last example in the series. For related material see [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')), which compares observers at the level of the cone fundamentals, and [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')), which covers $V^{*}(\\lambda)$ under genotype and age.
+%[text] This is the last example in the series. For related material see [Example 13: Observer Comparison](matlab:edit('Example13_ObserverComparison.m')), which compares observers at the level of the cone fundamentals, and [Example 12: Photopic Luminance](matlab:edit('Example12_Luminance.m')), which covers $V^{\\ast}(\\lambda)$ under genotype and age.
 
 %[appendix]{"version":"1.0"}
 %---
