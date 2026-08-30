@@ -399,12 +399,15 @@ classdef Nomograms
             %   translations along the log-wavelength axis.
             %
             %   This is the per-cone form: L, M and S each have their own
-            %   coefficients, from Table 1 of Stockman & Rider (2023). The three
-            %   cones are not the same shape even on a log-wavelength axis. At
-            %   half maximum they span 0.0821, 0.0738 and 0.0855 in log10
-            %   wavelength for L, M and S, so the M cone is the narrowest by
-            %   about 16 percent. Fitting each cone separately is what keeps the
-            %   resulting fundamentals on the CIE parity path.
+            %   coefficients, from Table 1 of Stockman & Rider (2023). In the
+            %   paper's words, the reason for fitting each cone separately is
+            %   that "the underlying CIE spectra have slightly different shapes
+            %   even when plotted against a logarithmic function of wavelength",
+            %   and separate fits minimize the difference from the tabulated
+            %   spectra. Their standard errors are 0.003, 0.003 and 0.004 for
+            %   L, M and S. This is the form on the CIE parity path, and
+            %   corresponds to pycone's individual templates, Lserconelog,
+            %   Mconelog and Sconelog.
             %
             %   See also Nomograms.stockmanRiderCommon, which fits all three
             %   cones with a single translated shape and is the right choice for
@@ -470,13 +473,19 @@ classdef Nomograms
             %   arbitrary lambda-max model and is NOT on the CIE parity path.
             %
             %   Both this and Nomograms.stockmanRider exist because shape
-            %   invariance is only approximate. One shape cannot reproduce all
-            %   three CIE cone absorbances exactly, and using it here costs up
-            %   to 0.056, 0.083 and 0.058 of peak for L, M and S respectively,
-            %   the largest error being on the narrowest cone. What is bought
-            %   with that error is a template that can be placed at any
+            %   invariance is only approximate. The paper attributes the
+            %   residuals to "differences in the widths of the underlying CIE
+            %   absorbance spectra that cannot be accounted for by a single
+            %   template shape", and reports a standard error of 0.0260 for this
+            %   fit against 0.003, 0.003 and 0.004 for the individual fits,
+            %   calling the single-template result "considerably worse".
+            %
+            %   What that error buys is a template that can be placed at any
             %   lambda-max, including pigments of other species, which the
-            %   per-cone templates of Table 1 cannot do.
+            %   per-cone templates of Table 1 cannot do. The paper gives both
+            %   uses: highlighting the shape differences between the CIE
+            %   spectra, and generating absorbance spectra for photopigments in
+            %   other species.
             %
             %   INPUTS:
             %       wavelengths - Wavelengths in nm (column vector) (vector)
