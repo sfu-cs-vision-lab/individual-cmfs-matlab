@@ -230,7 +230,9 @@ classdef generateDocsTest < matlab.unittest.TestCase
             categories = string(regexp(page, '<h3>([^<]+)</h3>', 'tokens'));
             testCase.verifyGreaterThan(numel(categories), 3, ...
                 "The method table was not split into categories.");
-            testCase.verifyTrue(any(categories == "Plot and Compare"));
+            testCase.verifyTrue(any(categories == "Plot Results and Compare"));
+            testCase.verifyTrue(any(categories == "Plot Model Stages"), ...
+                "The plotting methods split by what they draw.");
 
             mc = meta.class.fromName("IndividualCMF");
             meths = mc.MethodList;
@@ -314,9 +316,13 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 Classes=["IndividualCMF", "enums.LensModel"], ...
                 GettingStarted=fullfile(root, "toolbox", "doc", "GettingStarted.m"), ...
                 Examples="", RunExamples=false, BuildIndex=false, Verbose=false);
-            testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "group-observers.html")));
+            testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "group-lens-models.html")));
+            testCase.verifyFalse(isfile(fullfile(testCase.OutDir, "group-.html")), ...
+                "An ungrouped class should not produce a wrapper page.");
             toc = string(fileread(testCase.tocPath()));
-            testCase.verifySubstring(toc, "html/group-observers.html");
+            testCase.verifySubstring(toc, "html/group-lens-models.html");
+            testCase.verifySubstring(toc, ">IndividualCMF", ...
+                "The entry point should sit directly under Reference.");
             index = string(fileread(fullfile(testCase.OutDir, "index.html")));
             testCase.verifySubstring(index, "GettingStarted.html", ...
                 "The landing page should route to Getting Started.");
