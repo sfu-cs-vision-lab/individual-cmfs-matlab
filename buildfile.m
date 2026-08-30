@@ -29,7 +29,7 @@ function plan = buildfile
     plan = buildplan(localfunctions);
 
     plan("test").Dependencies = "check";
-    plan("package").Dependencies = ["check", "test"];
+    plan("package").Dependencies = ["check", "test", "doc"];
     plan.DefaultTasks = ["check", "test"];
 end
 
@@ -146,6 +146,20 @@ function testTask(context)
 end
 
 
+function docTask(context)
+% Generate the Help Browser reference from the class metadata.
+%
+%   Writes toolbox/doc/html and toolbox/doc/helptoc.xml, then builds the
+%   help search database. Every page is derived from meta.class, so the
+%   reference tracks the source without anyone maintaining a second copy.
+%
+%   The pages are build output and are not checked in. "package" depends on
+%   this task so a packaged .mltbx always ships current documentation.
+    rootDir = context.Plan.RootFolder;
+    outDir = fullfile(rootDir, 'toolbox', 'doc', 'html');
+    generateDocs(OutputDir=string(outDir), BuildIndex=true, Verbose=true);
+end
+
 function packageTask(context)
 % Build a redistributable .mltbx into dist/.
 %
@@ -196,6 +210,11 @@ function packageTask(context)
     % under the packaged toolbox folder (toolbox/doc), so it is already in
     % opts.ToolboxFiles.
     opts.ToolboxGettingStartedGuide = fullfile(toolboxDir, 'doc', 'GettingStarted.m');
+    % MATLAB Drive drops a .MATLABDriveTag marker into every folder it syncs.
+    % Those are local sync state and have no business in a redistributable, so
+    % drop them from the file list before packaging.
+    packagedFiles = string(opts.ToolboxFiles);
+    opts.ToolboxFiles = packagedFiles(~endsWith(packagedFiles, ".MATLABDriveTag"));
     opts.OutputFile = outputFile;
 
     matlab.addons.toolbox.packageToolbox(opts);

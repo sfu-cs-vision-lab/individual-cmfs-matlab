@@ -42,6 +42,20 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
+            <File Location="generateDocs.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="info.xml">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
             <File Location="writeBadgeJson.m">
                 <Info>
                     <Category UUID="FileClassCategory">
@@ -116,6 +130,13 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
+            <File Location="generateDocsTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
             <File Location="GenotypeIntegrationTest.m">
                 <Info>
                     <Category UUID="FileClassCategory">
