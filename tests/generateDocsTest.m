@@ -69,7 +69,7 @@ classdef generateDocsTest < matlab.unittest.TestCase
         function testSummaryIsASentenceNotAWrappedLine(testCase)
             testCase.generate("Genotype");
             page = string(fileread(fullfile(testCase.OutDir, "Genotype.html")));
-            lead = regexp(page, '<p class="lead">(.*?)</p>', 'tokens', 'once');
+            lead = regexp(page, '<p class="purpose">(.*?)</p>', 'tokens', 'once');
             testCase.verifyNotEmpty(lead);
             testCase.verifyGreaterThan(strlength(lead{1}), 40, ...
                 "Summary looks like a truncated first line rather than a sentence.");
@@ -114,6 +114,48 @@ classdef generateDocsTest < matlab.unittest.TestCase
                 "Broken helptoc.xml targets: " + strjoin(broken, "; "));
         end
 
+        function testPropertySummaryStopsAtTheFirstSentence(testCase)
+            % MATLAB splits property help at the first line break, so a
+            % wrapped first sentence arrives in two pieces and the rest of
+            % the block follows it. The table cell must show one sentence.
+            % A regex escaping error made this silently emit the whole help
+            % block, which the index table's length cap then hid.
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.html")));
+            cell = regexp(page, '<tr><td class="name">PhotopigmentModel</td>.*?</tr>', 'match', 'once');
+            testCase.verifyNotEmpty(cell);
+            text = strtrim(regexprep(cell, '<[^>]*>', ' '));
+            testCase.verifySubstring(text, "Photopigment template model");
+            testCase.verifyEqual(count(text, "."), 1, ...
+                "The property cell should hold exactly one sentence.");
+            testCase.verifyLessThan(strlength(text), 200, ...
+                "The property cell looks like the whole help block.");
+        end
+
+        function testEachMethodGetsItsOwnPage(testCase)
+            % The Help Browser loads pages in a frame, where a fragment does
+            % not scroll the document. Navigating to a method therefore needs
+            % a page of its own rather than an anchor.
+            testCase.generate("IndividualCMF");
+            testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "IndividualCMF.LMS.html")));
+            testCase.verifyTrue(isfile(fullfile(testCase.OutDir, "IndividualCMF.plotLMS.html")));
+            toc = string(fileread(testCase.tocPath()));
+            testCase.verifyEqual(count(toc, "#"), 0, ...
+                "helptoc.xml still points at fragments, which do not navigate.");
+        end
+
+        function testMethodHelpIsSplitIntoSections(testCase)
+            testCase.generate("IndividualCMF");
+            page = string(fileread(fullfile(testCase.OutDir, "IndividualCMF.LMS.html")));
+            headings = string(regexp(page, '<h2>([^<]+)</h2>', 'tokens'));
+            testCase.verifyNotEmpty(headings, ...
+                "Method help was not split into labelled sections.");
+            testCase.verifyTrue(any(contains(headings, "Outputs")), ...
+                "Expected an Outputs section for LMS.");
+            testCase.verifyFalse(contains(page, "OUTPUTS:"), ...
+                "A raw uppercase label survived into the rendered body.");
+        end
+
         % Edge Case Tests
 
         function testHtmlIsEscaped(testCase)
@@ -138,7 +180,7 @@ classdef generateDocsTest < matlab.unittest.TestCase
 
         function generate(testCase, classNames)
             generateDocs(OutputDir=testCase.OutDir, Classes=classNames, ...
-                BuildIndex=false, Verbose=false);
+                GettingStarted="", BuildIndex=false, Verbose=false);
         end
 
         function p = tocPath(testCase)
