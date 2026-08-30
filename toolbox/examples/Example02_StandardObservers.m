@@ -49,10 +49,11 @@ xlim([380 780])
 %[text] The L and M curves are reduced most near 499 and 498 nm, by 0.104 and 0.168. The S curve is higher for the 2 deg observer below 445 nm and lower between 445 and 465 nm.
 %%
 %[text] ## Standards compliance
-%[text] Two read-only properties record whether an observer still matches a CIE standard:
+%[text] Two properties record whether an observer still matches a CIE standard:
 %[text] - `Type` is `"CIE 170-1:2006"` for an observer that matches a tabulated standard, and `"Individualized"` otherwise.
 %[text] - `StandardObserver` is `2` or `10` for the matching standard, and `0` otherwise. \
-%[text] Changing anything biophysical sets both to the non-standard values. This includes `Age`, `FieldSize`, any density, any template and any lambda-max shift. Changing how the result is reported does not, since `OutputFormat`, `NormalizeOutput`, `LogOutput` and `NormalizationMethod` alter the presentation of the numbers rather than the observer they describe.
+%[text] Changing a biophysical parameter normally sets both to the non-standard values. This includes `Age`, `FieldSize`, any density, any template and any lambda-max shift. The exception is a change that lands on the other tabulated standard: setting `FieldSize` to 2 on a 10 deg observer gives the 2 deg standard observer, with a macular density of 0.350 and cone densities of 0.50, so it stays standard. A field size of 4 or 6 does not, since the standard tabulates no values there.
+%[text] Changing how the result is reported never affects either property, since `OutputFormat`, `NormalizeOutput`, `LogOutput` and `NormalizationMethod` alter the presentation of the numbers rather than the observer they describe.
 obs_test = IndividualCMF(StandardObserver=10);
 typeBefore = obs_test.Type;
 soBefore   = obs_test.StandardObserver;

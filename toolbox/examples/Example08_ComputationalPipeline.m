@@ -1,6 +1,6 @@
 %[text] # Example 08: Computational Pipeline
 %[text] A cone fundamental is computed in four stages, which follow the light from the photopigment back out to the cornea:
-%[text] 1. **Photopigment absorbance.** The absorbance of the visual pigment itself, set by the opsin protein. It is scaled so that its largest value is 1 at lambda-max. Pass `LogOutput=true` for base-10 logarithmic values.
+%[text] 1. **Photopigment absorbance.** The absorbance of the visual pigment itself, set by the opsin protein. It is anchored by the convention that absorbance is 1 at lambda-max, which the fitted templates approximate rather than meet exactly. Pass `LogOutput=true` for base-10 logarithmic values.
 %[text] 2. **Retinal absorptance.** The fraction of light the cone actually absorbs, which depends on the amount of pigment present.
 %[text] 3. **Corneal quantal sensitivity.** Sensitivity measured at the cornea, in photon units, after the lens and macular pigment have absorbed part of the light.
 %[text] 4. **Corneal energy sensitivity.** The same quantity in energy units. \
@@ -118,7 +118,7 @@ legend('Quantal', 'Energy', 'Location', 'bestoutside')
 grid on; xlim([390 700])
 %%
 %[text] ## The built-in diagnostic figure
-%[text] `plotDiagnostics` draws the whole pipeline in a single call.
+%[text] `plotDiagnostics` draws three of the four stages in a single call: the pigment absorbance, the retinal absorptance and the corneal sensitivity. It does not draw the quantal stage separately.
 obs.plotDiagnostics(Wavelength=wl);
 %%
 %[text] ## Unnormalized values
@@ -133,7 +133,7 @@ table(max(obs.L(wl)), max(obs_raw.L(wl)), ...
 %[text] - A higher optical density widens the curve, by self-screening. The lens and the macular pigment reduce the sensitivity at short wavelengths. The conversion to energy units moves the peak to longer wavelengths
 %[text] - Absorbance ignores `NormalizeOutput` and keeps the scale of its template, which is what gives `Lod`, `Mod` and `Sod` their meaning
 %[text] - `obs.getLensDensitySpectrum(wl)` and `obs.getMacularDensitySpectrum(wl)` return the two filter spectra
-%[text] - `obs.plotDiagnostics()` draws the whole pipeline in one call
+%[text] - `obs.plotDiagnostics()` draws the absorbance, absorptance and corneal sensitivity stages in one call
 %[text] - `NormalizeOutput=false` returns the values without dividing by the peak \
 %[text] **Next:** [Example 09: Output Formats and Units](matlab:edit('Example09_OutputFormats.m')). Choosing between the `energy`, `quantal`, `absorptance` and `absorbance` outputs.
 

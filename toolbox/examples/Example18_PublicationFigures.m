@@ -1,5 +1,5 @@
 %[text] # Example 18: Publication-Quality Figures
-%[text] Multi-panel figures are built with MATLAB's own `tiledlayout` and `nexttile`. Every plot method in the toolbox accepts a `Parent` argument, so passing it `nexttile()` places that plot in the next tile. Figures are written to file with `exportgraphics`.
+%[text] Multi-panel figures are built with MATLAB's own `tiledlayout` and `nexttile`. The plot methods that draw a single set of axes accept a `Parent` argument, so passing it `nexttile()` places that plot in the next tile. `plotDiagnostics` is the exception, since it draws three panels of its own: give it the layout itself rather than a tile. Figures are written to file with `exportgraphics`.
 %[text] This example draws on the material of the earlier ones and assembles it into figures of the kind used in papers and presentations.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
@@ -251,12 +251,12 @@ exportgraphics(gcf, fullfile(tempdir, "observer_panel.png"), Resolution=300);
 %%
 %[text] ## Key takeaways
 %[text] - Pass `NormalizeOutput=false` whenever a figure is about how much sensitivity changes. The default normalization sets every curve to 1.0 at its peak, and no warning is given. Here it would have hidden the 61% S-cone loss entirely
-%[text] - Every plot method accepts `Parent=`, so `nexttile` places them into any layout. That is how all three composite figures here are built
+%[text] - The single-axes plot methods accept `Parent=`, so `nexttile` places them into any layout. That is how all three composite figures here are built. `plotDiagnostics` draws three panels and takes the layout rather than a tile
 %[text] - A section that draws inline never calls `figure`, so the plot appears under that section in the Live Editor. Draw the first curve before `hold on` rather than after, so that re-running a section replaces the curves instead of adding a second set
 %[text] - A standalone figure calls `figure` first, then `tiledlayout` and `nexttile`. Size the figure to its tile grid by choosing a size per tile and multiplying by the number of rows and columns. The three composites here use 400 by 320, 500 by 420 and 500 by 375 pixels per tile, which keep each panel wider than it is tall. Inside a fresh `nexttile` a bare `hold on` is safe, since the tile starts empty
 %[text] - A section that follows a standalone figure must call `figure` before drawing. Otherwise `gcf` is still the previous figure, and a bare `plot` draws into one of its tiles and replaces that panel
 %[text] - Use `parula` or another sequential colormap for an age axis, since `lines` gives no sense of order. Note that parula ends in a pale yellow, so on a white background the oldest observer draws the faintest line, which is usually the one of most interest. `flipud(parula(n))` or a truncated map puts the strongest contrast where it is wanted
-%[text] - Age sweeps need `LensModel="VanDeKraats2007"`, since the default model does not depend on age
+%[text] - Age sweeps need `LensModel="VanDeKraats2007"` or `"Pokorny1987"`, since the default model does not depend on age
 %[text] - `sgtitle` adds a title above a whole `tiledlayout`
 %[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` writes the figure. Prefer PDF, SVG or EPS over a raster format \
 %[text] **Next:** [Example 19: Observer Metamerism](matlab:edit('Example19_ObserverMetamerism.m')). How a match made for the standard observer fails for an individual observer.

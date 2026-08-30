@@ -1,10 +1,10 @@
 %[text] # Example 10: RGB Color Matching Functions
 %[text] RGB colour matching functions give the amounts of three primary lights needed to match each wavelength of the spectrum. The toolbox computes them from the LMS cone fundamentals by a linear transformation, which is fixed once the three primary wavelengths are chosen.
 %[text] The default primaries are those of Stiles and Burch (1959) for 10 deg matching:
-%[text] - R at 645.15 nm, nominally 15 500 cm$^{-1}$, which is 645.16 nm. Both CIE 170 and pycone carry the rounded value.
+%[text] - R at 645.15 nm. The nominal figure is 15 500 cm$^{-1}$, which converts to 645.161 nm, so the value both CIE 170 and pycone carry is not simply that conversion rounded. This toolbox uses 645.15 to match them.
 %[text] - G at 526.32 nm, which is 19 000 cm$^{-1}$.
 %[text] - B at 444.44 nm, which is 22 500 cm$^{-1}$. \
-%[text] Any other set of primary wavelengths can be supplied, which allows a particular display to be modelled.
+%[text] Any other set of independent primary wavelengths can be supplied. The last section of this example covers what independent means here and what happens when the condition fails.
 %[text] **Time:** about 12 minutes.
 exampleDefaults();
 %%
@@ -36,10 +36,12 @@ table(RGB_at_500(1), RGB_at_500(2), RGB_at_500(3), ...
       'VariableNames', {'R_500nm', 'G_500nm', 'B_500nm'})
 %%
 %[text] ## Where the transformation comes from
-%[text] Build the 3 by 3 matrix whose column $j$ is the LMS response at primary wavelength $\\lambda_j$. Equivalently, row $i$ holds the response of cone $i$ at the three primaries. The LMS to RGB transformation is the inverse of that matrix. Applying it makes each primary wavelength produce a unit vector along its own RGB axis, which is why the three functions take the values 1, 0 and 0 at the primaries.
+%[text] Build the 3 by 3 matrix whose column $j$ is the LMS response at primary wavelength $\\lambda_j$. The LMS to RGB transformation is the inverse of that matrix. Applying it makes each primary wavelength produce a unit vector along its own RGB axis, which is why the three functions take the values 1, 0 and 0 at the primaries.
+%[text] The array printed below is the transpose of that matrix, since `LMS` returns one row per wavelength. Its first row is the LMS response at the red primary.
 LMS_at_primaries = obs.LMS(obs.Primaries')
 %%
-%[text] The R function reaches its largest value near 599 nm rather than at its own primary of 645 nm. Normalization sets R to 1 at 645 nm, and at that wavelength the L cone is already well below its own peak sensitivity. At wavelengths where the cones are more sensitive the function therefore rises above 1.
+%[text] The R function reaches its largest value, 3.20, at 598 nm rather than at its own primary of 645 nm.
+%[text] The value of 1 at 645 nm comes from the matrix inverse rather than from peak normalization, since the transformation is built to send each primary to a unit vector. Away from the primaries the functions are not bounded by 1. At 645 nm the L cone is well below its own peak, so a test light at a wavelength where the cones respond more strongly needs several units of the red primary to match.
 %%
 %[text] ## Supplying your own primaries
 %[text] `Primaries` accepts a 1 by 3 vector of wavelengths. The panels below compare the toolbox default against a display with primaries near the peak wavelengths typical of sRGB.
@@ -54,7 +56,7 @@ xlim([390 700])
 %%
 %[text] ## Three sets of primaries compared
 %[text] Adobe RGB covers a wider range of colours than sRGB. It does so through its green primary alone, since the two systems share the same red and blue primaries.
-%[text] The effect on the colour matching functions is not where it might be expected. The green function changes little. It peaks at 536 nm under both systems and its largest change is 0.046. The red function changes far more. Moving the green primary to a shorter wavelength raises the most negative value of the R function from -0.396 to -0.189, a change of 0.277.
+%[text] The effect on the colour matching functions is not where it might be expected. The green function changes little. It peaks at 536 nm under both systems and its largest change is 0.046. The red function changes far more. Moving the green primary to a shorter wavelength raises the most negative value of the R function from -0.396 to -0.189, a change of 0.207.
 %[text] The negative values mark the test wavelengths that the three primaries cannot match, so a set of primaries that covers more colours produces smaller negative values.
 %[text] The wavelengths below stand in for each system's primaries, with the same caveat about broadband emission. The Stiles and Burch row is read back from an observer so that it cannot disagree with the toolbox default.
 sb = IndividualCMF().Primaries;

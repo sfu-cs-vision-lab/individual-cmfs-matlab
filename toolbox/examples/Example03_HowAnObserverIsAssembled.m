@@ -11,7 +11,7 @@ exampleDefaults();
 %[text] ## The three components
 %[text] Each component is a spectrum, and the toolbox can plot each one directly.
 %[text] The lens and the macular pigment are optical densities. An optical density of $D$ at some wavelength means a fraction $10^{-D}$ of the light at that wavelength gets through. A density of 0 is perfectly transparent. The macular density of 0.35 at 460 nm in the 2 deg standard observer therefore passes 44.7% of the light at that wavelength.
-%[text] The photopigment is an absorbance spectrum, scaled so that its largest value is 1.0 at the wavelength of peak absorbance. That wavelength is called lambda-max.
+%[text] The photopigment is an absorbance spectrum, anchored so that its value is 1 at the wavelength of peak absorbance. That wavelength is called lambda-max. The anchoring is a convention that the fitted templates approximate rather than meet exactly, which puts the measured L peak at 0.9949.
 obs = IndividualCMF();
 wl = (380:1:780)';
 tiledlayout(3, 1, 'TileSpacing', 'loose', 'Padding', 'compact');
@@ -55,7 +55,7 @@ table(macCIE, macFormula, macCIE - macFormula, lodCIE - lodFormula, ...
 %[text] ## When to change a model
 %[text] Changing a model means choosing a different published description of that component. Three situations call for it:
 %[text] - **Studying age.** The default `LensModel="StockmanRider2023"` does not depend on age at all. Age work requires `Pokorny1987` or `VanDeKraats2007`.
-%[text] - **Working outside the usual range.** Each model states the wavelengths it was fitted over. `Pokorny1987` holds its 400 nm value at all shorter wavelengths, while `VanDeKraats2007` was fitted from 300 nm.
+%[text] - **Working outside the usual range.** Each model states the wavelengths it was fitted over. `Pokorny1987` returns no value below 400 nm, so `getLensDensitySpectrum` gives `NaN` and the cone sensitivities are zero there. `VanDeKraats2007` was fitted from 300 nm and covers that range.
 %[text] - **Working with non-human pigments.** `PhotopigmentModel="Govardovskii2000"` provides the A1 and A2 visual pigment templates used in comparative work. \
 %[text] The first of these is easy to miss, because setting `Age` on the default observer produces no change and no warning.
 obsOld = IndividualCMF(Age=70);
@@ -69,7 +69,8 @@ table([obs.Age; obsOld.Age; obsOldVdK.Age], ...
 %%
 %[text] ## Directly specified densities
 %[text] The density algorithms determine how each density is obtained. `CIE170` and the named formulae compute it from age and field size. `Custom` takes it as given.
-%[text] Assigning a value to `LensDensity`, `MacularDensity`, `Lod`, `Mod` or `Sod` selects `Custom` for the corresponding component. A density specified this way is then held constant, since the computation that would otherwise supply it is no longer performed. Later changes to `Age`, `FieldSize` or the associated model leave it unaltered.
+%[text] Assigning a value to `LensDensity`, `MacularDensity`, `Lod`, `Mod` or `Sod` normally selects `Custom` for the corresponding component. A density specified this way is then held constant, since the computation that would otherwise supply it is no longer performed. Later changes to `Age`, `FieldSize` or the associated model leave it unaltered.
+%[text] Assigning a cone or macular density that equals the tabulated CIE value is the exception. `Sod = 0.30` on a 10 deg observer leaves the algorithm at `CIE170`, since the assignment asks for the value the standard already specifies. [Example 15](matlab:edit('Example15_AdvancedCustomization.m')) gives the full rule.
 obsPinned = IndividualCMF();
 algoBefore = string(obsPinned.LensDensityAlgorithm);
 obsPinned.LensDensity = 1.7;
@@ -92,7 +93,7 @@ obs.plotDiagnostics();
 %[text] - Each has two controls. A `...Model` property sets the shape of the spectrum, and a `...DensityAlgorithm` property sets the number that shape is scaled to
 %[text] - `CIE170` accepts any field size. It uses the same published formulae as the named alternatives and substitutes the tabulated value at 2 and 10 deg, which are the only field sizes where the two settings differ
 %[text] - Change a model when a different published curve is needed, for age work, for wavelengths outside the fitted range, or for non-human pigments
-%[text] - Assigning any density selects `Custom` for that component and holds the value constant against later changes
+%[text] - Assigning a density selects `Custom` for that component and holds the value constant against later changes, unless the value assigned is the one the CIE table already specifies
 %[text] - The default `LensModel="StockmanRider2023"` does not depend on age, so setting `Age` alone changes nothing \
 %[text] **Next:** [Example 04: Field Size Effects](matlab:edit('Example04_FieldSizeEffects.m')). Macular pigment and photopigment density as functions of field size.
 

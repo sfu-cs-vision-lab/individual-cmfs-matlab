@@ -15,7 +15,7 @@ exampleDefaults();
 %[text:table]
 %%
 %[text] ## Building an observer
-%[text] Any combination of parameters can be given in one call. The result reports `Type = "Individualized"`, since it does not match either CIE standard observer.
+%[text] Parameters can be combined freely in one call, within the limits the table above records. `StandardObserver` cannot be combined with a biophysical argument, `Genotype` cannot be combined with an explicit template or lambda-max shift, and an algorithm cannot be set to `"Custom"` directly, since `Custom` is a state that follows from assigning a density. The observer below reports `Type = "Individualized"`, since it matches neither CIE standard observer.
 obs_custom = IndividualCMF( ...
     Age=45, FieldSize=6, ...
     L_OpsinTemplate="Serine", ...
@@ -99,8 +99,8 @@ xlim([390 700])
 %[text] ## Genotype and primaries
 %[text] The `Genotype` argument, `setGenotype` and `applyGenotype` are covered in [Example 06](matlab:edit('Example06_GeneticVariants.m')). Choosing `Primaries` is covered in [Example 10](matlab:edit('Example10_RGBColorMatching.m')).
 %%
-%[text] ## Every parameter in one call
-%[text] The property listing that MATLAB prints for the result records the whole parameter set.
+%[text] ## Many parameters in one call
+%[text] The property listing that MATLAB prints for the result records the whole parameter set, including the parameters not named in the call and the values derived from those that were.
 obs_full = IndividualCMF( ...
     Age=55, FieldSize=8, ...
     L_OpsinTemplate="Serine", ...
@@ -150,9 +150,9 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
 %[text] ## Key takeaways
 %[text] - Saving the object with `save` preserves everything about an observer
 %[text] - `getParameters` and `setParameters` transfer the observer itself, including the physiological values, the models, the opsin templates and all three algorithm modes. They do not transfer the output settings
-%[text] - Assigning a density selects `"Custom"` for its algorithm, which keeps the assigned value when the parameters behind it change
+%[text] - Assigning a density selects `"Custom"` for its algorithm, which keeps the assigned value when the parameters behind it change. Assigning the value the CIE table already specifies is the exception and leaves the algorithm alone
 %[text] - Custom mode applies to a group. Assigning one cone density holds all three
-%[text] - Assigning `[]` returns a density to the model and issues no warning. Setting the algorithm to `"Auto"` does the same and warns
+%[text] - Assigning `[]` returns a density to the model and issues no warning. For lens density only, setting `LensDensityAlgorithm="Auto"` does the same and warns. The macular and photopigment algorithms have no `"Auto"` value, so `[]` is the only route back for those
 %[text] - The three density algorithm properties are `LensDensityAlgorithm`, `MacularDensityAlgorithm` and `PhotopigmentDensityAlgorithm`
 %[text] - `setGenotype`, `applyGenotype` and the `Genotype` argument are three ways to set a genotype, differing in how much they set at once \
 %[text] **Next:** [Example 16: Data Export Workflows](matlab:edit('Example16_DataExport.m')). Exporting cone fundamentals as tables, CSV and MAT files.

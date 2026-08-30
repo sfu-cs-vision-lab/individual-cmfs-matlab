@@ -6,9 +6,12 @@
 %[text] These files are plain-text Live Scripts. In R2025a and later the text renders as formatted prose. In earlier releases the `%[text]` markers appear as comments, and every file still runs correctly as an ordinary script.
 %%
 %[text] ## A first observer
-%[text] `IndividualCMF` called with no arguments returns the CIE 2006 10 deg standard observer. Evaluate one cone with `obs.L(wl)`, `obs.M(wl)` or `obs.S(wl)`, or all three with `obs.LMS(wl)`. Wavelengths are given as a column vector.
+%[text] `IndividualCMF` called with no arguments returns the CIE 2006 10 deg standard observer. Evaluate one cone with `obs.L(wl)`, `obs.M(wl)` or `obs.S(wl)`, or all three with `obs.LMS(wl)`. Wavelengths may be given as a row or a column, and these files use columns throughout.
+%[text] `evaluate` returns the same numbers as a table, with the wavelengths and the cone names attached.
 obs = IndividualCMF();
-obs.LMS((450:50:650)')
+obs.evaluate((450:50:650)', Data='LMS')
+%[text] The toolbox exists to build observers other than the standard one. Any biophysical parameter can be set in the constructor, and the result reports itself as individualized.
+IndividualCMF(Age=70, LensModel="VanDeKraats2007")
 %[text] `plotLMS` draws the same three cone fundamentals. It plots whatever the observer's output settings produce, so the curves reach 1.0 here only because `NormalizeOutput` is true by default. See [Example 09](matlab:open('Example09_OutputFormats.m')).
 obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 xlim([380 780]); ylim([0 1.05])

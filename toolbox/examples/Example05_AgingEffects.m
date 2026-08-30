@@ -4,7 +4,7 @@
 exampleDefaults();
 %%
 %[text] ## The three lens models
-%[text] - **`StockmanRider2023`**, the default. Its density does not depend on age. It returns the standard value of 1.7649 at 400 nm whatever `Age` is set to, which is what makes it match the CIE 2006 fundamentals for a 32 year old exactly.
+%[text] - **`StockmanRider2023`**, the default. Its density does not depend on age. It returns the standard value of 1.7649 at 400 nm whatever `Age` is set to, which is the lens density the CIE 2006 standard specifies for its 32 year old observer.
 %[text] - **`VanDeKraats2007`**. A five-component model of the whole ocular media, with density coefficients quadratic in age. It was fitted to 74 donor lenses from 20 sources, 17 psychophysical sensitivity curves and 23 spectral reflection measurements. Separate Rayleigh scattering and tryptophan components extend it into the near ultraviolet.
 %[text] - **`Pokorny1987`**. Linear in age in two segments, with a change of slope at 60 years after which the density rises faster. Its published age range is 20 to 80 years, and the toolbox raises an error outside that range because the paper does not support extrapolation. Its Table I applies to a small pupil of less than 3 mm. For a dilated eye, multiply `LensDensity` by 0.86. Below 400 nm the toolbox reports no value rather than holding the 400 nm value flat, so `LMS` returns 0 and `getLensDensitySpectrum` returns `NaN`. Use `VanDeKraats2007` below 400 nm or outside the published age range. \
 %[text] Each template declares two wavelength ranges. `ValidRange` is where the publication provides a basis, and `Domain` is where the implementation can return an answer at all. A wavelength outside `ValidRange` produces one warning per observer and the value is still returned. A wavelength outside `Domain` returns no value.
@@ -54,7 +54,8 @@ xlim([380 550])
 %%
 %[text] ## A 20 year old and a 75 year old compared
 %[text] The two panels below show all three cones for a 20 year old and a 75 year old, both using `VanDeKraats2007`. These panels are peak-normalized, so they show only the change in shape. All three cones also lose sensitivity, which the next section measures.
-%[text] The S cone changes most. Its peak lies within the range where the lens absorbs strongly, so dividing by that peak increases the normalized sensitivity at longer wavelengths. Between ages 20 and 75 the normalized S curve falls from 0.584 to 0.280 at 420 nm and rises from 0.766 to 0.956 at 460 nm. The peak of the normalized curve also moves from 442 to 452 nm. That movement is a consequence of normalization and not a change in the S photopigment.
+%[text] The S cone changes most. Its peak lies within the range where the lens absorbs strongly, so dividing by that peak increases the normalized sensitivity at longer wavelengths. Between ages 20 and 75 the normalized S curve falls from 0.584 to 0.280 at 420 nm and rises from 0.766 to 0.956 at 460 nm.
+%[text] The peak of the S curve also moves, from 442 to 452 nm. This is the lens absorbing more of the short-wavelength light the S cone depends on, which leaves the largest response at a longer wavelength than before. It is not a change in the S photopigment, and it is not an effect of normalization: dividing by a scalar cannot move the wavelength at which a curve is largest, and the peak sits at 452 nm whether the output is normalized or not.
 %[text] The L and M cones change less. Their normalized curves move by at most 0.124 and 0.140 near 510 and 491 nm, against 0.312 for S. The change is not negligible. The normalized M sensitivity at 440 nm falls from 0.115 to 0.040.
 obs_young = observers(1);
 obs_old   = observers(end);

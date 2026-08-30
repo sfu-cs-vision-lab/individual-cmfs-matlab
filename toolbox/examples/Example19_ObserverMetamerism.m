@@ -3,7 +3,7 @@
 %[text] The CIE 2006 standard observer sees a great many such pairs. Those same pairs are not metameric for every real observer, and that is what **observer metamerism** means. A match made for one observer fails for another. If every observer saw the same matches, one standard observer would be enough, and in practice it is not.
 %[text] This is a different phenomenon from illuminant metamerism, in which two surfaces match under one illuminant and not under another, for one observer. That is not covered here.
 %[text] The example does four things:
-%[text] - Constructs a pair of lights that match exactly for the standard 2 deg observer.
+%[text] - Constructs a pair of spectra that match exactly for the standard 2 deg observer.
 %[text] - Changes to an observer carrying the L-cone Ser180Ala variant, for whom the match no longer holds.
 %[text] - Measures how far apart the two lights then are, in CIE xy chromaticity.
 %[text] - Repeats the measurement for a larger individual difference, an aged lens. \
@@ -29,7 +29,8 @@ XYZMixture = sum(spdMixture .* XYZCmfs, 1)';
 table(XYZTarget, XYZMixture, XYZTarget - XYZMixture, ...
       'VariableNames', {'XYZ_target', 'XYZ_mixture', 'Difference'}, ...
       'RowNames', {'X', 'Y', 'Z'})
-%[text] One of the three amounts is negative. A mixture with a negative amount cannot be produced by real lights, since light cannot be subtracted. The toolbox computes such matches because the arithmetic is well defined, but a physically realizable match needs four or more primaries, or a restriction to positive amounts that gives up exact agreement in XYZ.
+%[text] One of the three amounts is negative, so the mixture takes negative values over a 113 nm range and is not a spectrum any real light could produce. It is an algebraic construction rather than a second light, which is enough to demonstrate observer metamerism but should not be described as a physical stimulus.
+%[text] Three primaries are not inherently too few. They suffice whenever the target falls inside the range of colours their non-negative mixtures span. These three do not span this target: restricting the amounts to be non-negative leaves a residual of 5.2e-02 rather than reaching zero. Either a different set of three primaries or a fourth primary would be needed for a realizable match.
 %%
 %[text] ## Step 2: the two spectra
 %[text] The two spectra are quite different. The target is a single broad Gaussian peaking at 555 nm. The mixture is dominated by its 540 nm primary, with a secondary contribution at 620 nm reaching about 35% of that height. The 460 nm primary is effectively absent, since its amount is small and negative.

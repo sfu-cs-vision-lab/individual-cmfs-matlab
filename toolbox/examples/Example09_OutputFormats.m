@@ -34,7 +34,7 @@ table(L_energy(1), L_quantal(1), L_absorbance(1), fmt_after_calls, ...
 %[text] The panels below show all three cones in each format, drawn with `plotAbsorbance`, `plotAbsorptance` and `plotLMS`. The last of these plots whichever format the observer is currently set to.
 %[text] The first two panels are similar. Self-screening widens the L curve from 104 to 121 nm measured at half its maximum, and moves no peak.
 %[text] The change between the second and third panels is larger, because that is where the lens and the macular pigment act. The S-cone peak moves from 417 to 444 nm and the sensitivity at the shortest wavelengths is much reduced.
-%[text] Absorbance is scaled so that it equals 1 at lambda-max, which puts its peak near 1 but not exactly there. It is 0.9949 for the Stockman and Rider L template, and between 1.0009 and 1.0014 for the Govardovskii templates. Pass `LogOutput=true`, or `Log=true` to `plotAbsorbance`, for base-10 logarithmic values.
+%[text] Absorbance is scaled so that it equals 1 at lambda-max, which puts its peak near 1 but not exactly there. It is 0.9949 for the Stockman and Rider L template, and between 1.0009 and 1.0014 for the three Govardovskii A1 cones. The A2 variant sits further out, with an S-cone peak of 1.0350. Pass `LogOutput=true`, or `Log=true` to `plotAbsorbance`, for base-10 logarithmic values.
 wl = (390:1:700)';
 obs_abs  = IndividualCMF(OutputFormat="absorbance");
 obs_absp = IndividualCMF(OutputFormat="absorptance");
@@ -56,7 +56,7 @@ xlim([390 700]); ylim([0 1.1])
 %[text] `OutputFormat="absorptance"` returns the relative absorptance, $ (1 - 10^{-\\mathrm{OD}\\cdot A}) / (1 - 10^{-\\mathrm{OD}}) $, which has a peak near 1.0 by construction. This is not the raw Beer-Lambert fraction $ 1 - 10^{-\\mathrm{OD}\\cdot A} $, which for the L cone at an optical density of 0.38 peaks near 0.58 instead. The raw fraction is returned by `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(linAbs, od, Normalize=false)`.
 %%
 %[text] ## Quantal and energy compared
-%[text] The two differ by a factor of wavelength. The sensitivity in energy units is wavelength times the sensitivity in quantal units, from Equation 8 of Stockman and Rider (2023), up to a constant that normalization removes. Multiplying by wavelength moves each peak to slightly longer wavelengths. The movement is small and it is the same for all three cones.
+%[text] The two differ by a factor of wavelength. The sensitivity in energy units is wavelength times the sensitivity in quantal units, from Equation 8 of Stockman and Rider (2023), up to a constant that normalization removes. Multiplying by wavelength moves each peak to a longer wavelength. The direction is the same for all three cones but the size is not, since it depends on how steeply each cone falls away either side of its peak. The L peak moves 5.68 nm, the M peak 3.50 nm and the S peak 1.07 nm.
 %[text] `compareTo` draws both observers. The legend is relabelled after the call so that the two formats can be told apart.
 tiledlayout(1, 1);
 p_qe = obs_q.compareTo(obs_e, Title="Quantal (solid) vs Energy (dashed)", Wavelength=wl, Parent=nexttile);
