@@ -106,6 +106,27 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %                                    comparison. All draw into gca by
     %                                    default; pass Parent=nexttile()
     %                                    to compose a tiled figure.
+    %       copy                   - (Inherited from matlab.mixin.Copyable)
+    %                                    Independent duplicate of an
+    %                                    observer. See Copy semantics below.
+    %
+    %   Copy semantics:
+    %     IndividualCMF is a handle class, so a plain assignment creates a
+    %     second name for one observer rather than a second observer:
+    %
+    %         b = a;          % b and a are the same object
+    %         b.Age = 70;     % a.Age is now 70 as well
+    %
+    %     Use copy for an independent duplicate:
+    %
+    %         c = copy(a);    % c is a separate observer
+    %         a.Age = 70;     % c.Age is unchanged
+    %
+    %     copy is inherited from matlab.mixin.Copyable and is sealed, so it
+    %     carries no help text of its own. This class overrides the
+    %     protected copyElement so that the duplicate gets its own
+    %     normalization cache and its own template objects rather than
+    %     sharing them.
     %
     %   Behavior:
     %     Setting LensDensity, MacularDensity, or any of Lod/Mod/Sod auto-

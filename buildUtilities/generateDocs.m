@@ -148,17 +148,34 @@ function writeClassPage(outDir, entry)
         body = body + "<h2>Methods</h2>" + newline + "<table>" + newline;
         body = body + "<tr><th>Name</th><th>Summary</th></tr>" + newline;
         for m = entry.Methods(:)'
+            summary = summaryOf(string(m.Description));
+            if string(m.DefiningClass.Name) ~= entry.Name
+                summary = summary + " (inherited from " + string(m.DefiningClass.Name) + ")";
+            end
             body = body + sprintf("<tr><td><a href=""#%s""><code>%s</code></a></td><td>%s</td></tr>\n", ...
-                m.Name, m.Name, escapeHtml(summaryOf(string(m.Description))));
+                m.Name, m.Name, escapeHtml(strtrim(summary)));
         end
         body = body + "</table>" + newline;
         for m = entry.Methods(:)'
             body = body + sprintf("<h3 id=""%s""><code>%s</code></h3>\n", m.Name, m.Name);
+            owner = string(m.DefiningClass.Name);
+            if owner ~= entry.Name
+                body = body + sprintf("<p class=""inherited"">Inherited from " + ...
+                    "<code>%s</code>.</p>\n", escapeHtml(owner));
+            end
             detail = string(m.DetailedDescription);
             if strlength(strtrim(detail)) == 0
                 detail = string(m.Description);
             end
-            body = body + sprintf("<pre>%s</pre>\n", escapeHtml(detail));
+            if strlength(strtrim(detail)) == 0
+                % An inherited method whose defining class ships no help. Say so,
+                % rather than leaving a blank block that reads as an omission.
+                body = body + sprintf("<p class=""inherited"">No help text is " + ...
+                    "defined for this method. See the documentation for " + ...
+                    "<code>%s</code>.</p>\n", escapeHtml(owner));
+            else
+                body = body + sprintf("<pre>%s</pre>\n", escapeHtml(detail));
+            end
         end
     end
 
@@ -211,6 +228,7 @@ function out = header(pageTitle)
            "h2{font-size:1.25em;margin-top:1.8em;border-bottom:1px solid #ccc;padding-bottom:.2em}", ...
            "h3{font-size:1.05em;margin-top:1.6em;background:#f4f4f4;padding:.35em .5em;border-left:3px solid #666}", ...
            "p.lead{font-size:1.05em;color:#444}", ...
+           "p.inherited{color:#666;font-style:italic;margin:.2em 0 .6em}", ...
            "table{border-collapse:collapse;width:100%;margin:.8em 0}", ...
            "th,td{text-align:left;vertical-align:top;padding:.4em .6em;border-bottom:1px solid #ddd}", ...
            "th{background:#f4f4f4}", ...

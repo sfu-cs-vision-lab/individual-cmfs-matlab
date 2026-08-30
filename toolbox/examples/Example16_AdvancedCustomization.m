@@ -124,6 +124,20 @@ try, IndividualCMF(L_OpsinTemplate="Invalid"); catch ME, errors(end+1) = ME.mess
 table(["Age=-5"; "L_LambdaMaxShift=20"; "L_OpsinTemplate=""Invalid"""], errors', ...
       'VariableNames', {'Bad_input', 'Validation_error'})
 %%
+%[text] ## Copying an observer
+%[text] `IndividualCMF` is a handle class, which means a variable holds a reference to an observer rather than the observer itself. Assigning one variable to another therefore gives a second name for one observer, not a second observer.
+%[text] This is worth meeting deliberately, because nothing warns about it. Modifying what looks like a copy modifies the original as well, and the results simply come out wrong.
+%[text] `copy` returns an independent duplicate. It is inherited from `matlab.mixin.Copyable`, so it carries no help text of its own, but this class overrides the copying so that the duplicate gets its own normalization cache and its own template objects.
+original = IndividualCMF();
+alias = original;
+duplicate = copy(original);
+original.Age = 70;
+table([original.Age; alias.Age; duplicate.Age], ...
+      ["the observer that was changed"; "a second name for it"; "an independent copy"], ...
+      'VariableNames', {'Age', 'What_it_is'}, ...
+      'RowNames', {'original', 'alias = original', 'duplicate = copy(original)'})
+%[text] The alias followed the change and the copy did not. Use `copy` whenever an observer is about to be modified and the original is still needed, and in particular before handing an observer to a function that may change it.
+%%
 %[text] ## Saving an observer and restoring it
 %[text] There are two ways to keep an observer. Saving the object itself with `save` preserves everything. Calling `getParameters` returns an `ObserverParameters` value that can be applied to another observer with `setParameters`.
 save_path = fullfile(tempdir, 'custom_observer.mat');
@@ -150,6 +164,7 @@ table(string(obs_shaped.OutputFormat), string(obs_reshaped.OutputFormat), ...
 %[text] The age transfers and the format does not, so the two arrays differ. Set the output settings on the receiving observer as well when they need to match. `NormalizationMethod` and `NormalizationGrid` behave the same way. See [Example 06](matlab:edit('Example06_NormalizationMethods.m')).
 %%
 %[text] ## Key takeaways
+%[text] - `IndividualCMF` is a handle class. Assigning one variable to another gives a second name for the same observer, so use `copy` for an independent duplicate
 %[text] - Saving the object with `save` preserves everything about an observer
 %[text] - `getParameters` and `setParameters` transfer the observer itself, including the physiological values, the models, the opsin templates and all three algorithm modes. They do not transfer the output settings
 %[text] - Assigning a density selects `"Custom"` for its algorithm, which keeps the assigned value when the parameters behind it change. Assigning the value the CIE table already specifies is the exception and leaves the algorithm alone
