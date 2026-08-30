@@ -107,7 +107,6 @@ classdef DichromatBehaviorTest < matlab.unittest.TestCase
     end
 end
 
-% -------------------------------------------------------------------------
 
 function obs = makeDichromat(odField)
     obs = IndividualCMF();

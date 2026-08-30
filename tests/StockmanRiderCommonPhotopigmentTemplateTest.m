@@ -65,18 +65,20 @@ classdef StockmanRiderCommonPhotopigmentTemplateTest < matlab.unittest.TestCase
         %% Peak Absorbance Tests
 
         function testPeakAbsorbanceNearUnity(testCase)
-            % Linear absorbance at each base lambda-max should be ~1.0.
+            % Linear absorbance at each base lambda-max should be 1.0.
+            % The grid is 1 nm, so the sampled maximum sits just below the
+            % continuous peak. Measured worst case is the S cone at 1.12e-4,
+            % so the tolerance leaves about nine times that. The 0.02 it
+            % replaced would have passed a one percent normalization error.
             wl = testCase.TestWavelengths;
             for coneType = {'L', 'M', 'S'}
                 ct = coneType{1};
                 logAbs = testCase.Template.computeAbsorbance(wl, ct, 0, struct());
                 peakLin = max(10.^logAbs);
-                testCase.verifyEqual(peakLin, 1.0, 'AbsTol', 0.02, ...
+                testCase.verifyEqual(peakLin, 1.0, 'AbsTol', 1e-3, ...
                     sprintf('%s peak linear absorbance should be ~1.0', ct));
             end
         end
-
-        function testComputePeakAbsorbanceReturnsUnity(testCase)        end
 
         %% Shift Tests
 
