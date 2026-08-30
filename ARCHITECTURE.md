@@ -18,6 +18,7 @@ individual-cmfs-matlab/
 |   |-- PhotopigmentTemplate.m  Abstract base for cone absorbance templates
 |   |-- LensTemplate.m          Abstract base for lens density templates
 |   |-- StockmanRiderPhotopigmentTemplate.m
+|   |-- StockmanRiderCommonPhotopigmentTemplate.m
 |   |-- GovardovskiiPhotopigmentTemplate.m
 |   |-- StockmanRiderLensTemplate.m
 |   |-- Pokorny1987LensTemplate.m
@@ -30,15 +31,18 @@ individual-cmfs-matlab/
 |   |-- +pipeline/              Pure-function compute stages (Photopigment, PreReceptoral, Output)
 |   |-- +enums/                 Strategy/algorithm enum types
 |   |-- +validators/            Reusable mustBe* validators
-|   |-- doc/                    GettingStarted.m (registered Getting Started guide)
-|   `-- examples/               18 plain-text Live Scripts (curated tutorial path) + utils/
+|   |-- info.xml                Registers the toolbox with the MATLAB Help Browser
+|   |-- doc/                    GettingStarted.m, plus the generated reference
+|   |   |-- helptoc.xml         Contents tree (generated)
+|   |   `-- html/               Reference pages (generated, not checked in)
+|   `-- examples/               20 plain-text Live Scripts (curated tutorial path) + utils/
 |-- tests/                      Unit tests, integration tests, parity tests
 |   |-- data/                   CSV reference data
 |   `-- parity/                 Pycone parity adapter and configs
-|-- buildUtilities/             buildtool helpers (badge generators)
+|-- buildUtilities/             buildtool helpers (badge generators, reference generator)
 |-- reports/                    CI-generated reports (badges committed, XML ignored)
 |-- resources/project/          MATLAB Project metadata
-|-- buildfile.m                 buildtool entry point (check, test, clean tasks)
+|-- buildfile.m                 buildtool entry point (clean, check, test, doc, package)
 `-- ARCHITECTURE.md             You are here
 ```
 
@@ -67,6 +71,7 @@ graph TD
         LensTemplate
         MacularTemplate
         SR_Photo[StockmanRiderPhotopigmentTemplate]
+        SR_Common[StockmanRiderCommonPhotopigmentTemplate]
         Gov_Photo[GovardovskiiPhotopigmentTemplate]
         SR_Lens[StockmanRiderLensTemplate]
         Pok_Lens[Pokorny1987LensTemplate]
@@ -104,6 +109,7 @@ graph TD
     PreReceptoralFilter --> CIE170
 
     SR_Photo --> PhotopigmentTemplate
+    SR_Common --> PhotopigmentTemplate
     Gov_Photo --> PhotopigmentTemplate
     SR_Lens --> LensTemplate
     Pok_Lens --> LensTemplate
@@ -281,7 +287,6 @@ classDiagram
         +REGISTRY dictionary
         +create(name)$
         +computeAbsorbance(wl, cone, shift, options)
-        +computePeakAbsorbance(cone, shift, options)
         +getLambdaMax(cone, shift)
     }
     class StockmanRiderPhotopigmentTemplate
@@ -475,6 +480,40 @@ search runs for every cache miss.
 The `absorbance` format does not flow through the cache at all, since
 it is not normalized.
 
+### Generated reference documentation
+
+`buildUtilities/generateDocs.m` writes the Help Browser reference from
+`meta.class`. Nothing in it is written by hand, so the reference cannot
+disagree with the source: the help comments in the class files are the only
+place any of it exists, and editing one is what changes the published page.
+
+`toolbox/info.xml` registers the toolbox with MATLAB. It has to sit in the
+toolbox root, because MATLAB scans the path for it, and it points at
+`toolbox/doc` as the folder holding `helptoc.xml`. Both `helptoc.xml` and
+`toolbox/doc/html` are build output rather than checked-in files;
+`buildtool doc` regenerates them and `buildtool package` depends on that
+task, so a packaged `.mltbx` always ships current pages.
+
+Two structural constraints shape the output. The Help Browser loads pages
+inside a frame, where a fragment does not move the document, so every method
+needs a page of its own rather than an anchor within a long one, and every
+group heading needs a real page rather than a link into the landing page.
+And the reference is organised by the part of the model a class belongs to,
+with the string selectors ahead of the classes implementing them, since a
+caller reaches a lens model by assigning `LensModel="Pokorny1987"` rather
+than by constructing anything.
+
+The examples run during the export so their figures appear on the pages,
+which costs about three minutes and constrains the ordering: running a
+script makes MATLAB reload class definitions, so every page derived from
+metadata is written before any example runs, and nothing taken from
+`meta.class` is allowed to outlive `collectMetadata`.
+
+Two tables in `generateDocs.m` define the structure. `referenceSpec` pairs
+each documented class with its group, and `methodSpec` assigns each
+`IndividualCMF` method to a category. A method missing from the latter fails
+the doc build by name rather than dropping silently out of the reference.
+
 ### CIE170 as leaf-level constants
 
 `CIE170.m` holds the canonical numerical values from CIE 170-1:2006 and
@@ -503,9 +542,8 @@ the capture/restore dance the plot methods previously performed. `L`,
 ### Add a new photopigment template
 
 1. Create `toolbox/MyModelPhotopigmentTemplate.m` that subclasses
-   `PhotopigmentTemplate`. Implement `computeAbsorbance` and
-   `computePeakAbsorbance`, and declare the abstract Constant
-   properties (`BASE_LAMBDA_MAX_L/M/S`, `ValidRange`, `Domain`). The
+   `PhotopigmentTemplate`. Implement `computeAbsorbance` and declare
+   the abstract Constant properties (`BASE_LAMBDA_MAX_L/M/S`, `ValidRange`, `Domain`). The
    base class provides `getLambdaMax()` automatically.
 2. Add the enum value to `toolbox/+enums/PhotopigmentModel.m`.
 3. Add one line to `PhotopigmentTemplate.REGISTRY` mapping that enum
@@ -637,7 +675,9 @@ stable API; internals may evolve faster than the top-level
 
 - [`README.md`](README.md) - install and quickstart
 - [`toolbox/examples/README.md`](toolbox/examples/README.md) - the curated learning
-  path through the 18 example scripts
+  path through the 20 example scripts
 - [`tests/parity/README.md`](tests/parity/README.md) - pycone parity
   protocol
+- The Help Browser reference, from `doc Individual CMF Toolbox` in MATLAB
+  after installing the toolbox, or `buildtool doc` to regenerate it
 - [`CITATION.cff`](CITATION.cff) - how to cite the toolbox
