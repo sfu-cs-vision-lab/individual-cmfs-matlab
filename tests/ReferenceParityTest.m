@@ -53,13 +53,32 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
                 M_LambdaMaxShift=shift_M, ...
                 S_LambdaMaxShift=shift_S);
 
-            % 2. Configure output to match golden data
+            % 2. Configure output to match golden data.
+            %    The fixture records the legacy at-lambda-max convention:
+            %    each column equals exactly 1 at its nominal lambda-max
+            %    (560/530/430 nm), not at the curve's true maximum. The
+            %    toolbox normalizes to the true maximum, which for the
+            %    alpha+beta sum sits slightly elsewhere, so the two differ
+            %    by ~1.9e-07 (L) to 8.1e-06 (S).
+            %
+            %    Rather than loosen the tolerance by five orders of
+            %    magnitude, take the raw output and apply the fixture's own
+            %    convention here. That keeps AbsTol 1e-10 and keeps this
+            %    file an independent record of the legacy implementation
+            %    rather than a copy of current toolbox output.
             obs.OutputFormat = "absorptance";
-            obs.NormalizeOutput = true;
+            obs.NormalizeOutput = false;
 
-            % 3. Evaluate and Verify
+            % 3. Evaluate, normalize the legacy way, and verify.
             wl = testCase.LegacyData.nm;
-            new_LMS = obs.evaluate(wl);
+            raw = obs.LMS(wl);
+
+            lambdaMaxNm = [560, 530, 430];
+            new_LMS = zeros(size(raw));
+            for cone = 1:3
+                anchor = raw(wl == lambdaMaxNm(cone), cone);
+                new_LMS(:, cone) = raw(:, cone) / anchor;
+            end
 
             legacy_matrix = [testCase.LegacyData.L_absorptance, ...
                 testCase.LegacyData.M_absorptance, ...
@@ -81,7 +100,7 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
             % Evaluate near the expected shifted peak
             target_peak = base_L + shift_amount;
             wl = (target_peak-5 : 0.1 : target_peak+5)';
-            l_curve = obs.evaluate(wl, Data="L");
+            l_curve = obs.L(wl);
 
             [~, idx] = max(l_curve);
             found_peak = wl(idx);
@@ -116,7 +135,7 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
 
             % Scan UV range to find actual peak
             wl = (300:0.5:400)';
-            l_curve = obs.evaluate(wl, Data="L");
+            l_curve = obs.L(wl);
 
             [~, idx] = max(l_curve);
             found_peak = wl(idx);
@@ -170,13 +189,13 @@ classdef ReferenceParityTest < matlab.unittest.TestCase
                                      L_LambdaMaxShift=-30, ...
                                      OutputFormat="absorbance");
             wl = (300:1:800)';
-            curve_blue = obs_blue.evaluate(wl, Data="L");
+            curve_blue = obs_blue.L(wl);
             
             % 2. Standard / Redder (0 nm)
             obs_red  = IndividualCMF(PhotopigmentModel="Govardovskii2000", ...
                                      L_LambdaMaxShift=0, ...
                                      OutputFormat="absorbance");
-            curve_red = obs_red.evaluate(wl, Data="L");
+            curve_red = obs_red.L(wl);
             
             % 3. Calculate FWHM (Full Width Half Max)
             width_blue = sum(curve_blue > 0.5);

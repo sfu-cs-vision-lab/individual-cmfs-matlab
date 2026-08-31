@@ -14,9 +14,6 @@ classdef (Abstract) LensTemplate < handle
     %       Name      - Full descriptive name of the template model.
     %       ShortName - Short identifier for the template model.
     %
-    %   LensTemplate Abstract Constant Properties:
-    %       SupportsAging - True if the template SHAPE changes with age.
-    %
     %   LensTemplate Abstract Methods:
     %       computeTemplate      - Returns optical density spectrum normalized to 1.0 at 400nm.
     %       computeDensityAt400  - Returns the lens density at 400nm for given age.
@@ -35,6 +32,14 @@ classdef (Abstract) LensTemplate < handle
     % Licensed under AGPL-3.0-or-later. See LICENSE file for details.
     % Repository: https://github.com/sfu-cs-vision-lab/Individual-CMFs
 
+    %   Pupil size is not modelled. Each concrete template inherits
+    %   whatever pupil basis its source publication used, and those bases
+    %   differ -- Pokorny 1987 Table I is tabulated for a small pupil
+    %   (<3 mm), while the Wyszecki & Stiles data it derives from was for
+    %   a maximally open pupil. Mixing a lens model with macular or
+    %   photopigment constants from a different source does not reconcile
+    %   those assumptions. Document the basis in each subclass's help.
+
     properties (Abstract, SetAccess = protected)
         % Name  Full descriptive name of the template model.
         Name
@@ -44,14 +49,84 @@ classdef (Abstract) LensTemplate < handle
     end
 
     properties (Abstract, Constant)
-        % SupportsAging  True if the template SHAPE changes with age.
+        % ValidRange  [min_nm, max_nm] over which the publication has a basis.
         %
-        %   For age-invariant templates the absorbance shape is fixed and only
-        %   the magnitude (density at 400nm) varies with age, handled
-        %   externally via the observer's LensDensity. For age-dependent
-        %   templates the shape itself depends on age. Concrete subclasses
-        %   declare this constant so callers don't dispatch on type.
-        SupportsAging (1,1) logical
+        %   Where the source paper fitted or tabulated the model -- NOT
+        %   where the output happens to be non-zero. A template that
+        %   deliberately returns zero outside a support band is giving the
+        %   model's answer, not extrapolating, and its ValidRange should
+        %   still cover the full query range.
+        %
+        %   IndividualCMF.validateWavelengths warns once per observer when
+        %   a query falls outside this range. Mirrors
+        %   PhotopigmentTemplate.ValidRange.
+        ValidRange (1,2) double
+
+        % Domain  [min_nm, max_nm] where the implementation has an answer.
+        %
+        %   Where the math can produce a finite, physically admissible
+        %   number. Distinct from ValidRange: outside ValidRange but inside
+        %   Domain the value is kept and warned about, so a smooth decay
+        %   past the fit survives intact. Outside Domain no value exists,
+        %   and IndividualCMF reports zero sensitivity or a NaN density
+        %   rather than a number the model cannot support.
+        Domain (1,2) double
+
+        % AgeValidRange  [min, max] years the source publication presents.
+        %   Outside it IndividualCMF warns once per observer.
+        AgeValidRange (1,2) double
+
+        % AgeDomain  [min, max] years the model may be evaluated at.
+        %   Narrower than AgeValidRange only where the authors bound their
+        %   equations without sanctioning extrapolation; outside it
+        %   IndividualCMF errors rather than producing a number the paper
+        %   does not support. Set it unbounded when the authors explicitly
+        %   permit any age.
+        AgeDomain (1,2) double
+    end
+
+    properties (Constant)
+        % REGISTRY  Maps enums.LensModel member names to constructors.
+        %
+        %   Keys are the member names of enums.LensModel; values are
+        %   zero-argument thunks returning a LensTemplate instance. To add a
+        %   lens model: create the subclass, add the enum member, and add one
+        %   line here. Nothing in IndividualCMF changes.
+        %
+        %   TemplateRegistryTest asserts that these keys and the enum members
+        %   stay in agreement, so a half-registered model fails a test rather
+        %   than silently resolving to a default.
+        REGISTRY = dictionary( ...
+            ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"], ...
+            {@() StockmanRiderLensTemplate(), ...
+             @() Pokorny1987LensTemplate(), ...
+             @() VanDeKraatsVanNorren2007LensTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the lens template for a model name.
+            %
+            %   t = LensTemplate.create("Pokorny1987") returns a new
+            %   Pokorny1987LensTemplate. Accepts an enums.LensModel directly;
+            %   MATLAB converts it to its member name.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.LensModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A LensTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(LensTemplate.REGISTRY, model)
+                error("LensTemplate:UnknownModel", ...
+                    "No lens template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(LensTemplate.REGISTRY)', ", "));
+            end
+            ctor = LensTemplate.REGISTRY{model};
+            t = ctor();
+        end
     end
 
     methods (Abstract)
@@ -66,12 +141,11 @@ classdef (Abstract) LensTemplate < handle
         %   Rayleigh-loss coefficients for <=3 deg vs >3 deg fields).
         %   Templates that do not use field size silently accept the option.
         %
-        %   For age-invariant templates (SupportsAging == false), the age
-        %   parameter is ignored and the shape is always that of the standard
-        %   32-year-old observer.
+        %   For age-invariant templates the age parameter is ignored and the
+        %   shape is always that of the standard 32-year-old observer.
         %
-        %   For age-dependent templates (SupportsAging == true), the shape
-        %   may change with age to model changes in lens chromophore composition.
+        %   For age-dependent templates the shape may change with age to model
+        %   changes in lens chromophore composition.
         %
         %   INPUTS:
         %       wavelengths - Wavelengths in nanometers (column vector)

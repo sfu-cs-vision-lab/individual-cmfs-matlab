@@ -35,11 +35,23 @@ classdef StockmanRiderLensTemplate < LensTemplate
     end
 
     properties (Constant)
-        % SupportsAging  False; the Stockman & Rider lens template is an
-        % age-invariant Fourier polynomial. Aging is handled externally by
-        % scaling the template via the observer's LensDensity rather than
-        % by changing the template SHAPE.
-        SupportsAging = false
+        % ValidRange  360-830 nm. The zero above LENS_UPPER_LIMIT = 660 nm
+        %   is the model's answer -- lens absorption there is nil -- not
+        %   extrapolation, so the published basis covers the whole range.
+        ValidRange = [360, 830]
+
+        % Domain  Floored at the 360 nm expansion anchor (LENS_NORM_WL).
+        %   Below it the Fourier polynomial diverges into negative optical
+        %   density: -1.08 at 330 nm, -10.6 at 320, -87.2 at 300 (Age=32).
+        %   A negative OD means the lens amplifies, so no admissible value
+        %   exists. This is the guard that stopped obs.L(320) returning
+        %   2.897e+13 against a normalized peak of 1.0.
+        Domain = [360, Inf]
+
+        % Age-invariant: computeTemplate ignores `age` entirely, so there
+        %   is nothing to extrapolate and no bound to declare.
+        AgeValidRange = [0, Inf]
+        AgeDomain = [0, Inf]
     end
 
     properties (Constant, Access = private)
@@ -84,7 +96,7 @@ classdef StockmanRiderLensTemplate < LensTemplate
             %   silently accepts field size for interface compatibility; this
             %   template is field-size-invariant.
             %
-            %   This template does NOT support aging (SupportsAging == false).
+            %   This template is age-invariant.
             %   The age parameter is accepted for interface compatibility but is
             %   ignored. The returned shape is always that of the standard 32yo.
             %

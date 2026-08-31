@@ -14,13 +14,37 @@ classdef Pokorny1987LensTemplate < LensTemplate
     %   at short wavelengths (400-450nm) than at longer wavelengths where TL2=0.
     %
     %   Wavelength validity. The Pokorny tabulated values start at 400 nm.
-    %   For shorter wavelengths the template flat-extrapolates the 400-nm
-    %   value (TL1) and zero (TL2) -- a defensible boundary choice but
-    %   not a measured spectrum. Users modeling 360-399 nm with this lens
-    %   model should treat the result as constant-OD extrapolation, not
-    %   a paper-validated curve. (StockmanRider2023 covers the full
-    %   360-830 nm range; switch lens models if sub-400-nm precision
-    %   matters.)
+    %   computeTemplate flat-extrapolates the 400 nm value (TL1) and zero
+    %   (TL2) below that, which is bounded but not a measured spectrum, so
+    %   Domain is floored at 400 nm and IndividualCMF reports nothing
+    %   there: zero sensitivity, and NaN from getLensDensitySpectrum.
+    %   StockmanRider2023 covers 360-830 nm and VanDeKraats2007 is fitted
+    %   from 300 nm; switch lens models if sub-400 nm precision matters.
+    %
+    %   Age validity. The abstract and Section III both scope the model to
+    %   "observers aged 20-80", and the Table I footnote gives one equation
+    %   for 20-60 and another above 60 without extending either. Section III
+    %   is candid that the young end was contested -- Said and Weale saw no
+    %   change from 4 to 20 years and Powers et al. found infants
+    %   indistinguishable from adults, while Werner saw continuous change
+    %   from birth. AgeDomain therefore equals AgeValidRange at [20, 80] and
+    %   IndividualCMF errors outside it rather than inventing a number.
+    %   VanDeKraats2007 states its aging formula applies at any age.
+    %
+    %   Pupil size. Table I is tabulated for a small pupil (<3 mm); the
+    %   footnote gives a factor of 0.86 to convert to a completely open
+    %   pupil (>7 mm). Pokorny et al. reached the small-pupil basis by
+    %   scaling the Wyszecki & Stiles tabulation by 1.33, that tabulation
+    %   itself being for a maximally open pupil.
+    %
+    %   The toolbox does not model pupil diameter at all -- there is no
+    %   PupilDiameter property, and FieldSize is a different quantity
+    %   (visual field diameter in degrees, driving macular and cone optical
+    %   density). computeDensityAt400 therefore returns the small-pupil
+    %   density. Multiply LensDensity by 0.86 yourself if you are modelling
+    %   a dilated eye. The normalized template shape is unaffected -- the
+    %   factor is a scalar and divides out at the 400 nm normalization --
+    %   but the absolute density is not.
     %
     %   Reference:
     %       Pokorny, J., Smith, V. C., & Lutze, M. (1987). Aging of the human lens.
@@ -43,10 +67,34 @@ classdef Pokorny1987LensTemplate < LensTemplate
     end
 
     properties (Constant)
-        % SupportsAging  True; the Pokorny 1987 lens template's spectral
-        % shape changes with age via the two-component (TL1 age-scaled,
-        % TL2 age-stable) decomposition.
-        SupportsAging = true
+        % ValidRange  400-830 nm. Pokorny, Smith & Lutze (1987) Table I is
+        %   tabulated 400-650 nm in 10 nm steps, but it *terminates* at
+        %   T_L = 0.000 rather than running out of data: the lens is
+        %   transparent from 650 nm on, so zero stays the model's answer
+        %   above it. Only the 400 nm lower bound is a real boundary.
+        ValidRange = [400, 830]
+
+        % Domain  Also floored at 400 nm. Below it computeTemplate holds the
+        %   400 nm value flat. That is bounded but non-physical: real lens
+        %   optical density rises steeply into the UV, so a flat value
+        %   understates absorption and overstates short-wavelength
+        %   sensitivity. VanDeKraats2007 is fitted from 300 nm and is the
+        %   model to use below 400.
+        Domain = [400, Inf]
+
+        % AgeValidRange  Pokorny, Smith & Lutze (1987) scope the equations
+        %   to "observers aged 20-80" in both the abstract and Section III.
+        %   The Table I footnote gives one form for 20-60 and another above
+        %   60, and extends neither.
+        AgeValidRange = [20, 80]
+
+        % AgeDomain  Equal to AgeValidRange: extrapolation is not
+        %   sanctioned. Section III is explicit that the young end was
+        %   contested -- Said and Weale saw no change from 4 to 20 years,
+        %   Powers et al. found infants indistinguishable from adults,
+        %   while Werner saw continuous change from birth. Producing a
+        %   number there would be inventing one.
+        AgeDomain = [20, 80]
     end
 
     properties (Constant, Access = private)

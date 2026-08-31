@@ -19,7 +19,7 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
     end
 
     properties(TestParameter)
-        PlotDataType = {"LMS", "RGB", "chromaticity", "absorbance", "absorptance"};
+        PlotDataType = {"LMS", "RGB", "lmChromaticity", "absorbance", "absorptance"};
     end
 
     methods(TestMethodSetup)
@@ -65,18 +65,53 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
         %% plotDiagnostics Tests
 
         function testPlotDiagnostics(testCase)
-            % Test plotDiagnostics method 
+            % Three stage panels, each with one line per cone.
             [p, ax] = testCase.Observer1.plotDiagnostics();
-            testCase.verifyNotEmpty(p, 'Cell array of line handles should not be empty.');
-            testCase.verifyNotEmpty(ax, 'Axes array should not be empty.');
+
+            testCase.verifyClass(p, 'cell');
+            testCase.verifySize(p, [3 1]);
+            testCase.verifySize(ax, [3 1]);
+            for s = 1:3
+                testCase.verifySize(p{s}, [3 1]);
+                testCase.verifyTrue(all(isgraphics(p{s})), ...
+                    sprintf('Stage %d should draw all three cone lines', s));
+            end
         end
 
         function testPlotDiagnosticsWithWavelengths(testCase)
-            % Test plotDiagnostics with custom wavelengths 
+            % The supplied grid must reach the drawn data, not just be accepted.
             wl = (400:5:700)';
             [p, ax] = testCase.Observer1.plotDiagnostics(Wavelength=wl);
-            testCase.verifyNotEmpty(p);
-            testCase.verifyNotEmpty(ax);
+
+            testCase.verifySize(ax, [3 1]);
+            for s = 1:3
+                testCase.verifyEqual(p{s}(1).XData(:), wl, 'AbsTol', 0, ...
+                    sprintf('Stage %d should plot against the supplied grid', s));
+            end
+        end
+
+        function testPlotDiagnosticsAcceptsAnExistingLayout(testCase)
+            % Parent= lets the panel compose into a layout the caller owns,
+            % which is what replaced the old Plotter argument.
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            layout = tiledlayout(fig, 1, 3);
+
+            [p, ax] = testCase.Observer1.plotDiagnostics(Parent=layout);
+
+            testCase.verifySize(ax, [3 1]);
+            testCase.verifySize(p, [3 1]);
+            for s = 1:3
+                testCase.verifyEqual(ancestor(ax(s), 'figure'), fig, ...
+                    'Panels must be drawn into the supplied layout.');
+            end
+        end
+
+        function testPlotDiagnosticsRejectsRemovedPlotterOption(testCase)
+            % The Plotter argument is gone; CMFPlotter no longer participates.
+            testCase.verifyError( ...
+                @() testCase.Observer1.plotDiagnostics(Plotter=1), ...
+                'MATLAB:TooManyInputs');
         end
 
         %% Shortcut Method Tests
@@ -114,9 +149,76 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
         end
 
         function testPlotChromaticityShortcut(testCase)
-            % Test plotChromaticity shortcut method 
-            p = testCase.Observer1.plotChromaticity();
-            testCase.verifyNotEmpty(p);
+            % The locus must be a single line whose data matches
+            % lmChromaticity, not merely a non-empty handle.
+            wl = (400:5:700)';
+            obs = testCase.Observer1;
+            p = obs.plotChromaticity(Wavelength=wl);
+            ref = obs.lmChromaticity(wl);
+
+            testCase.verifyNumElements(p, 1);
+            testCase.verifyEqual(p(1).XData(:), ref(:,1), 'AbsTol', 1e-10);
+            testCase.verifyEqual(p(1).YData(:), ref(:,2), 'AbsTol', 1e-10);
+        end
+
+        function testPlotChromaticityIgnoresOutputFormat(testCase)
+            % Migrated from CMFPlotterTest. Chromaticity must be invariant
+            % under the observer's OutputFormat / LogOutput settings:
+            % without forcing the energy/normalized/non-log basis, an
+            % absorbance-configured observer would silently produce a
+            % different and wrong curve.
+            wl = (400:5:700)';
+            obs = IndividualCMF(StandardObserver=2);
+            lmRef = obs.lmChromaticity(wl);
+
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            pDefault = obs.plotChromaticity(Wavelength=wl, Parent=axes(fig));
+            xDefault = pDefault(1).XData(:);
+            yDefault = pDefault(1).YData(:);
+
+            obs.OutputFormat = "absorbance";
+            obs.LogOutput = true;
+            pAbs = obs.plotChromaticity(Wavelength=wl, Parent=axes(fig));
+
+            testCase.verifyEqual(pAbs(1).XData(:), xDefault, 'AbsTol', 1e-10, ...
+                'plotChromaticity X must be invariant under OutputFormat');
+            testCase.verifyEqual(pAbs(1).YData(:), yDefault, 'AbsTol', 1e-10, ...
+                'plotChromaticity Y must be invariant under OutputFormat');
+            testCase.verifyEqual(xDefault, lmRef(:,1), 'AbsTol', 1e-10, ...
+                'plotChromaticity X must match obs.lmChromaticity column 1');
+            testCase.verifyEqual(yDefault, lmRef(:,2), 'AbsTol', 1e-10, ...
+                'plotChromaticity Y must match obs.lmChromaticity column 2');
+        end
+
+        function testPlotMethodsDoNotMutateObserverState(testCase)
+            % Migrated from CMFPlotterTest's per-method state-restoration
+            % tests. The plot methods reach other output formats through
+            % per-call LMS overrides, so the observer's persistent
+            % OutputFormat / LogOutput / NormalizeOutput must come back
+            % unchanged from every one of them.
+            obs = IndividualCMF(StandardObserver=2);
+            before = {obs.OutputFormat, obs.LogOutput, obs.NormalizeOutput};
+
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            methodsUnderTest = {@() obs.plotAbsorbance(Parent=axes(fig)), ...
+                                @() obs.plotAbsorptance(Parent=axes(fig)), ...
+                                @() obs.plotQuantalEnergy(Parent=axes(fig)), ...
+                                @() obs.plotLMS(Parent=axes(fig)), ...
+                                @() obs.plotDiagnostics(Parent=tiledlayout(fig, 1, 3))};
+            names = ["plotAbsorbance", "plotAbsorptance", "plotQuantalEnergy", ...
+                     "plotLMS", "plotDiagnostics"];
+
+            for k = 1:numel(methodsUnderTest)
+                methodsUnderTest{k}();
+                testCase.verifyEqual(obs.OutputFormat, before{1}, ...
+                    names(k) + " must restore OutputFormat");
+                testCase.verifyEqual(obs.LogOutput, before{2}, ...
+                    names(k) + " must restore LogOutput");
+                testCase.verifyEqual(obs.NormalizeOutput, before{3}, ...
+                    names(k) + " must restore NormalizeOutput");
+            end
         end
 
         function testPlotRGBCMFsShortcut(testCase)
@@ -296,28 +398,16 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
                 'plotLMS should create at most one inline figure from a clean state.');
         end
 
-        function testPlotWrappersDoNotInstantiateCMFPlotter(testCase) %#ok<MANU>
-            % Static-source guarantee: the IndividualCMF plot shortcut
-            % methods (plotLMS, plotRGBCMFs, plotChromaticity,
-            % plotAbsorbance, plotAbsorptance, plotQuantalEnergy,
-            % plotLens, plotMacular, compareTo) must not call the
-            % CMFPlotter constructor. plotDiagnostics is the one
-            % exception and is whitelisted.
-            sourcePath = which('IndividualCMF');
-            txt = fileread(sourcePath);
-            cmfPlotterCalls = regexp(txt, '\<CMFPlotter\s*\(', 'start');
-            % Allow the call inside plotDiagnostics, which is documented
-            % as using CMFPlotter for its multi-panel layout.
-            for idx = cmfPlotterCalls
-                context = txt(max(1, idx-2000):idx);
-                if contains(context, 'function varargout = plotDiagnostics')
-                    continue
-                end
-                error('IndividualCMFVisualizationTest:UnexpectedCMFPlotter', ...
-                    ['IndividualCMF.m contains a CMFPlotter() call outside ' ...
-                     'plotDiagnostics at character %d. Plot wrappers must be ' ...
-                     'axes-native, not CMFPlotter-managed.'], idx);
-            end
+        function testPlotMethodsDoNotInstantiateCMFPlotter(testCase)
+            % Static-source guarantee: no IndividualCMF plot method may
+            % construct a CMFPlotter. plotDiagnostics used to be a
+            % whitelisted exception; it now builds its own tiledlayout, so
+            % there is no exception left and the check is unconditional.
+            txt = fileread(which('IndividualCMF'));
+            testCase.verifyEmpty(regexp(txt, '\<CMFPlotter\s*\(', 'start'), ...
+                ['IndividualCMF.m must not construct a CMFPlotter. Plot ' ...
+                 'methods are axes-native; multi-panel layouts use ' ...
+                 'tiledlayout and nexttile.']);
         end
 
         function testDichromatHandleShape(testCase)
@@ -393,23 +483,6 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
                 'plotMacular peak must not be silently rescaled to ~0.35x');
         end
 
-        function testPlotMacularMatchesCMFPlotter(testCase)
-            % The IndividualCMF facade plot and the CMFPlotter direct plot
-            % must produce identical YData. Catches the scaling drift that
-            % made the facade silently disagree with the underlying plotter.
-            obs = testCase.Observer1;
-            wl = (380:5:780)';
-            facadeP = obs.plotMacular(Wavelength=wl);
-            facadeY = facadeP(1).YData;
-
-            plotter = CMFPlotter();
-            plotterP = plotter.plotMacular(obs, Wavelength=wl);
-            plotterY = plotterP(1).YData;
-
-            testCase.verifyEqual(facadeY, plotterY, 'AbsTol', 1e-10, ...
-                'IndividualCMF.plotMacular and CMFPlotter.plotMacular must agree');
-        end
-
         function testPlotQuantalEnergyHandleCount(testCase)
             p = testCase.Observer1.plotQuantalEnergy();
             testCase.verifyNumElements(p, 6);
@@ -450,9 +523,62 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             % curves, masking a copy-bug where p(2) plots the reference).
             obsRef  = IndividualCMF(Age=32, FieldSize=2, LensModel="Pokorny1987");
             obsComp = IndividualCMF(Age=70, FieldSize=2, LensModel="Pokorny1987");
+            % Pokorny has no value below 400 nm, so the plotted curve
+            % carries NaN there. Expected, and not what this test is about.
+            obsRef.ModelRangeWarning = false;
+            obsComp.ModelRangeWarning = false;
+
             p = obsRef.plotLens(Compare=obsComp);
             testCase.verifyNumElements(p, 2);
-            testCase.verifyNotEqual(p(1).YData, p(2).YData);
+
+            % Compare where both curves have values. NaN never equals NaN,
+            % so comparing the raw YData would pass even if p(2) plotted
+            % the reference by mistake -- the bug this test exists to catch.
+            y1 = p(1).YData(:);
+            y2 = p(2).YData(:);
+            defined = isfinite(y1) & isfinite(y2);
+            testCase.assertTrue(any(defined), ...
+                'The two curves must overlap somewhere');
+            testCase.verifyNotEqual(y1(defined), y2(defined));
+        end
+
+        function testPlotAndEvaluateShareOneChromaticityName(testCase)
+            % evaluate renamed Data='chromaticity' to "lmChromaticity" as a
+            % breaking change in 4.3; plot kept the old token, so a user
+            % paid the rename toll in one method and met the retired name
+            % in the other. One vocabulary.
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            testCase.verifyWarningFree( ...
+                @() testCase.Observer1.plot(Data="lmChromaticity", Parent=axes(fig)));
+            testCase.verifyError( ...
+                @() testCase.Observer1.plot(Data="chromaticity", Parent=axes(fig)), ...
+                'MATLAB:validators:mustBeMember', ...
+                'The retired token must not survive in plot');
+        end
+
+        function testPlotRGBComparisonPlotsRGBNotLMS(testCase)
+            % CMFPlotterTest asserted the six DisplayName labels because
+            % they were "the only contract distinguishing this method's
+            % output from compareLMS -- a routing mistake otherwise passes
+            % every shape and count check". plot(Data=...) dispatches LMS
+            % to compareTo and RGB to an inline overlay, so that is exactly
+            % the routing at risk. Counting six handles does not catch it.
+            fig = figure('Visible', 'off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+
+            wl = (400:10:700)';
+            p = testCase.Observer1.plot(Data="RGB", ...
+                Compare=testCase.Observer2, Wavelength=wl, Parent=axes(fig));
+
+            testCase.assertNumElements(p, 6);
+            expected = testCase.Observer1.RGB(wl);
+            testCase.verifyEqual(p(1).YData(:), expected(:,1), 'AbsTol', 1e-12, ...
+                'The first series must be the reference observer''s R, not L');
+            lms = testCase.Observer1.LMS(wl);
+            testCase.verifyNotEqual(p(1).YData(:), lms(:,1), ...
+                'A mis-dispatch to compareTo would plot LMS and still return six handles');
         end
 
         function testPlotLensCompareRejectsNonObserver(testCase)
@@ -482,6 +608,53 @@ classdef IndividualCMFVisualizationTest < matlab.unittest.TestCase
             testCase.verifyError( ...
                 @() testCase.Observer1.plotMacular(Compare="not an observer"), ...
                 'IndividualCMF:InvalidInput');
+        end
+
+        %% Shared palette and axes-setup helpers
+
+        function testConeColorsConstantIsUsedByDefault(testCase)
+            % The default L/M/S line colors must come from the class
+            % constant, not from literals scattered through the plot code.
+            obs = IndividualCMF();
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            p = obs.plotLMS(Parent=axes(fig));
+
+            testCase.verifyEqual(p(1).Color, IndividualCMF.CONE_COLORS(1,:), ...
+                'AbsTol', 1e-12);
+            testCase.verifyEqual(p(2).Color, IndividualCMF.CONE_COLORS(2,:), ...
+                'AbsTol', 1e-12);
+            testCase.verifyEqual(p(3).Color, IndividualCMF.CONE_COLORS(3,:), ...
+                'AbsTol', 1e-12);
+        end
+
+        function testConeColorsCanBeOverriddenPerCall(testCase)
+            obs = IndividualCMF();
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            custom = [1 0 1; 0 1 1; 1 1 0];
+            p = obs.plotLMS(Parent=axes(fig), ConeColors=custom);
+
+            testCase.verifyEqual(p(1).Color, custom(1,:), 'AbsTol', 1e-12);
+            testCase.verifyEqual(p(2).Color, custom(2,:), 'AbsTol', 1e-12);
+            testCase.verifyEqual(p(3).Color, custom(3,:), 'AbsTol', 1e-12);
+        end
+
+        function testHoldStateIsRestoredByPlotMethods(testCase)
+            % beginLinePlot turns hold on; finalizeLinePlot must put it back
+            % so a caller's axes are left as they were found.
+            obs = IndividualCMF();
+            fig = figure('Visible','off');
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            ax = axes(fig);
+
+            hold(ax, 'off');
+            obs.plotLMS(Parent=ax);
+            testCase.verifyFalse(ishold(ax), 'plotLMS must not leave hold on');
+
+            hold(ax, 'on');
+            obs.plotLMS(Parent=ax);
+            testCase.verifyTrue(ishold(ax), "plotLMS must preserve a caller's hold on");
         end
 
     end

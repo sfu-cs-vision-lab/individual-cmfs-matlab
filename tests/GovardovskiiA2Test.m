@@ -155,17 +155,6 @@ classdef GovardovskiiA2Test < matlab.unittest.TestCase
                 ?MException);
         end
 
-        function testTemplateA2AnalyticalPeak(testCase)
-            % The analytical peak (computePeakAbsorbance) should match
-            % the peak of computeAbsorbance to high precision.
-            t = GovardovskiiPhotopigmentTemplate(Pigment="A2");
-            wl = (400:0.5:700)';
-            logAbs = t.computeAbsorbance(wl, 'L', 0);
-            peakNumeric = max(10.^logAbs);
-            peakAnalytic = t.computePeakAbsorbance('L', 0);
-            testCase.verifyEqual(peakNumeric, peakAnalytic, 'AbsTol', 0.005);
-        end
-
         % IndividualCMF dispatch.
 
         function testIndividualCMFAcceptsA2(testCase)

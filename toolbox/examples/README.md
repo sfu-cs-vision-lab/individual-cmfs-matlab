@@ -4,6 +4,8 @@ This folder contains 18 worked examples covering the Individual CMF Toolbox API 
 
 For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`) -- it is also the guide registered with the Add-On Manager.
 
+> **Note:** every example calls `exampleDefaults()`, which sets MATLAB `groot` graphics defaults so the figures look consistent. Those persist for the session and affect every figure you draw afterwards, including ones unrelated to this toolbox. Undo them with `exampleDefaults('reset')`.
+
 ## Learning Path
 
 Roughly ordered from foundations to advanced usage:
@@ -141,7 +143,7 @@ params = obs.getParameters();   % captures everything that affects LMS
 obs2.setParameters(params);     % obs2 now matches obs exactly
 
 % Export
-data = obs.evaluate(wl, Data='LMS', Format='table');
+data = obs.evaluate(wl, Data='LMS');
 writetable(data, 'cone_fundamentals.csv');
 ```
 

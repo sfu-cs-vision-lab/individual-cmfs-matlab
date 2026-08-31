@@ -104,23 +104,25 @@ classdef OutputFormatTest < matlab.unittest.TestCase
             obs = IndividualCMF(StandardObserver=2);
             wl = testCase.RefData.nm;
 
-            % Test Absorbance
+            % The persistent OutputFormat must reach the result, and the
+            % two formats must not produce the same numbers. Comparing the
+            % method against itself would pass whatever the property did.
             obs.OutputFormat = "absorbance";
             obs.LogOutput = true;
-            result = obs.evaluate(wl, Data='L');
-            expected = obs.L(wl);
+            absorbance = obs.L(wl);
+            testCase.verifyEqual(absorbance, ...
+                obs.L(wl, OutputFormat="absorbance", LogOutput=true), ...
+                'AbsTol', 0, 'The property and the per-call override must agree');
 
-            testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
-                'evaluate() should respect OutputFormat=absorbance');
-
-            % Test Absorptance
             obs.OutputFormat = "absorptance";
             obs.LogOutput = false;
-            result = obs.evaluate(wl, Data='L');
-            expected = obs.L(wl);
+            absorptance = obs.L(wl);
+            testCase.verifyEqual(absorptance, ...
+                obs.L(wl, OutputFormat="absorptance", LogOutput=false), ...
+                'AbsTol', 0, 'The property and the per-call override must agree');
 
-            testCase.verifyEqual(result, expected, 'AbsTol', testCase.Tolerance, ...
-                'evaluate() should respect OutputFormat=absorptance');
+            testCase.verifyNotEqual(absorbance, absorptance, ...
+                'The two output formats must produce different values');
         end
 
         function testEvaluateRespectsNormalization(testCase)
@@ -130,7 +132,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test 1: Normalized output should be close to but not exceed 1.0
             obs.NormalizeOutput = true;
-            result_norm = obs.evaluate(wl, Data='L');
+            result_norm = obs.L(wl);
             testCase.verifyLessThanOrEqual(max(result_norm), 1.0, ...
                 'Normalized output should not exceed 1.0');
             testCase.verifyGreaterThan(max(result_norm), 0.99, ...
@@ -138,7 +140,7 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test 2: Unnormalized should be larger in absolute terms
             obs.NormalizeOutput = false;
-            result_unnorm = obs.evaluate(wl, Data='L');
+            result_unnorm = obs.L(wl);
             testCase.verifyGreaterThan(max(result_unnorm), max(result_norm), ...
                 'Unnormalized max should be greater than normalized max');
 
@@ -156,11 +158,11 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Linear
             obs.LogOutput = false;
-            lin_result = obs.evaluate(wl, Data='LMS');
+            lin_result = obs.LMS(wl);
 
             % Log
             obs.LogOutput = true;
-            log_result = obs.evaluate(wl, Data='LMS');
+            log_result = obs.LMS(wl);
 
             % Verify relationship
             testCase.verifyEqual(log_result, log10(lin_result), 'AbsTol', 1e-12, ...
@@ -212,18 +214,173 @@ classdef OutputFormatTest < matlab.unittest.TestCase
 
             % Test consistency within same format
             obs.OutputFormat = "energy";
-            chrom1 = obs.evaluate(wl, Data='chromaticity');
-            chrom2 = obs.evaluate(wl, Data='chromaticity');
+            chrom1 = obs.lmChromaticity(wl);
+            chrom2 = obs.lmChromaticity(wl);
 
             testCase.verifyEqual(chrom1, chrom2, 'AbsTol', 1e-10, ...
                 'Chromaticity should be consistent with same format');
 
-            % Verify chromaticity sums to 1
-            testCase.verifyEqual(sum(chrom1, 2), ones(size(chrom1, 1), 1), ...
-                'AbsTol', 1e-10, 'Chromaticity should sum to 1');
+            % lmChromaticity returns (l, m); the third coordinate is
+            % implicit, so l + m + s = 1 with s = 1 - l - m.
+            s_implicit = 1 - chrom1(:,1) - chrom1(:,2);
+            testCase.verifyEqual(sum([chrom1, s_implicit], 2), ...
+                ones(size(chrom1, 1), 1), 'AbsTol', 1e-10, ...
+                'Chromaticity coordinates plus the implicit s should sum to 1');
 
             % Note: Different OutputFormats (energy vs quantal) WILL give different
             % chromaticity values. This is expected because the spectral shape differs.
+        end
+
+        % One wavelength default across every method
+
+        function testEveryMethodSharesOneWavelengthDefault(testCase)
+            obs = IndividualCMF();
+            n = numel(IndividualCMF.DEFAULT_WL);
+
+            testCase.verifyNumElements(obs.L(), n);
+            testCase.verifyNumElements(obs.M(), n);
+            testCase.verifyNumElements(obs.S(), n);
+            testCase.verifySize(obs.LMS(), [n 3]);
+            testCase.verifySize(obs.XYZ(), [n 3]);
+            testCase.verifySize(obs.RGB(), [n 3]);
+            testCase.verifyNumElements(obs.Luminance(), n);
+            testCase.verifySize(obs.lmChromaticity(), [n 2]);
+            testCase.verifySize(obs.xyChromaticity(), [n 2]);
+            testCase.verifySize(obs.MacLeodBoynton(), [n 2]);
+            testCase.verifyEqual(height(obs.evaluate()), n);
+            testCase.verifyNumElements(obs.getLensDensitySpectrum(), n);
+            testCase.verifyNumElements(obs.getMacularDensitySpectrum(), n);
+        end
+
+        function testPerConeMatchesTheLMSColumn(testCase)
+            % obs.L() and obs.LMS()(:,1) are the same quantity and must be
+            % subtractable. They were 471 and 401 samples before this task.
+            obs = IndividualCMF();
+            LMS = obs.LMS();
+            testCase.verifyEqual(obs.L(), LMS(:,1), 'AbsTol', 0);
+            testCase.verifyEqual(obs.M(), LMS(:,2), 'AbsTol', 0);
+            testCase.verifyEqual(obs.S(), LMS(:,3), 'AbsTol', 0);
+        end
+
+        function testChromaticitySiblingsAgreeOnLength(testCase)
+            % lmChromaticity used the Govardovskii range and xyChromaticity
+            % the Stockman-Rider one, for the same observer.
+            obs = IndividualCMF();
+            testCase.verifyEqual(height(obs.lmChromaticity()), ...
+                height(obs.xyChromaticity()));
+            testCase.verifyEqual(numel(obs.Luminance()), height(obs.XYZ()), ...
+                'Luminance is a row of the XYZ matrix and must match it');
+        end
+
+        function testDefaultMatchesTheDefaultTemplateValidity(testCase)
+            % The default grid must be exactly where the default
+            % photopigment model is defined, so nothing is truncated
+            % silently.
+            testCase.verifyEqual( ...
+                [IndividualCMF.DEFAULT_WL(1), IndividualCMF.DEFAULT_WL(end)], ...
+                Nomograms.SR_VALID_RANGE, 'AbsTol', 0);
+        end
+
+        function testPlotMethodsShareTheSameDefault(testCase)
+            obs = IndividualCMF();
+            fig = figure(Visible="off");
+            cleanup = onCleanup(@() close(fig)); %#ok<NASGU>
+            p = obs.plotLMS(Parent=axes(fig));
+            testCase.verifyNumElements(p(1).XData, numel(IndividualCMF.DEFAULT_WL));
+        end
+
+        function testDefaultIsWarningFreeUnderTheDefaultModel(testCase)
+            % Stockman-Rider is valid over 360-830, so a no-argument call
+            % must not warn. Govardovskii observers warn once by design.
+            Nomograms.resetWarnings();
+            obs = IndividualCMF();
+            testCase.verifyWarningFree(@() obs.LMS(), ...
+                'The default grid must be warning-free under the default model');
+            testCase.verifyWarningFree(@() obs.getLensDensitySpectrum());
+            testCase.verifyWarningFree(@() obs.getMacularDensitySpectrum());
+        end
+
+        function testFilterSpectraAreWellBehavedOnTheDefaultGrid(testCase)
+            % Pin the numerics on the wider default: no Inf, no negative
+            % density, no polynomial oscillation in the tails.
+            wl = IndividualCMF.DEFAULT_WL;
+            % Domain floor per lens model. Only Pokorny has one inside the
+            % default grid, and 360-399 nm is exactly where it would
+            % otherwise flat-extrapolate.
+            floors = dictionary( ...
+                ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"], ...
+                [360, 400, 0]);
+
+            for model = ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"]
+                obs = IndividualCMF(LensModel=model, Age=45);
+                obs.ModelRangeWarning = false;
+                s = obs.getLensDensitySpectrum();
+
+                % Pokorny has no value below 400 nm and reports NaN there
+                % (Task 4.9). Everything it does report must be sound.
+                defined = ~isnan(s);
+                testCase.verifyTrue(all(isfinite(s(defined))), ...
+                    model + " lens: non-finite value");
+                testCase.verifyGreaterThanOrEqual(s(defined), 0, ...
+                    model + " lens: negative density");
+
+                testCase.verifyEqual(isnan(s), wl < floors(model), ...
+                    model + " lens: NaN must appear exactly outside the domain");
+            end
+
+            m = IndividualCMF().getMacularDensitySpectrum();
+            testCase.verifyTrue(all(isfinite(m)));
+            testCase.verifyGreaterThanOrEqual(m, 0);
+            % Macular pigment absorbs roughly 380-540 nm and must be flat
+            % zero well outside it, not ringing.
+            testCase.verifyEqual(m(wl > 620), zeros(sum(wl > 620), 1), ...
+                'AbsTol', 1e-12);
+        end
+
+        % Per-cone methods share LMS's per-call override surface
+
+        function testPerConeMethodsAcceptTheSameOverridesAsLMS(testCase)
+            obs = IndividualCMF();
+            wl = (400:10:700)';
+            for fmt = ["energy" "quantal" "absorptance" "absorbance"]
+                LMS = obs.LMS(wl, OutputFormat=fmt);
+                testCase.verifyEqual(obs.L(wl, OutputFormat=fmt), LMS(:,1), ...
+                    'AbsTol', 0, "L must match the LMS column for " + fmt);
+                testCase.verifyEqual(obs.M(wl, OutputFormat=fmt), LMS(:,2), ...
+                    'AbsTol', 0, "M must match the LMS column for " + fmt);
+                testCase.verifyEqual(obs.S(wl, OutputFormat=fmt), LMS(:,3), ...
+                    'AbsTol', 0, "S must match the LMS column for " + fmt);
+            end
+        end
+
+        function testPerConeLogAndNormalizeOverrides(testCase)
+            obs = IndividualCMF();
+            wl = (400:10:700)';
+
+            LMS = obs.LMS(wl, LogOutput=true);
+            testCase.verifyEqual(obs.L(wl, LogOutput=true), LMS(:,1), 'AbsTol', 0);
+
+            LMS = obs.LMS(wl, NormalizeOutput=false);
+            testCase.verifyEqual(obs.S(wl, NormalizeOutput=false), LMS(:,3), 'AbsTol', 0);
+        end
+
+        function testPerConeOverridesDoNotMutateTheObserver(testCase)
+            obs = IndividualCMF();
+            formatBefore = obs.OutputFormat;
+            obs.L((400:10:700)', OutputFormat="quantal", LogOutput=true, ...
+                NormalizeOutput=false);
+            testCase.verifyEqual(obs.OutputFormat, formatBefore);
+            testCase.verifyFalse(obs.LogOutput);
+            testCase.verifyTrue(obs.NormalizeOutput);
+        end
+
+        function testPerConeOverridesPreserveInputOrientation(testCase)
+            % L/M/S return a row for a row input; the overrides must not
+            % quietly reshape that.
+            obs = IndividualCMF();
+            wlRow = 400:10:700;
+            testCase.verifyTrue(isrow(obs.L(wlRow, OutputFormat="quantal")));
+            testCase.verifyTrue(iscolumn(obs.L(wlRow', OutputFormat="quantal")));
         end
 
     end

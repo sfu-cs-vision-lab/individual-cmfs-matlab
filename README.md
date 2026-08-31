@@ -34,7 +34,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 pe
 
 - Govardovskii et al. (2000) photopigment template (A1 and A2) for sub-400 nm extrapolation and cross-species use.
 - Stockman & Rider (2023) common (shape-invariant) photopigment template (Table 4 column 3): one Fourier shape translated along log-wavelength to fit any cone, for cross-species / arbitrary lambda-max use.
-- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm; below that the template flat-extrapolates the 400-nm density, so prefer `VanDeKraats2007` when sub-400 nm precision matters (see the `Pokorny1987LensTemplate` class help).
+- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm, and the toolbox reports nothing below that rather than flat-extrapolating. Its equations are published for ages 20-80 and the toolbox errors outside that span, because the paper does not sanction extrapolation. Table I is tabulated for a small pupil (<3 mm); scale `LensDensity` by 0.86 for a fully dilated eye (>7 mm), which the toolbox does not do for you. Prefer `VanDeKraats2007` -- fitted from 300 nm, with an aging formula its authors state applies at any age -- for sub-400 nm or out-of-span work (see the `Pokorny1987LensTemplate` class help).
 - van de Kraats & van Norren (2007) five-component total-ocular-media lens model with field-size-aware Rayleigh-loss coefficient and UV coverage.
 
 **Where outputs can differ from pycone**
@@ -45,12 +45,12 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 pe
 
 **Parameter precedence**
 
-Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. The formula-driven value is restored only by reassigning it or by switching the algorithm back to its formula (for example `LensDensityAlgorithm = "CIE170"`). This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
+Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. Assigning `[]` is the inverse and returns the quantity to its formula (`obs.LensDensity = []`); because one formula produces all three cone densities together, clearing any of `Lod`, `Mod`, or `Sod` reverts the group. `Custom` itself cannot be assigned to an `*Algorithm` property -- it is a state that pinning a value produces. This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
 
 **Ergonomics**
 
 - Round-trippable parameter snapshots via `getParameters` / `setParameters`.
-- Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`), backed by a richer `CMFPlotter` class for standalone figures.
+- Visualization: twelve plot and compare methods on `IndividualCMF` (`plotLMS`, `plotXYZ`, `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`, `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`, `compareTo`, `plot`). Each draws into `gca` by default and takes `Parent=` an axes or a tile, so multi-panel figures compose with MATLAB's own `tiledlayout` / `nexttile` rather than a toolbox-specific plotter.
 
 See [`tests/parity/README.md`](tests/parity/README.md) for the configurations covered and notes on where the two implementations differ.
 
@@ -121,6 +121,7 @@ obs = IndividualCMF(PhotopigmentModel="Govardovskii2000");
 % Manual override engages Custom mode (preserved across Age/FieldSize edits)
 obs.LensDensity = 1.2;
 disp(obs.LensDensityAlgorithm);   % "Custom"
+obs.LensDensity = [];             % back to the model-driven value
 
 % Evaluate cone sensitivities and derived quantities.
 % Case follows the color-science convention: tristimulus quantities
@@ -141,12 +142,17 @@ A = obs.LMS(wl, OutputFormat="absorptance");
 % Compare two observers
 obs.compareTo(IndividualCMF(Age=70), Title="Effect of aging");
 
-% Plot wrappers (all accept Wavelength=, Title=, Parent= options;
+% Plot methods (all accept Wavelength=, Title=, Parent= options;
 % plotLMS/plotAbsorbance/plotAbsorptance also accept Cones= and Log=;
 % plotXYZ accepts Channels=)
 obs.plotLMS(Cones=["L" "M"]);            % L and M only, observer's OutputFormat
 obs.plotXYZ(Channels="Y");                % Y (luminous-efficiency) channel only
 obs.plotLMS(Log=true);                    % log10 y-axis
+
+% Multi-panel figures use MATLAB's own layout, via Parent=
+tiledlayout(1, 2);
+obs.plotLMS(Parent=nexttile());
+obs.plotXYZ(Parent=nexttile());
 
 % Build an array of observers across one parameter axis
 observers = IndividualCMF.across('Age', [25 50 75], ...
@@ -163,7 +169,7 @@ obs2 = IndividualCMF();
 obs2.setParameters(params);
 
 % Export to CSV
-data = obs.evaluate(wl, Data="LMS", Format="table");
+data = obs.evaluate(wl, Data="LMS");
 writetable(data, "cone_fundamentals.csv");
 ```
 
@@ -193,7 +199,6 @@ individual-cmfs-matlab/
 |   |-- CIE170.m                                 CIE 170-1:2006 / 170-2:2015 leaf-level constants
 |   |-- Nomograms.m                              Raw absorbance computations (Fourier series, alpha/beta bands)
 |   |-- NormalizationCache.m                     Per-(cone, format) peak cache with invalidation hooks
-|   |-- CMFPlotter.m                             Visualization layer used by IndividualCMF plot wrappers
 |   |-- +pipeline/                               Pure-function compute stages (PhotopigmentStage, PreReceptoralStage, OutputStage)
 |   |-- +enums/                                  Strategy / algorithm-mode enum types
 |   |-- +validators/                             Reusable mustBe* validators

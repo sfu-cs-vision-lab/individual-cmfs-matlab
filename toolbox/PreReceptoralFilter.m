@@ -211,7 +211,8 @@ classdef PreReceptoralFilter
             %   1.0 at 460 nm) template should construct a
             %   StockmanRider2023MacularTemplate directly. The absolute-
             %   peak convention is preserved here because existing callers
-            %   (CMFPlotter, tests, getDensitySpectrum) depend on it.
+            %   (IndividualCMF.plotMacular, tests, getDensitySpectrum)
+            %   depend on it.
             %
             %   To rescale for a different field size or for an individual
             %   observer with a different peak macular density D, use

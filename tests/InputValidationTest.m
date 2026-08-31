@@ -105,19 +105,22 @@ classdef InputValidationTest < matlab.unittest.TestCase
         function testEvaluateInvalidData(testCase)
             obs = IndividualCMF(StandardObserver=2);
 
+            % 'XYZ' used to be the canonical invalid value here. It is now
+            % a supported Data option, so this needs a genuinely unknown one.
             testCase.verifyError(...
-                @() obs.evaluate(550, Data='XYZ'), ...
+                @() obs.evaluate(550, Data='NotAQuantity'), ...
                 'MATLAB:validators:mustBeMember', ...
                 'Should reject invalid Data parameter');
         end
 
-        function testEvaluateInvalidFormat(testCase)
+        function testEvaluateRejectsFormatArgument(testCase)
             obs = IndividualCMF(StandardObserver=2);
 
+            % Format is removed: evaluate always returns a table.
             testCase.verifyError(...
                 @() obs.evaluate(550, Format='csv'), ...
-                'MATLAB:validators:mustBeMember', ...
-                'Should reject invalid Format parameter');
+                'MATLAB:TooManyInputs', ...
+                'Format is no longer an accepted argument');
         end
 
         function testEvaluateWithModifiedObserver(testCase)
@@ -126,11 +129,11 @@ classdef InputValidationTest < matlab.unittest.TestCase
             wl = 500:10:600;  % Range around L-cone peak
 
             % Get baseline
-            baseline = obs.evaluate(wl, Data='L');
+            baseline = obs.L(wl);
 
             % Make a dramatic change - age affects lens density with Pokorny1987
             obs.Age = 70;  % Major age change
-            aged = obs.evaluate(wl, Data='L');
+            aged = obs.L(wl);
 
             % Should be different (older age = more lens absorption = lower sensitivity)
             testCase.verifyNotEqual(aged, baseline, ...
@@ -147,21 +150,22 @@ classdef InputValidationTest < matlab.unittest.TestCase
             obs.OutputFormat = "quantal";
             obs.NormalizeOutput = false;
 
-            % Compare methods
+            % evaluate must still agree with LMS after the property
+            % changes above. Comparing LMS against itself would pass even
+            % if evaluate had stopped delegating.
             LMS_direct = obs.LMS(wl);
-            LMS_eval = obs.evaluate(wl);
+            evaluated = obs.evaluate(wl, Data="LMS");
+            LMS_eval = table2array(evaluated(:, 2:end));
 
-            % Verify sizes match
-            testCase.verifySize(LMS_direct, size(LMS_eval), ...
+            testCase.verifySize(LMS_eval, size(LMS_direct), ...
                 'Size mismatch between LMS() and evaluate');
-
-            testCase.verifyEqual(LMS_eval, LMS_direct, 'AbsTol', 1e-10, ...
+            testCase.verifyEqual(LMS_eval, LMS_direct, 'AbsTol', 0, ...
                 'evaluate() should match LMS() after property changes');
         end
 
-        function testWavelengthWarningIssuedForOutOfRange(testCase)
+        function testModelRangeWarningIssuedForOutOfRangeWavelengths(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Stockman-Rider template has valid range [360, 830] nm
             % Request wavelengths outside this range
@@ -171,9 +175,9 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Should warn when wavelengths are outside the valid range');
         end
 
-        function testWavelengthWarningOnlyOnce(testCase)
+        function testModelRangeWarningIssuedOnlyOnce(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % First call should warn
             wl_out = (340:10:380)';
@@ -188,18 +192,18 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Third call with same object should not warn again');
         end
 
-        function testWavelengthWarningDisabled(testCase)
+        function testModelRangeWarningDisabled(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = false;
+            obs.ModelRangeWarning = false;
 
             wl_out = (340:10:380)';
             testCase.verifyWarningFree(@() obs.L(wl_out), ...
-                'Should not warn when WavelengthWarning is disabled');
+                'Should not warn when ModelRangeWarning is disabled');
         end
 
-        function testWavelengthWarningValidRangeNoWarning(testCase)
+        function testInRangeWavelengthsDoNotWarn(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Request wavelengths strictly within Stockman-Rider valid range [360, 830]
             wl_valid = (400:10:700)';
@@ -208,9 +212,9 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Valid wavelengths should not trigger warning');
         end
 
-        function testWavelengthWarningResetsOnTemplateChange(testCase)
+        function testModelRangeWarningResetsOnTemplateChange(testCase)
             obs = IndividualCMF(StandardObserver=10);
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Trigger the warning with Stockman-Rider template
             wl_out = (340:10:380)';
@@ -230,11 +234,11 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Warning should reset after template change');
         end
 
-        function testWavelengthWarningGovardovskiiRange(testCase)
+        function testGovardovskiiLowerBoundWarns(testCase)
             % Test Govardovskii template's different valid range [380, 780]
             obs = IndividualCMF(StandardObserver=10);
             obs.PhotopigmentModel = "Govardovskii2000";
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % Wavelengths 360-380 are valid for Stockman-Rider but invalid for Govardovskii
             wl_out = (360:5:400)';
@@ -242,16 +246,56 @@ classdef InputValidationTest < matlab.unittest.TestCase
                 'Govardovskii should warn for wavelengths below 380 nm');
         end
 
-        function testWavelengthWarningGovardovskiiUpperBound(testCase)
+        function testGovardovskiiUpperBoundWarns(testCase)
             % Test Govardovskii template warns for wavelengths above 780 nm
             obs = IndividualCMF(StandardObserver=10);
             obs.PhotopigmentModel = "Govardovskii2000";
-            obs.WavelengthWarning = true;
+            obs.ModelRangeWarning = true;
 
             % 800 nm is valid for Stockman-Rider but invalid for Govardovskii
             wl_out = (750:10:810)';
             testCase.verifyWarning(@() obs.L(wl_out), 'IndividualCMF:WavelengthOutOfRange', ...
                 'Govardovskii should warn for wavelengths above 780 nm');
+        end
+
+        % StandardObserver is all-or-nothing
+
+        function testStandardObserverRejectsNonDefaultFilterModels(testCase)
+            % The CIE standard observers are defined on the Stockman-Rider
+            % pre-receptoral filters. Another lens model gives a different
+            % LensDensity, so the observer would report StandardObserver=2
+            % while no longer being one. It used to be accepted silently.
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=2, LensModel="Pokorny1987"), ...
+                'IndividualCMF:Conflict');
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=10, LensModel="VanDeKraats2007"), ...
+                'IndividualCMF:Conflict');
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=2, MacularModel="StockmanRider2023", ...
+                    LensModel="Pokorny1987"), ...
+                'IndividualCMF:Conflict');
+
+            % The default is still accepted, so a redundant but consistent
+            % argument is not an error.
+            testCase.verifyWarningFree( ...
+                @() IndividualCMF(StandardObserver=2, LensModel="StockmanRider2023"));
+        end
+
+        function testStandardObserverRejectsDensityAlgorithmOptions(testCase)
+            % These follow from the standard configuration. Custom was
+            % previously accepted here and silently discarded, even though
+            % the manual-config path rejects it.
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=2, LensDensityAlgorithm="Custom"), ...
+                'IndividualCMF:CustomIsNotAssignable');
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=2, MacularDensityAlgorithm="CIE170"), ...
+                'IndividualCMF:Conflict');
+            testCase.verifyError( ...
+                @() IndividualCMF(StandardObserver=10, ...
+                    PhotopigmentDensityAlgorithm="PokornySmith"), ...
+                'IndividualCMF:Conflict');
         end
 
     end

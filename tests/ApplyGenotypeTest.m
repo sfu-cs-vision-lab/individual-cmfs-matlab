@@ -160,13 +160,13 @@ classdef ApplyGenotypeTest < matlab.unittest.TestCase
                 'struct Genotype= without M entry must leave M shift 0');
         end
 
-        function testSetGenotypeAgreesWithFromGenotypeSinglePosition(testCase)
-            % obj.setGenotype('L', 180, 'Ala') is the per-position
-            % version of the partial-override API. For a single position
-            % it should produce the same L shift as
-            % ObserverParameters.fromGenotype("L_180_Ala"). Catches drift
-            % in either path's use of the GENOTYPE_SHIFTS dictionary or
-            % the L/M scaling constants.
+        function testSetGenotypeMatchesTabulatedShift(testCase)
+            % obj.setGenotype('L', 180, 'Ala') is the per-position version
+            % of the partial-override API. For a single position it must
+            % reproduce the Stockman & Rider 2023 Table 3 coefficient
+            % scaled by the cone's bases sum. Checking against the
+            % published dictionary rather than a sibling implementation
+            % means the two cannot drift together and still pass.
             singlePositions = struct( ...
                 'L_180_Ala', {'L', 180, 'Ala'}, ...
                 'L_277_Phe', {'L', 277, 'Phe'}, ...
@@ -183,18 +183,21 @@ classdef ApplyGenotypeTest < matlab.unittest.TestCase
                 obs = IndividualCMF();
                 obs.setGenotype(cone, position, aminoAcid);
 
-                params = ObserverParameters.fromGenotype(string(names{k}));
-
+                coefficient = Genotype.GENOTYPE_SHIFTS(string(names{k}));
                 msg = sprintf('setGenotype(%s, %d, %s)', cone, position, aminoAcid);
                 switch cone
                     case 'L'
-                        testCase.verifyEqual(obs.L_LambdaMaxShift, ...
-                            params.LCone.LambdaMaxShift, 'AbsTol', 1e-12, ...
-                            [msg ' L shift must match fromGenotype']);
+                        expected = coefficient * ...
+                            (Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM);
+                        testCase.verifyEqual(obs.L_LambdaMaxShift, expected, ...
+                            'AbsTol', 1e-12, ...
+                            [msg ' L shift must match the tabulated coefficient']);
                     case 'M'
-                        testCase.verifyEqual(obs.M_LambdaMaxShift, ...
-                            params.MCone.LambdaMaxShift, 'AbsTol', 1e-12, ...
-                            [msg ' M shift must match fromGenotype']);
+                        expected = coefficient * ...
+                            (Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM);
+                        testCase.verifyEqual(obs.M_LambdaMaxShift, expected, ...
+                            'AbsTol', 1e-12, ...
+                            [msg ' M shift must match the tabulated coefficient']);
                 end
             end
         end

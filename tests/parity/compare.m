@@ -106,9 +106,9 @@ for k = 1:nConfigs
     wl = (wlMin:wlStep:wlMax)';
 
     % Force Sampled normalization on the comparison grid so MATLAB and
-    % pycone use the same peak-detection method.
-    obs.NormalizationMethod = struct( ...
-        Method="Sampled", Start=wlMin, Stop=wlMax, Step=wlStep);
+    % pycone use the same peak-detection method. wl is that exact grid.
+    obs.NormalizationMethod = "Sampled";
+    obs.NormalizationGrid = wl;
 
     isLog = isfield(cfg.pycone, 'log_output') && cfg.pycone.log_output;
     isNormalized = ~(isfield(cfg.pycone, 'normalize') && cfg.pycone.normalize == false);

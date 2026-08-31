@@ -44,9 +44,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       MacularDensityAlgorithm      - "CIE170", "MorelandAlexander", or "Custom" (string)
     %       PhotopigmentDensityAlgorithm - "CIE170", "PokornySmith", or "Custom" (string)
     %       OutputFormat                 - "energy", "quantal", "absorptance", or "absorbance" (string) Default: "energy"
-    %       NormalizeOutput              - Scale each cone peak to 1.0 (logical) Default: true
+    %       NormalizeOutput              - Scale each cone peak to 1.0; ignored
+    %                                      for OutputFormat="absorbance" (logical) Default: true
     %       LogOutput                    - Return log10 of output (logical) Default: false
-    %       NormalizationMethod          - "Continuous", "Sampled", or config struct (string|struct) Default: "Continuous"
+    %       NormalizationMethod          - "Continuous" or "Sampled" (string) Default: "Continuous"
+    %       NormalizationGrid            - Grid for Sampled mode, nm (vector) Default: 380:1:780
     %       Primaries                    - RGB primary wavelengths in nm (1x3 double) Default: [645.15 526.32 444.44]
     %
     %   OUTPUTS:
@@ -76,8 +78,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       OutputFormat                 - "energy", "quantal", "absorptance", or "absorbance".
     %       NormalizeOutput              - Logical; if true, scales each cone peak to 1.
     %       LogOutput                    - Logical; if true, returns log10 values.
-    %       NormalizationMethod          - "Continuous" or "Sampled" (or a config struct).
-    %       NormalizationConfig          - Active normalization configuration (read-only).
+    %       NormalizationMethod          - "Continuous" or "Sampled".
+    %       NormalizationGrid            - Wavelength grid used in "Sampled" mode.
     %       Primaries                    - 1x3 RGB primary wavelengths in nm.
     %
     %   IndividualCMF Methods:
@@ -86,7 +88,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       applyGenotype          - Configure observer from a "L-geno/M-geno" string.
     %       getParameters          - Snapshot current parameters as ObserverParameters.
     %       setParameters          - Restore parameters from an ObserverParameters object.
-    %       evaluate               - Evaluate the model with Data and Format options.
+    %       evaluate               - Return a derived quantity as a table.
     %       L, M, S                - Per-cone sensitivity at the given wavelengths.
     %       LMS                    - L, M, S sensitivities as an Nx3 matrix.
     %       XYZ                    - CIE XYZ CMFs (2-deg matrix below 4 deg, else 10-deg).
@@ -101,7 +103,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       plot, plotLMS, plotXYZ, plotRGBCMFs, plotChromaticity,
     %       plotAbsorbance, plotAbsorptance, plotQuantalEnergy, plotLens,
     %       plotMacular, plotDiagnostics, compareTo - Plotting and
-    %                                    comparison wrappers over CMFPlotter.
+    %                                    comparison. All draw into gca by
+    %                                    default; pass Parent=nexttile()
+    %                                    to compose a tiled figure.
     %
     %   Behavior:
     %     Setting LensDensity, MacularDensity, or any of Lod/Mod/Sod auto-
@@ -142,7 +146,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     %       obs2.setParameters(params);
     %
     %   See also Genotype, ObserverParameters, PhotopigmentTemplate,
-    %       LensTemplate, MacularTemplate, CMFPlotter.
+    %       LensTemplate, MacularTemplate.
     %
     %   Primary reference: Stockman, A. & Rider, A.T. (2023). Formulae for
     %   generating standard and individual human cone spectral sensitivities.
@@ -202,7 +206,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   Setting StandardObserver = 0 is rejected; 0 is a state you
         %   drift into by editing parameters, not one you set directly.
         %   Output-shape options (OutputFormat, NormalizeOutput, LogOutput,
-        %   NormalizationMethod, Primaries, WavelengthWarning) are
+        %   NormalizationMethod, Primaries, ModelRangeWarning) are
         %   preserved across the snap.
         StandardObserver
 
@@ -347,39 +351,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %   emits a warning.
         LensDensityAlgorithm
 
-        % Normalization method ("Continuous", "Sampled", or a config struct).
-        %   Controls how the peak of the sensitivity curve is defined.
-        %   "Continuous" (default) - Peak computed via
-        %                            computePeakForFormat: an analytical
-        %                            formula for Govardovskii absorptance,
-        %                            fminbnd otherwise. Results are
-        %                            independent of wavelength sampling.
-        %   "Sampled"              - Maximum of a discretely sampled
-        %                            spectrum. Shorthand for the default
-        %                            config struct (380:1:780 nm).
-        %   struct(...)            - Explicit Sampled configuration. Fields:
-        %                              Method: "Sampled" (required)
-        %                              Start:  380 (nm, default)
-        %                              Stop:   780 (nm, default)
-        %                              Step:   1 (nm, default)
-        %                            Example matching the Pycone 5 nm grid:
-        %                              obs.NormalizationMethod = struct( ...
-        %                                  Method="Sampled", Start=390, ...
-        %                                  Stop=830, Step=5);
-        %   Sampled results depend on the grid; for reproducibility or
-        %   compatibility with external tools (e.g., Pycone) specify the
-        %   resolution explicitly. Evaluating at wavelengths finer than the
-        %   sampled normalization grid can produce values slightly above 1.0
-        %   (the true peak falls between grid points). For guaranteed
-        %   unit-bounded output, use "Continuous" or evaluate only on the
-        %   wavelengths used for normalization.
-        NormalizationMethod
-
-        % Active normalization configuration (read-only).
-        %   Returns the full configuration struct used by the current
-        %   NormalizationMethod, including resolution parameters for
-        %   Sampled mode.
-        NormalizationConfig
     end
 
     properties (SetObservable, AbortSet)
@@ -395,10 +366,58 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         OutputFormat (1,1) enums.OutputFormat = enums.OutputFormat.energy
 
         % If true (default), scales output so each cone peaks at 1.0.
+        %
+        %   Ignored for OutputFormat="absorbance". Absorbance is always the
+        %   raw photopigment template, matching pycone, which never
+        %   renormalizes that stage: the templates carry A(lambda_max) = 1
+        %   in their published constants, and that absolute scale is what
+        %   multiplies the optical density in Beer-Lambert self-screening,
+        %   so Lod / Mod / Sod mean "peak axial density". Re-dividing by a
+        %   sampled peak would silently redefine them. The other three
+        %   formats are relative sensitivities whose scale is arbitrary,
+        %   which is why normalizing them is meaningful.
+        %
+        %   The residuals this preserves are real: the Stockman-Rider L
+        %   template peaks at 0.9949448501 rather than exactly 1, a fit
+        %   artifact frozen into the published coefficients, and the
+        %   Govardovskii A2 S cone reaches 1.0349751181 because the beta
+        %   band rides on top of the unit alpha band. Read either with
+        %   getPeak(cone, OutputFormat="absorbance").
         NormalizeOutput (1,1) logical = true
 
         % If true, returns log10 of the requested output. Default false.
         LogOutput (1,1) logical = false
+
+        % How the normalization peak is located.
+        %   "Continuous" (default) finds the peak of the continuous
+        %   spectral model, so the normalized peak is 1 regardless of which
+        %   wavelengths the caller evaluates at. "Sampled" takes the
+        %   maximum over NormalizationGrid, matching pycone.
+        NormalizationMethod (1,1) enums.NormalizationMethod = ...
+            enums.NormalizationMethod.Continuous
+
+        % Wavelength grid used when NormalizationMethod is "Sampled".
+        %   A wavelength vector in nm, written in MATLAB's own
+        %   start:step:stop form:
+        %       obs.NormalizationGrid = 390:5:830;
+        %   Ignored in "Continuous" mode. Default 380:1:780.
+        %
+        %   Sampled results depend on this grid. For reproducibility, or to
+        %   match an external implementation such as pycone, set it to the
+        %   same wavelengths the reference uses. Evaluating at wavelengths
+        %   finer than the grid can produce values slightly above 1.0,
+        %   because the true peak falls between grid points; for guaranteed
+        %   unit-bounded output use "Continuous" or evaluate only on the
+        %   grid wavelengths.
+        %   An empty grid is rejected: a descending or negatively-stepped
+        %   colon expression produces one, and max() over it would silently
+        %   break normalization rather than error.
+        %   Deliberately NOT DEFAULT_WL: 380-780 nm is the grid the pycone
+        %   reference normalizes over, and "Sampled" exists to match it.
+        %   Widening this would make the default Sampled mode less faithful
+        %   to the reference, which is the opposite of its purpose.
+        NormalizationGrid double {mustBeVector, mustBeNonempty, ...
+            validators.mustBeWavelengthVector} = (380:1:780)'
     end
 
     properties
@@ -409,11 +428,22 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         Primaries (1,3) double {validators.mustBeValidPrimaries} = ...
             CIE170.STILES_BURCH_10DEG_PRIMARIES_NM
 
-        % If true (default), warn once when wavelengths fall outside the active template range.
-        %   Valid ranges: 360-830 nm for Stockman-Rider templates,
-        %   380-780 nm for Govardovskii. Warning is emitted once per
-        %   session per template configuration.
-        WavelengthWarning (1,1) logical = true
+        % If true (default), warn once per observer when a query falls
+        % outside an active model's published range, on either axis.
+        %   Wavelength: warns outside the active templates' ValidRange
+        %     (360-830 nm for Stockman-Rider, 380-780 nm for Govardovskii,
+        %     400-830 nm for the Pokorny lens, 300-700 nm for vdK&vN).
+        %   Age: warns outside the active lens model's AgeValidRange
+        %     (0-80 years for vdK&vN; the Pokorny model errors rather than
+        %     warns outside 20-80, and that error is not suppressible).
+        %
+        %   This is a convenience master switch. For finer control use
+        %   MATLAB's own mechanism on the individual identifiers, which
+        %   stay distinct:
+        %       warning('off', 'IndividualCMF:WavelengthOutOfRange')
+        %       warning('off', 'IndividualCMF:AgeOutOfRange')
+        %       warning('off', 'Nomograms:WavelengthOutOfRange')
+        ModelRangeWarning (1,1) logical = true
     end
 
     properties (Access = private)
@@ -439,9 +469,18 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %      getParameters/setParameters time, not on every change.
         %
         % ObserverParameters is a transfer DTO: getParameters() gathers
-        % both strategies into a snapshot; setParameters() reverses
-        % the operation. Treat ObserverParameters as the wire format,
-        % not a live mirror of IndividualCMF state.
+        % both strategies into a snapshot; setParameters() reverses the
+        % operation. It is a snapshot, not a live mirror -- mutating one
+        % does not affect the observer it came from.
+        %
+        % It carries who the observer is, not how you are viewing them.
+        % Physiology, model selections, and algorithm modes round-trip
+        % exactly; LensDensity round-trips to ~1e-12 because the snapshot
+        % stores it as a ratio to CIE170.STD_LENS_DENSITY_400; and the
+        % output-shape group (OutputFormat, LogOutput, NormalizeOutput,
+        % Primaries, NormalizationMethod, ModelRangeWarning) is
+        % deliberately not carried, matching snapToStandardObserver.
+        % ObserverParametersRoundTripTest enforces all three.
         %
         % The p_ prefix marks "private working state of IndividualCMF"
         % and is applied uniformly to both strategies. Several p_*
@@ -456,7 +495,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         p_PhotopigmentDensityAlgorithm (1,1) enums.PhotopigmentDensityAlgorithm = ObserverParameters.DEFAULT_PHOTOPIGMENT_DENSITY_ALGORITHM
         p_LensDensityAlgorithm (1,1) enums.LensDensityAlgorithm = ObserverParameters.DEFAULT_LENS_DENSITY_ALGORITHM
         p_LensDensity = CIE170.STD_LENS_DENSITY_400
-        p_IsInternalUpdate = false
         p_PhotopigmentTemplate
         % Instance of LensTemplate subclass
         p_LensTemplate
@@ -464,16 +502,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         p_MacularTemplate
         GenotypeState dictionary = configureDictionary("string", "string")
 
-        % Normalization configuration struct
-        % For Continuous: struct('Method', "Continuous")
-        % For Sampled: struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 1)
-        p_NormalizationConfig struct = struct('Method', "Continuous")
-
         % NormalizationCache instance for caching peak values
         p_NormalizationCache
 
         % Flag to track if wavelength range warning has been issued this session
         p_WavelengthWarningIssued (1,1) logical = false
+
+        % Tracks the age axis separately: a lens-model change re-arms it,
+        % the same way a photopigment change re-arms the wavelength flag.
+        p_AgeWarningIssued (1,1) logical = false
 
         % Strategy 1 storage: the cone parameters, pre-receptoral
         % filters, Age, and FieldSize. Read/written directly by the
@@ -481,17 +518,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         p_Parameters (1,1) ObserverParameters
     end
 
-    properties (Constant, Access = private)
-        DEFAULT_WL = (360:1:830)';
+    properties (Constant)
+        % Default line colors, one row per cone in L, M, S order.
+        %   Public so callers can reference the toolbox palette when
+        %   building their own axes, and so the per-call ConeColors
+        %   override on every plot method has a documented default.
+        CONE_COLORS = [0.8 0.0 0.0
+                       0.0 0.6 0.0
+                       0.0 0.0 0.8]
 
-        % Default operating range and step used by the "Sampled"
-        % normalization mode. [380, 780] nm at 1 nm is the toolbox's
-        % default sampling grid for normalization, NOT the CIE 170-1:2006
-        % tabulation range (which is 390-830 nm; see tests/data/cvrl/).
-        DEFAULT_SAMPLED_RANGE_NM = [380, 780]
-        DEFAULT_SAMPLED_STEP_NM  = 1
+        % DEFAULT_WL  The wavelength grid every method defaults to.
+        %
+        %   360-830 nm at 1 nm. This is Nomograms.SR_VALID_RANGE, the
+        %   validity range of the default Stockman-Rider photopigment
+        %   model, so a no-argument call covers exactly where the default
+        %   model is defined and truncates nothing silently.
+        %
+        %   Numeric and plot methods share this default deliberately:
+        %   obs.L() and obs.LMS()(:,1) must be the same length, and
+        %   obs.lmChromaticity() and obs.xyChromaticity() must agree.
+        %
+        %   The Govardovskii templates are fitted only over 380-780
+        %   (Nomograms.GOV_VALID_RANGE), so a Govardovskii observer using
+        %   this default emits IndividualCMF:WavelengthOutOfRange once.
+        %   That is intended -- the model reporting that it is
+        %   extrapolating. Set obs.ModelRangeWarning = false to silence it.
+        %
+        %   Not a published tabulation range: CIE 170-1:2006 tabulates
+        %   390-830 (see tests/data/cvrl/NOTES.md) and the golden parity
+        %   fixtures use 390-780. Template validity is the justification;
+        %   the 830 upper bound agreeing with CIE is incidental.
+        DEFAULT_WL = (360:1:830)'
     end
-    
+
     methods
         function obj = IndividualCMF(options)
             % INDIVIDUALCMF  Construct a new IndividualCMF observer.
@@ -505,26 +564,34 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             arguments
                 options.StandardObserver (1,1) double {mustBeMember(options.StandardObserver, [0, 2, 10])} = 0
-                options.Age (1,1) double {validators.mustBePositiveOrNaN} = NaN
-                options.FieldSize (1,1) double {validators.mustBePositiveOrNaN} = NaN
-                options.Lod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.Mod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.Sod (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.MacularDensity (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
-                options.LensDensity (1,1) double {validators.mustBeNonnegativeFiniteOrNaN} = NaN
+                options.Age double {mustBeScalarOrEmpty, mustBePositive, mustBeFinite} = []
+                options.FieldSize double {mustBeScalarOrEmpty, mustBePositive, mustBeFinite} = []
+                options.Lod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.Mod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.Sod double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.MacularDensity double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
+                options.LensDensity double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite} = []
                 options.L_LambdaMaxShift (1,1) double {mustBeInRange(options.L_LambdaMaxShift, -40, 10)} = 0
                 options.M_LambdaMaxShift (1,1) double {mustBeInRange(options.M_LambdaMaxShift, -20, 30)} = 0
-                options.S_LambdaMaxShift (1,1) double {mustBeFinite} = 0
+                options.S_LambdaMaxShift (1,1) double {mustBeInRange(options.S_LambdaMaxShift, -40, 30)} = 0
                 options.L_OpsinTemplate (1,1) string {mustBeMember(options.L_OpsinTemplate, ["Mean", "Serine", "Alanine", "MinL"])} = "Mean"
                 options.M_OpsinTemplate (1,1) string {mustBeMember(options.M_OpsinTemplate, ["Mean", "Standard", "LinM"])} = "Mean"
                 options.NormalizeOutput (1,1) logical = true
                 options.LogOutput (1,1) logical = false
                 options.OutputFormat (1,1) string = "energy"
                 % String or struct
-                options.NormalizationMethod = "Continuous"
+                options.NormalizationMethod (1,1) enums.NormalizationMethod = ...
+                    enums.NormalizationMethod.Continuous
+                options.NormalizationGrid double {mustBeVector, mustBeNonempty, ...
+                    validators.mustBeWavelengthVector} = (380:1:780)'
                 options.PhotopigmentModel (1,1) string = "StockmanRider2023"
-                options.LensModel (1,1) string {mustBeMember(options.LensModel, ["StockmanRider2023", "Pokorny1987", "VanDeKraats2007"])} = "StockmanRider2023"
-                options.MacularModel (1,1) string {mustBeMember(options.MacularModel, "StockmanRider2023")} = "StockmanRider2023"
+                % No mustBeMember: the enum conversion in set.LensModel is
+                % the gate, exactly as it is for PhotopigmentModel above.
+                % A hardcoded list here would silently break the registry's
+                % promise that a new model needs one line in LensTemplate
+                % and nothing in IndividualCMF.
+                options.LensModel (1,1) string = "StockmanRider2023"
+                options.MacularModel (1,1) string = "StockmanRider2023"
                 options.MacularDensityAlgorithm (1,1) string {mustBeMember(options.MacularDensityAlgorithm, ["", "CIE170", "MorelandAlexander", "Custom"])} = ""
                 options.PhotopigmentDensityAlgorithm (1,1) string {mustBeMember(options.PhotopigmentDensityAlgorithm, ["", "CIE170", "PokornySmith", "Custom"])} = ""
                 options.LensDensityAlgorithm (1,1) string {mustBeMember(options.LensDensityAlgorithm, ["", "Auto", "Custom"])} = ""
@@ -533,16 +600,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Genotype = []
             end
 
-            % Initialize template first (needed for cache computations). The default
-            % template uses Stockman & Rider (2023) Fourier series templates, which
-            % are the most accurate representation of human cone fundamentals.
-            obj.p_PhotopigmentTemplate = StockmanRiderPhotopigmentTemplate();
-
-            % Initialize lens template (needed for pre-receptoral filtering).
-            obj.p_LensTemplate = StockmanRiderLensTemplate();
-
-            % Initialize macular template (needed for pre-receptoral filtering).
-            obj.p_MacularTemplate = StockmanRider2023MacularTemplate();
+            % Initialize templates first (needed for cache computations).
+            % The defaults are the Stockman & Rider (2023) models, the most
+            % accurate representation of human cone fundamentals; each is
+            % resolved through its base-class registry so no template class
+            % name appears in this file.
+            obj.p_PhotopigmentTemplate = PhotopigmentTemplate.create( ...
+                string(ObserverParameters.DEFAULT_PHOTOPIGMENT_MODEL));
+            obj.p_LensTemplate = LensTemplate.create( ...
+                string(ObserverParameters.DEFAULT_LENS_MODEL));
+            obj.p_MacularTemplate = MacularTemplate.create( ...
+                string(ObserverParameters.DEFAULT_MACULAR_MODEL));
 
             % Initialize p_Parameters with defaults. Configuration methods (applyStandardObserver,
             % applyManualConfig) will update these values. All property getters read from
@@ -550,7 +618,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.p_Parameters = ObserverParameters();
 
             % 2. Initialize normalization config (before cache)
-            obj.p_NormalizationConfig = struct('Method', "Continuous");
 
             % 3. Initialize cache (needs observer reference)
             obj.p_NormalizationCache = NormalizationCache(obj);
@@ -559,6 +626,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             addlistener(obj, 'OutputFormat',   'PostSet', @(s,e) obj.invalidateNormalizationCache());
             addlistener(obj, 'LogOutput',      'PostSet', @(s,e) obj.invalidateNormalizationCache());
             addlistener(obj, 'NormalizeOutput','PostSet', @(s,e) obj.invalidateNormalizationCache());
+            addlistener(obj, 'NormalizationMethod','PostSet', @(s,e) obj.invalidateNormalizationCache());
+            addlistener(obj, 'NormalizationGrid','PostSet', @(s,e) obj.invalidateNormalizationCache());
 
             obj.GenotypeState = dictionary(string.empty, string.empty);
 
@@ -585,8 +654,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % Note: FieldSizeMethod is set in applyManualConfig based on density overrides
             obj.Primaries = options.Primaries;
 
-            % 7. Set normalization method last (may override defaults)
+            % 7. Set normalization last (may override defaults)
             obj.NormalizationMethod = options.NormalizationMethod;
+            obj.NormalizationGrid = options.NormalizationGrid;
         end
     end
 
@@ -653,21 +723,25 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.MacularDensityAlgorithm(obj, val)
             % set.MacularDensityAlgorithm  Set the macular density calculation algorithm.
+            %   Chooses which formula computes MacularDensity. "Custom" is
+            %   not assignable here: it is engaged by assigning a value to
+            %   MacularDensity and cleared by MacularDensity = [].
             arguments
                 obj
                 val (1,1) enums.MacularDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "MacularDensityAlgorithm", "MacularDensity");
             oldAlg = obj.p_MacularDensityAlgorithm;
             obj.p_MacularDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val ~= "Custom"
+            % val can no longer be Custom -- the setter rejects it above.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:MacularCustomOverwritten', ...
                     'Switching from Custom macular mode. MacularDensity will be recalculated.');
             end
 
-            if val ~= "Custom"
-                obj.updateMacularDensity();
-            end
+            obj.updateMacularDensity();
         end
 
         function v = get.MacularDensityAlgorithm(obj)
@@ -677,21 +751,25 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.PhotopigmentDensityAlgorithm(obj, val)
             % set.PhotopigmentDensityAlgorithm  Set the photopigment density calculation algorithm.
+            %   Chooses which formula computes Lod / Mod / Sod. "Custom" is
+            %   not assignable here: it is engaged by assigning a value to
+            %   any of the three and cleared by assigning [] to any of them.
             arguments
                 obj
                 val (1,1) enums.PhotopigmentDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "PhotopigmentDensityAlgorithm", "Lod / Mod / Sod");
             oldAlg = obj.p_PhotopigmentDensityAlgorithm;
             obj.p_PhotopigmentDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val ~= "Custom"
+            % val can no longer be Custom -- the setter rejects it above.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:PhotopigmentCustomOverwritten', ...
                     'Switching from Custom photopigment mode. Lod/Mod/Sod will be recalculated.');
             end
 
-            if val ~= "Custom"
-                obj.updatePhotopigmentDensities();
-            end
+            obj.updatePhotopigmentDensities();
         end
 
         function v = get.PhotopigmentDensityAlgorithm(obj)
@@ -743,16 +821,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Lod(obj, v)
             % set.Lod  Set L-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
             end
-            obj.p_Parameters.LCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.LCone.LambdaMaxShift);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
+            obj.setConeParameter('L', "OpticalDensity", v);
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -763,16 +844,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Mod(obj, v)
             % set.Mod  Set M-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
             end
-            obj.p_Parameters.MCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.MCone.LambdaMaxShift);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
+            obj.setConeParameter('M', "OpticalDensity", v);
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -783,16 +867,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.Sod(obj, v)
             % set.Sod  Set S-cone optical density.
+            %   Assigning [] clears Custom mode. The photopigment formulas
+            %   produce all three cone densities together, so this reverts
+            %   Lod, Mod and Sod as a group.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
             end
-            obj.p_Parameters.SCone = PhotopigmentParameters( ...
-                OpticalDensity=v, ...
-                LambdaMaxShift=obj.p_Parameters.SCone.LambdaMaxShift);
-            if ~obj.p_IsInternalUpdate
-                obj.updatePhotopigmentAlgorithmFromValues();
+            if isempty(v)
+                obj.revertPhotopigmentDensities();
+                return
             end
+            obj.setConeParameter('S', "OpticalDensity", v);
+            obj.updatePhotopigmentAlgorithmFromValues();
             obj.invalidateNormalizationCache();
         end
 
@@ -803,23 +890,28 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.MacularDensity(obj, v)
             % set.MacularDensity  Set macular pigment density.
+            %   Assigning [] clears Custom mode and returns the value to
+            %   the field-size-appropriate formula.
             arguments
                 obj
-                v (1,1) double
+                v double {mustBeScalarOrEmpty}
+            end
+            if isempty(v)
+                obj.revertMacularDensity();
+                return
             end
             obj.p_Parameters.Macular = PreReceptoralFilter(Type="macular", Density=v);
-            if ~obj.p_IsInternalUpdate
-                % Tag the assigned value: CIE170 if it matches the standard
-                % table for the current field size (2 or 10 deg only), Custom
-                % otherwise. Non-standard field sizes can never be CIE170 --
-                % there is no published table to match against.
-                fieldSize = obj.p_Parameters.FieldSize;
-                if (fieldSize == 2 || fieldSize == 10) && ...
-                        v == PreReceptoralFilter.macularDensityCIEStandard(fieldSize)
-                    obj.p_MacularDensityAlgorithm = "CIE170";
-                else
-                    obj.p_MacularDensityAlgorithm = "Custom";
-                end
+
+            % Tag the assigned value: CIE170 if it matches the standard
+            % table for the current field size (2 or 10 deg only), Custom
+            % otherwise. Non-standard field sizes can never be CIE170 --
+            % there is no published table to match against.
+            fieldSize = obj.p_Parameters.FieldSize;
+            if (fieldSize == 2 || fieldSize == 10) && ...
+                    v == PreReceptoralFilter.macularDensityCIEStandard(fieldSize)
+                obj.p_MacularDensityAlgorithm = "CIE170";
+            else
+                obj.p_MacularDensityAlgorithm = "Custom";
             end
             obj.invalidateNormalizationCache();
         end
@@ -835,9 +927,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) double {mustBeInRange(v, -40, 10)}
             end
-            obj.p_Parameters.LCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.LCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('L', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -852,9 +942,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) double {mustBeInRange(v, -20, 30)}
             end
-            obj.p_Parameters.MCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.MCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('M', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -865,18 +953,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
         function set.S_LambdaMaxShift(obj, v)
             % set.S_LambdaMaxShift  Set S-cone peak wavelength shift.
-            %   S is left otherwise unbounded (L and M shifts use
-            %   mustBeInRange to clamp to the physiologically plausible
-            %   window). mustBeFinite still rejects NaN/Inf, which would
-            %   propagate into the fminbnd peak-search bounds and produce
-            %   non-finite spectra downstream.
+            %
+            %   Bounded to [-40, 30], the same endpoints already used for
+            %   L (-40) and M (+30). Outside that window the Fourier
+            %   template stops being evaluable, not merely imprecise.
+            %
+            %   Stockman & Rider fit an 8th-order Fourier polynomial over
+            %   HALF a period, log 360 to log 850 nm mapped to 0 to pi
+            %   (2023, p. 820, Eq. 2). A shift slides the query window
+            %   along that arc by (lambdaMax + shift)/lambdaMax, and past
+            %   the arc the series climbs again. Measured on the raw
+            %   template at 830 nm: 1.2e-10 at shift -40, 5.3e-04 at -50,
+            %   2.2e+03 at -55. At the short end, 360 nm gives 0.55 at
+            %   +30, 2.2 at +35, and 24.3 at +40. The peak search tracks
+            %   the shifted peak and never samples those wavelengths, so
+            %   normalization does not catch it.
+            %
+            %   pycone applies the identical formula with no bound and
+            %   breaks at the same shifts -- verified by running it: its
+            %   Sconelog returns 2200.52 at -55 and inf at +240. So this
+            %   clamp is deliberate hardening beyond the reference, as the
+            %   L and M clamps already were, not a divergence from it.
+            %
+            %   For pigments genuinely outside this window use
+            %   PhotopigmentModel="Govardovskii2000", a lambda-max
+            %   parameterised nomogram, or the common template. Stockman &
+            %   Rider report only weak evidence for S shifts at all
+            %   (p. 828): observer lambda-max has a 1.5 nm standard
+            %   deviation, clustering near 417.4 and 420.1 nm.
             arguments
                 obj
-                v (1,1) double {mustBeFinite}
+                v (1,1) double {mustBeInRange(v, -40, 30)}
             end
-            obj.p_Parameters.SCone = PhotopigmentParameters( ...
-                OpticalDensity=obj.p_Parameters.SCone.OpticalDensity, ...
-                LambdaMaxShift=v);
+            obj.setConeParameter('S', "LambdaMaxShift", v);
             obj.invalidateNormalizationCache();
         end
 
@@ -937,23 +1046,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.PhotopigmentModel
             end
-            % Instantiate the appropriate photopigment template based on
-            % the requested model. StockmanRider2023 uses Fourier series
-            % templates from Stockman & Rider (2023). Govardovskii2000
-            % and Govardovskii2000A2 use the parametric A1 and A2 visual
-            % pigment templates from Govardovskii et al. (2000).
-            switch v
-                case enums.PhotopigmentModel.StockmanRider2023
-                    obj.p_PhotopigmentTemplate = StockmanRiderPhotopigmentTemplate();
-                case enums.PhotopigmentModel.Govardovskii2000
-                    obj.p_PhotopigmentTemplate = GovardovskiiPhotopigmentTemplate();
-                case enums.PhotopigmentModel.Govardovskii2000A2
-                    obj.p_PhotopigmentTemplate = ...
-                        GovardovskiiPhotopigmentTemplate(Pigment="A2");
-                case enums.PhotopigmentModel.StockmanRider2023Common
-                    obj.p_PhotopigmentTemplate = ...
-                        StockmanRiderCommonPhotopigmentTemplate();
-            end
+            obj.p_PhotopigmentTemplate = PhotopigmentTemplate.create(string(v));
             obj.p_WavelengthWarningIssued = false;
             obj.invalidateNormalizationCache();
         end
@@ -982,14 +1075,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.LensModel
             end
-            switch v
-                case enums.LensModel.StockmanRider2023
-                    obj.p_LensTemplate = StockmanRiderLensTemplate();
-                case enums.LensModel.Pokorny1987
-                    obj.p_LensTemplate = Pokorny1987LensTemplate();
-                case enums.LensModel.VanDeKraats2007
-                    obj.p_LensTemplate = VanDeKraatsVanNorren2007LensTemplate();
-            end
+            obj.p_LensTemplate = LensTemplate.create(string(v));
+            obj.p_AgeWarningIssued = false;
             obj.recalcLensFromAge();
             obj.invalidateNormalizationCache();
         end
@@ -1014,10 +1101,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 v (1,1) enums.MacularModel
             end
-            switch v
-                case enums.MacularModel.StockmanRider2023
-                    obj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-            end
+            obj.p_MacularTemplate = MacularTemplate.create(string(v));
             obj.invalidateNormalizationCache();
         end
 
@@ -1034,17 +1118,23 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % set.LensDensity  Set lens optical density at 400 nm.
             %   Direct assignment auto-engages LensDensityAlgorithm="Custom"
             %   so the value is preserved across subsequent Age, FieldSize,
-            %   or LensModel changes. Internal recalculations from
-            %   recalcLensFromAge bypass the mode switch via the
-            %   p_IsInternalUpdate flag.
+            %   or LensModel changes. recalcLensFromAge writes p_LensDensity
+            %   directly, so a formula recompute never engages Custom.
+            %
+            %   Assigning [] is the inverse: it clears Custom mode and
+            %   recomputes from the Age in force at that moment.
             arguments
                 obj
-                v (1,1) double {mustBeNonnegative, mustBeFinite}
+                v double {mustBeScalarOrEmpty, mustBeNonnegative, mustBeFinite}
+            end
+            if isempty(v)
+                obj.p_LensDensityAlgorithm = "Auto";
+                obj.recalcLensFromAge();
+                obj.invalidateNormalizationCache();
+                return
             end
             obj.p_LensDensity = v;
-            if ~obj.p_IsInternalUpdate
-                obj.p_LensDensityAlgorithm = "Custom";
-            end
+            obj.p_LensDensityAlgorithm = "Custom";
             obj.invalidateNormalizationCache();
         end
 
@@ -1057,21 +1147,25 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % set.LensDensityAlgorithm  Set the lens density mode.
             %   Switching from "Custom" to "Auto" warns and recomputes
             %   LensDensity from the active LensModel and current Age.
+            %   "Custom" is not assignable here: it is engaged by assigning
+            %   a value to LensDensity and cleared by LensDensity = [].
             arguments
                 obj
                 val (1,1) enums.LensDensityAlgorithm
             end
+            IndividualCMF.rejectCustomAssignment(val == "Custom", ...
+                "LensDensityAlgorithm", "LensDensity");
             oldAlg = obj.p_LensDensityAlgorithm;
             obj.p_LensDensityAlgorithm = val;
 
-            if oldAlg == "Custom" && val == "Auto"
+            % LensDensityAlgorithm has only Auto and Custom, and Custom is
+            % rejected above, so val is necessarily Auto here.
+            if oldAlg == "Custom"
                 warning('IndividualCMF:LensCustomOverwritten', ...
                     'Switching from Custom lens mode. LensDensity will be recalculated from Age.');
             end
 
-            if val == "Auto"
-                obj.recalcLensFromAge();
-            end
+            obj.recalcLensFromAge();
         end
 
         function v = get.LensDensityAlgorithm(obj)
@@ -1079,57 +1173,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             v = obj.p_LensDensityAlgorithm;
         end
 
-        function set.NormalizationMethod(obj, val)
-            % set.NormalizationMethod  Set the normalization method.
-            %
-            %   Accepts:
-            %     - "Continuous" string - Optimization-based peak finding (default)
-            %     - "Sampled" string    - Discrete sampling with default resolution
-            %     - struct with Method="Sampled" - Explicit resolution for reproducibility
-            %
-            %   EXAMPLE:
-            %       obj.NormalizationMethod = "Continuous";
-            %       obj.NormalizationMethod = "Sampled";
-            %       obj.NormalizationMethod = struct('Method', "Sampled", 'Step', 5);
-            if isstring(val) || ischar(val)
-                val = string(val);
-                switch val
-                    case "Continuous"
-                        obj.p_NormalizationConfig = struct('Method', "Continuous");
-                    case "Sampled"
-                        obj.p_NormalizationConfig = struct(...
-                            'Method', "Sampled", ...
-                            'Start', IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(1), ...
-                            'Stop',  IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(2), ...
-                            'Step',  IndividualCMF.DEFAULT_SAMPLED_STEP_NM);
-                    otherwise
-                        error('IndividualCMF:InvalidNormalizationMethod', ...
-                            'NormalizationMethod must be "Continuous", "Sampled", or a struct with Method="Sampled".');
-                end
-            elseif isstruct(val)
-                obj.p_NormalizationConfig = obj.validateSampledConfig(val);
-            else
-                error('IndividualCMF:InvalidNormalizationMethod', ...
-                    'NormalizationMethod must be "Continuous", "Sampled", or a struct with Method="Sampled".');
-            end
-            obj.invalidateNormalizationCache();
-        end
-
-        function v = get.NormalizationMethod(obj)
-            % get.NormalizationMethod  Get the normalization method name.
-            %
-            %   Returns "Continuous" or "Sampled" for clean display.
-            %   Use NormalizationConfig to get the full configuration struct.
-            v = obj.p_NormalizationConfig.Method;
-        end
-
-        function v = get.NormalizationConfig(obj)
-            % get.NormalizationConfig  Get the full normalization configuration.
-            %
-            %   Returns the complete configuration struct, allowing inspection
-            %   of all settings including resolution parameters for Sampled mode.
-            v = obj.p_NormalizationConfig;
-        end
     end
 
     % Public API
@@ -1155,8 +1198,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.GenotypeState(key) = amino_acid;
 
             % Constants for scaling shifts (from Stockman & Rider)
-            M_scale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
-            L_scale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
+            M_scale = Genotype.mShift();
+            L_scale = Genotype.lShift();
 
             total = 0;
             sites = [116, 180, 230, 233, 277, 285, 309];
@@ -1453,7 +1496,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       isequal(obs1.LMS(400:5:700), obs2.LMS(400:5:700))   % true
             %
             %       % Apply a CIE standard observer's parameters:
-            %       obs.setParameters(ObserverParameters.standard2Deg());
+            %       obs.setParameters(IndividualCMF(StandardObserver=2).getParameters());
             %
             %   See also: getParameters, applyGenotype, ObserverParameters
             arguments
@@ -1478,15 +1521,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             % Apply model selections. In Custom mode these are no-ops for
             % density; the lens template still swaps for spectrum shape.
+            % Age and FieldSize first: assigning LensModel runs
+            % validateAgeForLensModel, and against the receiver's stale age
+            % a perfectly valid snapshot could be refused -- a Pokorny-at-50
+            % snapshot applied to a receiver sitting at age 90 errored with
+            % AgeOutsideModelDomain even though both states were legal.
+            % These are direct writes to the value object, so they carry no
+            % side effects of their own.
+            obj.p_Parameters.Age = params.Age;
+            obj.p_Parameters.FieldSize = params.FieldSize;
+
             obj.PhotopigmentModel = params.PhotopigmentModel;
             obj.LensModel = params.LensModel;
             obj.MacularModel = params.MacularModel;
             obj.p_L_Template = params.L_OpsinTemplate;
             obj.p_M_Template = params.M_OpsinTemplate;
-
-            % Apply physiological parameters
-            obj.p_Parameters.Age = params.Age;
-            obj.p_Parameters.FieldSize = params.FieldSize;
 
             % Apply cone parameters
             obj.p_Parameters.LCone = PhotopigmentParameters( ...
@@ -1517,40 +1566,94 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.invalidateNormalizationCache();
         end
 
-        function val = L(obj, wl)
+        function val = L(obj, wl, options)
             % L  Calculate L-cone sensitivity.
-            %   val = obj.L(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.L(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Lod == 0
             %   (protanope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'L');
+            val = obj.computeSensitivityCore(wl, 'L', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
-        function val = M(obj, wl)
+        function val = M(obj, wl, options)
             % M  Calculate M-cone sensitivity.
-            %   val = obj.M(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.M(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Mod == 0
             %   (deuteranope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'M');
+            val = obj.computeSensitivityCore(wl, 'M', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
-        function val = S(obj, wl)
+        function val = S(obj, wl, options)
             % S  Calculate S-cone sensitivity.
-            %   val = obj.S(wl) returns sensitivity at specified wavelengths.
+            %   val = obj.S(wl) returns sensitivity at specified wavelengths
+            %   using the observer's persistent OutputFormat, LogOutput, and
+            %   NormalizeOutput. Pass any of those as Name=Value to query in
+            %   a different mode without mutating the observer, exactly as
+            %   LMS does.
+            %
             %   Returns zeros (or -10 in LogOutput mode) when Sod == 0
             %   (tritanope).
+            %
+            %   OPTIONAL INPUTS (Name-Value arguments):
+            %       OutputFormat    - "energy" | "quantal" | "absorptance" |
+            %                         "absorbance". Default: obj.OutputFormat.
+            %       LogOutput       - Log10 the result. Default: obj.LogOutput.
+            %       NormalizeOutput - Peak-normalize. Default:
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             arguments
                 obj
-                wl double = obj.DEFAULT_WL
+                wl double = IndividualCMF.DEFAULT_WL
+                options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
+                options.LogOutput (1,1) logical = obj.LogOutput
+                options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
             end
-            val = obj.calculateSensitivity(wl, 'S');
+            val = obj.computeSensitivityCore(wl, 'S', ...
+                string(options.OutputFormat), options.NormalizeOutput, ...
+                options.LogOutput);
         end
 
         function peak = getPeak(obj, coneType, options)
@@ -1575,10 +1678,18 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OUTPUTS:
             %       peak - The peak sensitivity value used as the normalization divisor
             %
+            %   For OutputFormat="absorbance" the returned value is
+            %   diagnostic only -- it is never applied as a divisor,
+            %   because absorbance is not normalized. It is how you see the
+            %   template's true maximum: 0.9949448501 for the
+            %   Stockman-Rider L cone, 1.0349751181 for the Govardovskii A2
+            %   S cone.
+            %
             %   EXAMPLE:
             %       obs = IndividualCMF();
             %       peak_L = obs.getPeak('L');
             %       peak_M_quantal = obs.getPeak('M', OutputFormat="quantal");
+            %       peak_abs = obs.getPeak('L', OutputFormat="absorbance");
             arguments
                 obj
                 coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
@@ -1588,68 +1699,56 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         end
 
         function [result, wl] = evaluate(obj, wl, options)
-            % EVALUATE  Evaluates the model to return data in specific formats.
-            %   Calculates sensitivities for the provided wavelengths and formats the output
-            %   as arrays, tables, or structures based on the configuration options.
+            % EVALUATE  Return a derived quantity as a table.
+            %   Computes the requested quantity at the given wavelengths and
+            %   returns it as a table with a Wavelength_nm column, ready for
+            %   writetable.
+            %
+            %   Every branch delegates to the correspondingly named method,
+            %   so evaluate and the named methods cannot drift apart. For an
+            %   array, call the named method directly: obs.LMS(wl).
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
-            %       Data - Type of data to return: "LMS", "RGB", "chromaticity" (string) Default: "LMS"
-            %       Format - Return structure: "array" (matrix), "table", "struct" (string) Default: "array"
+            %       Data - Quantity to return (string). One of "LMS", "L",
+            %              "M", "S", "RGB", "XYZ", "Luminance",
+            %              "lmChromaticity", "xyChromaticity",
+            %              "MacLeodBoynton". Default "LMS".
             %
             %   OUTPUTS:
-            %       result - The calculated data in the requested format (array)
+            %       result - Table with Wavelength_nm plus one column per channel
             %       wl - Wavelengths in nm (vector)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       writetable(obs.evaluate((400:10:700)'), "cmfs.csv");
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
-                options.Data {mustBeMember(options.Data, ...
-                    {'LMS', 'L', 'M', 'S', 'RGB', 'chromaticity'})} = 'LMS'
-                options.Format {mustBeMember(options.Format, ...
-                    {'array', 'table', 'struct'})} = 'array'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
+                options.Data (1,1) string {mustBeMember(options.Data, ...
+                    ["LMS", "L", "M", "S", "RGB", "XYZ", "Luminance", ...
+                     "lmChromaticity", "xyChromaticity", "MacLeodBoynton"])} = "LMS"
             end
 
-            % Ensure wl is column vector
             wl = wl(:);
 
             switch options.Data
-                case 'LMS', data = obj.LMS(wl); var_names = {'L', 'M', 'S'};
-                case 'L', data = obj.L(wl); var_names = {'L'};
-                case 'M', data = obj.M(wl); var_names = {'M'};
-                case 'S', data = obj.S(wl); var_names = {'S'};
-                case 'RGB'
-                    data = obj.RGB(wl);
-                    var_names = {'R', 'G', 'B'};
-                case 'chromaticity'
-                    % Force the energy/normalized/non-log basis required
-                    % by the projective chromaticity formula. Otherwise
-                    % the result silently changes shape with the
-                    % observer's OutputFormat.
-                    LMS = obj.chromaticityBasisLMS(wl);
-                    sum_LMS = sum(LMS, 2); sum_LMS(sum_LMS == 0) = eps;
-                    data = LMS ./ sum_LMS; var_names = {'l', 'm', 's'};
+                case "LMS",            data = obj.LMS(wl);            names = ["L" "M" "S"];
+                case "L",              data = obj.L(wl);              names = "L";
+                case "M",              data = obj.M(wl);              names = "M";
+                case "S",              data = obj.S(wl);              names = "S";
+                case "RGB",            data = obj.RGB(wl);            names = ["R" "G" "B"];
+                case "XYZ",            data = obj.XYZ(wl);            names = ["X" "Y" "Z"];
+                case "Luminance",      data = obj.Luminance(wl);      names = "V";
+                case "lmChromaticity", data = obj.lmChromaticity(wl); names = ["l" "m"];
+                case "xyChromaticity", data = obj.xyChromaticity(wl); names = ["x" "y"];
+                case "MacLeodBoynton", data = obj.MacLeodBoynton(wl); names = ["l_MB" "s_MB"];
             end
 
-            switch lower(options.Format)
-                case 'array'
-                    % RESULT IS DATA ONLY. WL is returned as 2nd arg.
-                    result = data;
-                case 'table'
-                    if size(data, 2) == 1
-                        result = table(wl, data, 'VariableNames', {'Wavelength_nm', var_names{1}});
-                    else
-                        T = array2table(data, 'VariableNames', var_names);
-                        result = [table(wl, 'VariableNames', {'Wavelength_nm'}), T];
-                    end
-                case 'struct'
-                    result.Wavelength_nm = wl;
-                    for i = 1:length(var_names)
-                        if size(data, 2) == 1, result.(var_names{i}) = data;
-                        else, result.(var_names{i}) = data(:,i); end
-                    end
-            end
+            result = [table(wl, VariableNames="Wavelength_nm"), ...
+                      array2table(data, VariableNames=names)];
         end
 
         function [RGB, wl] = RGB(obj, wl)
@@ -1664,14 +1763,14 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   matrix is singular with one cone absent).
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       RGB - Nx3 matrix [R, G, B] containing tristimulus values.
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % RGB CMFs require inverting a 3x3 LMS-at-primaries matrix.
@@ -1743,14 +1842,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   to query in a different mode without mutating the observer.
             %
             %   OPTIONAL INPUTS:
-            %       wl - Wavelengths in nm. Default: (380:1:780)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       OutputFormat    - "energy" | "quantal" | "absorptance" |
             %                         "absorbance". Default: obj.OutputFormat.
             %       LogOutput       - Log10 the result. Default: obj.LogOutput.
             %       NormalizeOutput - Peak-normalize each cone. Default:
-            %                         obj.NormalizeOutput.
+            %                         obj.NormalizeOutput. Ignored when
+            %                         OutputFormat is "absorbance".
             %
             %   OUTPUTS:
             %       LMS - Nx3 matrix [L, M, S] containing sensitivities.
@@ -1761,7 +1861,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       wl  - Nx1 vector of wavelengths corresponding to the data.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.OutputFormat (1,1) enums.OutputFormat = obj.OutputFormat
                 options.LogOutput (1,1) logical = obj.LogOutput
                 options.NormalizeOutput (1,1) logical = obj.NormalizeOutput
@@ -1785,18 +1885,29 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   automatically when the observer's Age changes.
             %
             %   INPUTS:
-            %       wavelengths - Wavelengths in nanometers (vector)
+            %       wavelengths - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       spectrum - Lens optical density at each wavelength (vector)
             arguments
                 obj
-                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
+                    IndividualCMF.DEFAULT_WL
             end
+
+            obj.validateWavelengths(wavelengths);
 
             template = obj.p_LensTemplate.computeTemplate(wavelengths, ...
                 obj.p_Parameters.Age, FieldSize=obj.p_Parameters.FieldSize);
             spectrum = obj.LensDensity * template;
+
+            % An optical density has no zero-valued "no answer": zero reads
+            % as perfectly transparent, the opposite of reality in the UV,
+            % and would silently inflate anything computed from it. Report
+            % NaN instead. These survive -- pipeline.OutputStage.cleanNaN
+            % runs only in the sensitivity path, not here.
+            dom = obj.p_LensTemplate.Domain;
+            spectrum((wavelengths < dom(1)) | (wavelengths > dom(2))) = NaN;
         end
 
         function spectrum = getMacularDensitySpectrum(obj, wavelengths)
@@ -1813,17 +1924,26 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   changes (unless MacularDensityAlgorithm is "Custom").
             %
             %   INPUTS:
-            %       wavelengths - Wavelengths in nanometers (vector)
+            %       wavelengths - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OUTPUTS:
             %       spectrum - Macular optical density at each wavelength (vector)
             arguments
                 obj
-                wavelengths (:,1) double {validators.mustBeWavelengthVector}
+                wavelengths (:,1) double {validators.mustBeWavelengthVector} = ...
+                    IndividualCMF.DEFAULT_WL
             end
+
+            obj.validateWavelengths(wavelengths);
 
             template = obj.p_MacularTemplate.computeTemplate(wavelengths);
             spectrum = obj.MacularDensity * template;
+
+            % NaN rather than zero outside the domain, for the same reason
+            % as the lens spectrum: zero optical density is a claim, not an
+            % absence of one.
+            dom = obj.p_MacularTemplate.Domain;
+            spectrum((wavelengths < dom(1)) | (wavelengths > dom(2))) = NaN;
         end
 
         function [XYZ, wl] = XYZ(obj, wl, options)
@@ -1844,7 +1964,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %         parameters deviate from the standard (unless a custom matrix is provided).
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       wl - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       TransformationMatrix - A custom matrix M to convert (3,3 double)
@@ -1857,7 +1977,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (360:1:830)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
             end
 
@@ -1962,7 +2082,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  V*(lambda) unchanged (S not in V*)
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       lum - Photopic luminance V*(lambda) (Nx1 column).
@@ -1986,7 +2106,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       doi:10.1016/j.cobeha.2019.06.005
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % Field-size dispatch mirrors XYZ(): the 2-deg matrix is
@@ -2032,7 +2152,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  s_MB = 0
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       mb - Nx2 matrix with columns [l_MB, s_MB].
@@ -2057,7 +2177,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Behavioral Sciences, 30, 87-93.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             % Row 2 = y_bar coefficients; column 1 = L contribution,
@@ -2073,12 +2193,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             LMS = obj.chromaticityBasisLMS(wl);
             Lw = kL * LMS(:,1);
             Mw = kM * LMS(:,2);
-            V  = Lw + Mw;
-            safeV = V;
-            % Outside the photopic range V can hit zero, which would
-            % produce 0/0 and NaN-propagate; mark explicitly.
-            safeV(safeV == 0) = NaN;
-            mb = [Lw ./ safeV, LMS(:,3) ./ safeV];
+            mb = IndividualCMF.projectiveNormalize([Lw, LMS(:,3)], Lw + Mw);
         end
 
         function lm = lmChromaticity(obj, wl)
@@ -2104,7 +2219,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Sod = 0  ->  l + m = 1 (S contribution removed)
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (380:1:780)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OUTPUTS:
             %       lm - Nx2 matrix with columns [l, m].
@@ -2120,14 +2235,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Behavioral Sciences, 30, 87-93.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (380:1:780)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
             end
 
             LMS = obj.chromaticityBasisLMS(wl);
-            total = sum(LMS, 2);
-            safe = total;
-            safe(safe == 0) = NaN;
-            lm = [LMS(:,1) ./ safe, LMS(:,2) ./ safe];
+            lm = IndividualCMF.projectiveNormalize(LMS(:,1:2), sum(LMS, 2));
         end
 
         function xy = xyChromaticity(obj, wl, options)
@@ -2146,7 +2258,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   Name-Value argument to override (forwarded to XYZ).
             %
             %   INPUTS:
-            %       wl - Wavelengths in nm (vector). Default: (360:1:830)'.
+            %       wl - Wavelengths in nm (vector). Default: DEFAULT_WL.
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       TransformationMatrix - Forwarded to XYZ (3x3 double).
@@ -2166,27 +2278,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Vienna: CIE.
             arguments
                 obj
-                wl (:,1) double {validators.mustBeWavelengthVector} = (360:1:830)'
+                wl (:,1) double {validators.mustBeWavelengthVector} = IndividualCMF.DEFAULT_WL
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
             end
 
-            if isempty(options.TransformationMatrix)
-                XYZ = obj.XYZ(wl);
-            else
-                XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
-            end
-            total = sum(XYZ, 2);
-            safe = total;
-            safe(safe == 0) = NaN;
-            xy = [XYZ(:,1) ./ safe, XYZ(:,2) ./ safe];
+            % XYZ's own TransformationMatrix default is already [], so
+            % the empty case needs no branch.
+            XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
+            xy = IndividualCMF.projectiveNormalize(XYZ(:,1:2), sum(XYZ, 2));
         end
     end
 
-    % Visualization shortcuts
-    % Thin wrappers that delegate to CMFPlotter. All plotting methods:
-    %   - Return [p, ax] for post-creation customization
-    %   - Support lazy instantiation (auto-create CMFPlotter if not provided)
-    %   - Apply consistent default styling
+    % Visualization. Every method draws into gca unless Parent= is given,
+    % returns [p, ax] for post-creation customization, and restores the
+    % caller's hold state. For multi-panel figures use MATLAB's
+    % tiledlayout/nexttile and pass Parent=nexttile().
     %
     % For custom line styling, modify returned handles:
     %   [p, ax] = obs.plotLMS();
@@ -2205,13 +2311,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %       Data - Type of data to plot: (string)
             %                         "LMS" (default) - Cone fundamentals
             %                         "RGB"           - RGB Color Matching Functions
-            %                         "chromaticity"  - rg-chromaticity diagram
+            %                         "lmChromaticity" - lm chromaticity diagram
             %                         "absorbance"    - Photopigment absorbance
             %                         "absorptance"   - Relative retinal absorptance (see OutputFormat docs)
             %       Title - Custom title. Default: auto-generated based on Data (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - For absorbance: plot log scale. Default: false (logical)
-            %       Plotter - Existing plotter instance (lazy instantiation) (CMFPlotter)
+            %       Compare - Overlay another observer (IndividualCMF)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
+            %       Parent - Target axes. Default: gca (axes)
             %
             %   Examples:
             %       obs.plot()                              % LMS cone fundamentals
@@ -2222,11 +2330,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             arguments
                 obj
                 options.Data (1,1) string {mustBeMember(options.Data, ...
-                    ["LMS", "RGB", "chromaticity", "absorbance", "absorptance"])} = "LMS"
+                    ["LMS", "RGB", "lmChromaticity", "absorbance", "absorptance"])} = "LMS"
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Compare = []
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
@@ -2246,24 +2355,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                         [p, ax] = obj.compareTo(options.Compare, ...
                             Wavelength=wl, Title=titleStr, Parent=options.Parent);
                     case "RGB"
-                        ax = obj.resolvePlotAxes(options.Parent);
+                        [ax, wasHeld] = obj.beginLinePlot(options.Parent);
                         RGBref  = obj.RGB(wl);
                         RGBcomp = options.Compare.RGB(wl);
-                        wasHeld = ishold(ax);
-                        cla(ax);
-
-                        ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-                        ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-                        hold(ax, 'on');
+                        names = ["R", "G", "B"];
                         p = gobjects(6, 1);
-                        p(1) = plot(ax, wl, RGBref(:,1),  '-',  'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'R');
-                        p(2) = plot(ax, wl, RGBref(:,2),  '-',  'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'G');
-                        p(3) = plot(ax, wl, RGBref(:,3),  '-',  'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'B');
-                        p(4) = plot(ax, wl, RGBcomp(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', "R'");
-                        p(5) = plot(ax, wl, RGBcomp(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', "G'");
-                        p(6) = plot(ax, wl, RGBcomp(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', "B'");
-                        if ~wasHeld, hold(ax, 'off'); end
-                        obj.finalizeLinePlot(ax, p, titleStr, "Tristimulus Value");
+                        for k = 1:3
+                            p(k) = plot(ax, wl, RGBref(:,k), '-', ...
+                                'Color', options.ConeColors(k,:), ...
+                                'LineWidth', 2, 'DisplayName', names(k));
+                            p(k+3) = plot(ax, wl, RGBcomp(:,k), '--', ...
+                                'Color', options.ConeColors(k,:), ...
+                                'LineWidth', 2, 'DisplayName', names(k) + "'");
+                        end
+                        obj.finalizeLinePlot(ax, p, titleStr, "Tristimulus Value", wasHeld);
                     otherwise
                         error('IndividualCMF:UnsupportedComparison', ...
                             'Comparison not supported for Data="%s". Use "LMS" or "RGB".', options.Data);
@@ -2272,24 +2377,26 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 switch options.Data
                     case "LMS"
                         [p, ax] = obj.plotLMS(Wavelength=wl, Title=titleStr, ...
-                            Parent=options.Parent);
+                            ConeColors=options.ConeColors, Parent=options.Parent);
                     case "RGB"
                         [p, ax] = obj.plotRGBCMFs(Wavelength=wl, Title=titleStr, ...
-                            Parent=options.Parent);
-                    case "chromaticity"
+                            ConeColors=options.ConeColors, Parent=options.Parent);
+                    case "lmChromaticity"
                         [p, ax] = obj.plotChromaticity(Wavelength=wl, Title=titleStr, ...
                             Parent=options.Parent);
                     case "absorbance"
                         [p, ax] = obj.plotAbsorbance(Wavelength=wl, Title=titleStr, ...
-                            Log=options.Log, Parent=options.Parent);
+                            Log=options.Log, ConeColors=options.ConeColors, ...
+                            Parent=options.Parent);
                     case "absorptance"
                         [p, ax] = obj.plotAbsorptance(Wavelength=wl, Title=titleStr, ...
-                            Log=options.Log, Parent=options.Parent);
+                            Log=options.Log, ConeColors=options.ConeColors, ...
+                            Parent=options.Parent);
                 end
             end
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotChromaticity(obj, options)
@@ -2300,22 +2407,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Chromaticity Diagram" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Chromaticity Diagram"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             chrom = obj.lmChromaticity(wl);
 
-            cla(ax);
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
             p = plot(ax, chrom(:,1), chrom(:,2), 'k-', 'LineWidth', 2, ...
                 'DisplayName', 'Spectral locus');
 
@@ -2323,10 +2427,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             ylabel(ax, 'm');
             title(ax, options.Title);
             grid(ax, 'on');
+            if ~wasHeld
+                hold(ax, 'off');
+            end
+            % axis equal must come after the hold restore: beginLinePlot
+            % reset DataAspectRatioMode to auto, and this is what sets it.
             axis(ax, 'equal');
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotLMS(obj, options)
@@ -2341,53 +2450,45 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "LMS Cone Fundamentals" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 sensitivity. Default: false (logical)
             %       Cones - Subset of cones to plot. Default: ["L" "M" "S"] (string array)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "LMS Cone Fundamentals"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
                 options.Cones (1,:) string {mustBeMember(options.Cones, ["L", "M", "S"])} = ["L", "M", "S"]
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             LMS = obj.LMS(wl, LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            od = [obj.Lod, obj.Mod, obj.Sod];
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            if obj.Lod > 0 && any(options.Cones == "L")
-                p(1) = plot(ax, wl, LMS(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'L');
+            for k = 1:3
+                if od(k) > 0 && any(options.Cones == names(k))
+                    p(k) = plot(ax, wl, LMS(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if obj.Mod > 0 && any(options.Cones == "M")
-                p(2) = plot(ax, wl, LMS(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'M');
-            end
-            if obj.Sod > 0 && any(options.Cones == "S")
-                p(3) = plot(ax, wl, LMS(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'S');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
             if options.Log
                 yLab = "Log_{10} Sensitivity";
             else
                 yLab = "Sensitivity";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotXYZ(obj, options)
@@ -2402,48 +2503,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "CIE XYZ CMFs" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Channels - Subset of channels to plot. Default: ["X" "Y" "Z"] (string array)
             %       TransformationMatrix - 3x3 LMS->XYZ matrix override (double)
+            %       ChannelColors - 3x3 [X; Y; Z] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "CIE XYZ CMFs"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Channels (1,:) string {mustBeMember(options.Channels, ["X", "Y", "Z"])} = ["X", "Y", "Z"]
                 options.TransformationMatrix double {validators.mustBe3x3OrEmpty} = []
+                options.ChannelColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             XYZ = obj.XYZ(wl, TransformationMatrix=options.TransformationMatrix);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["X", "Y", "Z"];
             p = gobjects(3, 1);
-            if any(options.Channels == "X")
-                p(1) = plot(ax, wl, XYZ(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'X');
+            for k = 1:3
+                if any(options.Channels == names(k))
+                    p(k) = plot(ax, wl, XYZ(:,k), '-', ...
+                        'Color', options.ChannelColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if any(options.Channels == "Y")
-                p(2) = plot(ax, wl, XYZ(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'Y');
-            end
-            if any(options.Channels == "Z")
-                p(3) = plot(ax, wl, XYZ(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'Z');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value");
+            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotRGBCMFs(obj, options)
@@ -2454,40 +2546,37 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "RGB CMFs" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
+            %       ConeColors - 3x3 [R; G; B] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "RGB CMFs"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             RGB = obj.RGB(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["R", "G", "B"];
             p = gobjects(3, 1);
-            p(1) = plot(ax, wl, RGB(:,1), '-', 'Color', [0.8 0 0], ...
-                'LineWidth', 2, 'DisplayName', 'R');
-            p(2) = plot(ax, wl, RGB(:,2), '-', 'Color', [0 0.6 0], ...
-                'LineWidth', 2, 'DisplayName', 'G');
-            p(3) = plot(ax, wl, RGB(:,3), '-', 'Color', [0 0 0.8], ...
-                'LineWidth', 2, 'DisplayName', 'B');
+            for k = 1:3
+                p(k) = plot(ax, wl, RGB(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), ...
+                    'LineWidth', 2, 'DisplayName', names(k));
+            end
+            % RGB CMFs go negative outside the primary gamut; the zero line
+            % marks where.
             plot(ax, wl, zeros(size(wl)), 'k--', 'LineWidth', 0.5, ...
                 'HandleVisibility', 'off');
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value");
+            obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotAbsorbance(obj, options)
@@ -2498,45 +2587,40 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Photopigment Absorbance" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 absorbance. Default: false (logical)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Photopigment Absorbance"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorbance", LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            p(1) = plot(ax, wl, A(:,1), '-', 'Color', [0.8 0 0], ...
-                'LineWidth', 2, 'DisplayName', 'L');
-            p(2) = plot(ax, wl, A(:,2), '-', 'Color', [0 0.6 0], ...
-                'LineWidth', 2, 'DisplayName', 'M');
-            p(3) = plot(ax, wl, A(:,3), '-', 'Color', [0 0 0.8], ...
-                'LineWidth', 2, 'DisplayName', 'S');
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, A(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), ...
+                    'LineWidth', 2, 'DisplayName', names(k));
+            end
 
             if options.Log
                 yLab = "Log_{10} absorbance";
             else
                 yLab = "Absorbance";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotAbsorptance(obj, options)
@@ -2550,51 +2634,43 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Retinal Absorptance" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Log - Plot log10 absorptance. Default: false (logical)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Retinal Absorptance"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Log (1,1) logical = false
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorptance", LogOutput=options.Log);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            od = [obj.Lod, obj.Mod, obj.Sod];
+            names = ["L", "M", "S"];
             p = gobjects(3, 1);
-            if obj.Lod > 0
-                p(1) = plot(ax, wl, A(:,1), '-', 'Color', [0.8 0 0], ...
-                    'LineWidth', 2, 'DisplayName', 'L');
+            for k = 1:3
+                if od(k) > 0
+                    p(k) = plot(ax, wl, A(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
-            if obj.Mod > 0
-                p(2) = plot(ax, wl, A(:,2), '-', 'Color', [0 0.6 0], ...
-                    'LineWidth', 2, 'DisplayName', 'M');
-            end
-            if obj.Sod > 0
-                p(3) = plot(ax, wl, A(:,3), '-', 'Color', [0 0 0.8], ...
-                    'LineWidth', 2, 'DisplayName', 'S');
-            end
-            if ~wasHeld, hold(ax, 'off'); end
 
             if options.Log
                 yLab = "Log_{10} absorptance";
             else
                 yLab = "Absorptance";
             end
-            obj.finalizeLinePlot(ax, p, options.Title, yLab);
+            obj.finalizeLinePlot(ax, p, options.Title, yLab, wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotQuantalEnergy(obj, options)
@@ -2606,39 +2682,36 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Quantal vs Energy" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Title (1,1) string = "Quantal vs Energy"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             Q = obj.LMS(wl, OutputFormat="quantal");
             E = obj.LMS(wl, OutputFormat="energy");
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(6, 1);
-            p(1) = plot(ax, wl, Q(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L (quantal)');
-            p(2) = plot(ax, wl, Q(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M (quantal)');
-            p(3) = plot(ax, wl, Q(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S (quantal)');
-            p(4) = plot(ax, wl, E(:,1), '-',  'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L (energy)');
-            p(5) = plot(ax, wl, E(:,2), '-',  'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M (energy)');
-            p(6) = plot(ax, wl, E(:,3), '-',  'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S (energy)');
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, Q(:,k), '--', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + " (quantal)");
+                p(k+3) = plot(ax, wl, E(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + " (energy)");
+            end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity");
+            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = compareTo(obj, otherObs, options)
@@ -2650,40 +2723,37 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Title - Custom title. Default: "Observer Comparison" (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 otherObs (1,1) IndividualCMF
                 options.Title (1,1) string = "Observer Comparison"
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             LMSref  = obj.LMS(wl);
             LMScomp = otherObs.LMS(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
+            names = ["L", "M", "S"];
             p = gobjects(6, 1);
-            p(1) = plot(ax, wl, LMSref(:,1), '-', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', 'L');
-            p(2) = plot(ax, wl, LMSref(:,2), '-', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', 'M');
-            p(3) = plot(ax, wl, LMSref(:,3), '-', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', 'S');
-            p(4) = plot(ax, wl, LMScomp(:,1), '--', 'Color', [0.8 0 0], 'LineWidth', 2, 'DisplayName', "L'");
-            p(5) = plot(ax, wl, LMScomp(:,2), '--', 'Color', [0 0.6 0], 'LineWidth', 2, 'DisplayName', "M'");
-            p(6) = plot(ax, wl, LMScomp(:,3), '--', 'Color', [0 0 0.8], 'LineWidth', 2, 'DisplayName', "S'");
-            if ~wasHeld, hold(ax, 'off'); end
+            for k = 1:3
+                p(k) = plot(ax, wl, LMSref(:,k), '-', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k));
+                p(k+3) = plot(ax, wl, LMScomp(:,k), '--', ...
+                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                    'DisplayName', names(k) + "'");
+            end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity");
+            obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotLens(obj, options)
@@ -2695,26 +2765,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Compare - Comparison observer. Default: [] (IndividualCMF)
             %       Title - Custom title (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Compare = []
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             lens = obj.getLensDensitySpectrum(wl);
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Lens Density"; end
                 p = plot(ax, wl, lens, '-', 'Color', [0 0 0], ...
@@ -2726,18 +2790,20 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 end
                 if options.Title == "", options.Title = "Lens Density Comparison"; end
                 lensComp = options.Compare.getLensDensitySpectrum(wl);
+                % Reference/comparison pair, not cone colours -- these two
+                % only need to be distinguishable, so they do not use
+                % CONE_COLORS and take no ConeColors override.
                 p = gobjects(2, 1);
                 p(1) = plot(ax, wl, lens, '-', 'Color', [0 0 0.8], ...
                     'LineWidth', 2, 'DisplayName', 'Reference');
                 p(2) = plot(ax, wl, lensComp, '--', 'Color', [0.8 0 0], ...
                     'LineWidth', 2, 'DisplayName', 'Comparison');
             end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density");
+            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotMacular(obj, options)
@@ -2752,33 +2818,27 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   OPTIONAL INPUTS (Name-Value arguments):
             %       Compare - Comparison observer. Default: [] (IndividualCMF)
             %       Title - Custom title (string)
-            %       Wavelength - Wavelengths in nm. Default: (360:1:830)' (vector)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
             %       Parent - Target axes. Default: gca (axes)
             arguments
                 obj
                 options.Compare = []
                 options.Title (1,1) string = ""
-                options.Wavelength (:,1) double = obj.DEFAULT_WL
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
                 options.Parent = []
             end
 
-            ax = obj.resolvePlotAxes(options.Parent);
+            [ax, wasHeld] = obj.beginLinePlot(options.Parent);
             wl = options.Wavelength;
             % macularTemplate peaks at CIE170.STD_2DEG_MACULAR_DENSITY
             % (~0.350 OD); rescale to the observer's MacularDensity so the
             % plotted curve peaks at obs.MacularDensity, not at
-            % 0.35 * obs.MacularDensity. Matches CMFPlotter.plotMacular
-            % and the manual rescale in Example12.
+            % 0.35 * obs.MacularDensity. Matches the manual rescale in
+            % Example12.
             macTemplate = PreReceptoralFilter.macularTemplate(wl);
             macScale = obj.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
             mac = macTemplate * macScale;
 
-            wasHeld = ishold(ax);
-            cla(ax);
-
-            ax.XLimMode = 'auto'; ax.YLimMode = 'auto';
-            ax.DataAspectRatioMode = 'auto'; ax.PlotBoxAspectRatioMode = 'auto';
-            hold(ax, 'on');
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Macular Pigment Density"; end
                 p = plot(ax, wl, mac, '-', 'Color', [0 0 0], ...
@@ -2791,47 +2851,84 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 if options.Title == "", options.Title = "Macular Pigment Comparison"; end
                 macCompScale = options.Compare.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
                 macComp = macTemplate * macCompScale;
+                % Reference/comparison pair, not cone colours -- these two
+                % only need to be distinguishable, so they do not use
+                % CONE_COLORS and take no ConeColors override.
                 p = gobjects(2, 1);
                 p(1) = plot(ax, wl, mac, '-', 'Color', [0 0 0.8], ...
                     'LineWidth', 2, 'DisplayName', 'Reference');
                 p(2) = plot(ax, wl, macComp, '--', 'Color', [0.8 0 0], ...
                     'LineWidth', 2, 'DisplayName', 'Comparison');
             end
-            if ~wasHeld, hold(ax, 'off'); end
 
-            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density");
+            obj.finalizeLinePlot(ax, p, options.Title, "Optical Density", wasHeld);
 
-            if nargout > 0, varargout{1} = p; end
-            if nargout > 1, varargout{2} = ax; end
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
 
         function varargout = plotDiagnostics(obj, options)
-            % PLOTDIAGNOSTICS  Generates a diagnostic plot of the computational pipeline.
-            %   Plots Absorbance -> Absorptance -> Corneal Sensitivity side-by-side.
+            % PLOTDIAGNOSTICS  Plot the three computational pipeline stages side by side.
+            %   Absorbance -> relative retinal absorptance -> corneal sensitivity.
+            %
+            %   obj.plotDiagnostics() creates a 1x3 tiled layout in the
+            %   current figure. Pass Parent=<TiledChartLayout> to draw into
+            %   a layout you already own, for example a row of a larger panel.
             %
             %   obj.plotDiagnostics() plots without returning handles.
-            %   p = obj.plotDiagnostics() returns cell array of line handles {p1, p2, p3}.
-            %   [p, ax] = obj.plotDiagnostics() also returns axes array [ax1; ax2; ax3].
+            %   p = obj.plotDiagnostics() returns a 3x1 cell of line handles.
+            %   [p, ax] = obj.plotDiagnostics() also returns the 3x1 axes array.
             %
             %   OPTIONAL INPUTS (Name-Value arguments):
-            %       Wavelength - Wavelengths in nm. Default: (380:1:780)' (vector)
-            %       Plotter - Existing plotter instance (must have 3+ tiles) (CMFPlotter)
+            %       Wavelength - Wavelengths in nm. Default: DEFAULT_WL (vector)
+            %       ConeColors - 3x3 [L; M; S] line colors. Default: CONE_COLORS
+            %       Parent - Target TiledChartLayout. Default: a new 1x3 layout
             arguments
                 obj
-                options.Wavelength (:,1) double = (380:1:780)'
-                options.Plotter CMFPlotter = CMFPlotter(1, 3, ...
-                    Parent=gcf, ...
-                    Title="IndividualCMF Diagnostics")
+                options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
+                options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
+                options.Parent = []
             end
 
-            [p, ax] = options.Plotter.plotDiagnosticsPanel(obj, Wavelength=options.Wavelength);
+            if isempty(options.Parent)
+                layout = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
+                title(layout, "IndividualCMF Diagnostics");
+            else
+                layout = options.Parent;
+            end
 
-            if nargout > 0
-                varargout{1} = p;
+            wl = options.Wavelength;
+            names = ["L", "M", "S"];
+
+            % Each stage is drawn in linear units, so LogOutput is forced
+            % false regardless of the observer's persistent setting.
+            stages = { ...
+                struct(Format="absorbance",  Normalize=false, ...
+                       Title="1. Pigment Absorbance",  YLabel="Absorbance"), ...
+                struct(Format="absorptance", Normalize=true, ...
+                       Title="2. Retinal Absorptance", YLabel="Absorptance"), ...
+                struct(Format="energy",      Normalize=true, ...
+                       Title="3. Corneal Sensitivity", YLabel="Sensitivity")};
+
+            ax = gobjects(3, 1);
+            p  = cell(3, 1);
+            for s = 1:3
+                cfg = stages{s};
+                LMS = obj.LMS(wl, OutputFormat=cfg.Format, ...
+                    LogOutput=false, NormalizeOutput=cfg.Normalize);
+
+                [ax(s), wasHeld] = obj.beginLinePlot(nexttile(layout));
+                p{s} = gobjects(3, 1);
+                for k = 1:3
+                    p{s}(k) = plot(ax(s), wl, LMS(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
+                obj.finalizeLinePlot(ax(s), p{s}, cfg.Title, cfg.YLabel, wasHeld);
             end
-            if nargout > 1
-                varargout{2} = ax;
-            end
+
+            outputs = {p, ax};
+            varargout = outputs(1:nargout);
         end
     end
 
@@ -2867,12 +2964,12 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = wl(:);
 
             % Validate wavelengths against template's valid range.
-            % Honour WavelengthWarning at both the IndividualCMF boundary
+            % Honour ModelRangeWarning at both the IndividualCMF boundary
             % and inside the Nomograms layer, which has its own
             % independent warning. Restore on exit so we don't pollute
             % the caller's warning state.
             obj.validateWavelengths(wl);
-            if ~obj.WavelengthWarning
+            if ~obj.ModelRangeWarning
                 prevWarn = warning('off', 'Nomograms:WavelengthOutOfRange');
                 cleanupWarn = onCleanup(@() warning(prevWarn));
             end
@@ -2887,65 +2984,57 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
-            % Stage 1: Absorbance
+            % Outside the active domain no template has an admissible
+            % value, so every format reports zero here rather than a
+            % diverged or extrapolated number. This lives in
+            % computeRawSensitivity, not in its callers: RGB, the sampled
+            % peak in NormalizationCache, and the fminbnd peak objective
+            % all reach the stages through this method, and guarding only
+            % computeSensitivityCore left those three returning values as
+            % large as 4.2e+153.
+            dom = obj.activeDomain();
+            outOfDomain = (wl < dom(1)) | (wl > dom(2));
+
+            % Stage 1: photopigment absorbance. Kept behind a method
+            % because it assembles the shift and the template options --
+            % getTemplateOptions carries the L/M magnitude switch, and
+            % losing it reverts the toolbox to codon-only switching.
             logAbs = obj.computePigmentAbsorbance(wl, coneType);
 
             if outputFormat == "absorbance"
-                val = 10.^(logAbs);
+                val = IndividualCMF.applyDomainFloor(10.^(logAbs), outOfDomain, false);
                 return;
             end
 
-            % Stage 2: Absorptance
-            absorptance = obj.computeRetinalAbsorptance(coneType, logAbs);
+            % Stage 2: Beer-Lambert self-screening. `true` selects the
+            % relative form (1-10^(-OD*A))/(1-10^(-OD)); the raw fraction
+            % is reachable via absorptanceFromAbsorbance(Normalize=false).
+            absorptance = pipeline.PhotopigmentStage.retinalAbsorptance( ...
+                logAbs, obj.getConeOD(coneType), true);
 
             if outputFormat == "absorptance"
-                val = absorptance;
+                val = IndividualCMF.applyDomainFloor(absorptance, outOfDomain, false);
                 return;
             end
 
-            % Stage 3: Corneal Quantal
-            quantal = obj.computeCornealQuantal(wl, absorptance);
+            % Stage 3: lens and macular pre-receptoral filtering.
+            quantal = pipeline.PreReceptoralStage.applyFilters( ...
+                absorptance, wl, ...
+                LensTemplate=obj.p_LensTemplate, ...
+                LensDensity=obj.LensDensity, ...
+                MacularTemplate=obj.p_MacularTemplate, ...
+                MacularDensity=obj.MacularDensity, ...
+                Age=obj.p_Parameters.Age, ...
+                FieldSize=obj.p_Parameters.FieldSize);
 
             if outputFormat == "quantal"
-                val = quantal;
+                val = IndividualCMF.applyDomainFloor(quantal, outOfDomain, false);
                 return;
             end
 
-            % Stage 4: Energy
-            val = obj.convertToEnergy(wl, quantal);
-        end
-
-        function peak = computeAnalyticalAbsorptancePeak(obj, coneType)
-            arguments
-                obj
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
-            end
-
-            % This method should only be called for Govardovskii
-            assert(obj.templateSupportsAnalyticalPeak(), ...
-                'computeAnalyticalAbsorptancePeak should only be used with Govardovskii');
-
-            shift = obj.getConeShift(coneType);
-            od = obj.getConeOD(coneType);
-            opts = obj.getTemplateOptions();
-
-            % Absent cone (gene-deletion dichromacy): the cone column is
-            % identically zero, so any peak value would work as the
-            % cache's denominator (everything gets divided into zero).
-            % Return 1 explicitly to avoid 0/0 = NaN from the relative
-            % formula when od = 0 -- the cache's "peak == 0 -> 1"
-            % guard would otherwise not fire because NaN ~= 0.
-            if od == 0
-                peak = 1;
-                return;
-            end
-
-            peakAbsorbance = obj.p_PhotopigmentTemplate.computePeakAbsorbance(coneType, shift, opts);
-            % Relative retinal absorptance peak: matches the helper-norm
-            % convention applied by computeRetinalAbsorptance. For an
-            % absorbance template whose peak is exactly 1 (Govardovskii
-            % alpha-band), this reduces to (1-10^(-od))/(1-10^(-od)) = 1.
-            peak = (1 - 10^(-od * peakAbsorbance)) / (1 - 10^(-od));
+            % Stage 4: quantal -> energy (S&R 2023 Eq. 8).
+            val = pipeline.OutputStage.quantalToEnergy(quantal, wl);
+            val = IndividualCMF.applyDomainFloor(val, outOfDomain, false);
         end
 
         function peak = computePeakForFormat(obj, coneType, outputFormat)
@@ -2959,12 +3048,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
                 outputFormat (1,1) string {mustBeMember(outputFormat, ["absorbance", "absorptance", "quantal", "energy"])}
-            end
-
-            % For Govardovskii absorptance: use analytical peak
-            if outputFormat == "absorptance" && obj.templateSupportsAnalyticalPeak()
-                peak = obj.computeAnalyticalAbsorptancePeak(coneType);
-                return;
             end
 
             % For everything else: use fminbnd. The base bounds bracket
@@ -2984,7 +3067,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             shift = obj.getConeShift(coneType);
             lb = lb + shift;
             ub = ub + shift;
-            validRange = obj.p_PhotopigmentTemplate.getValidRange();
+            validRange = obj.p_PhotopigmentTemplate.ValidRange;
             lb = max(lb, validRange(1));
             ub = min(ub, validRange(2));
 
@@ -3025,7 +3108,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 'OutputFormat',      obj.OutputFormat, ...
                 'NormalizeOutput',   string(obj.NormalizeOutput), ...
                 'LogOutput',         string(obj.LogOutput), ...
-                'WavelengthWarning', string(obj.WavelengthWarning), ...
+                'ModelRangeWarning', string(obj.ModelRangeWarning), ...
                 'Primaries',         obj.Primaries);
 
             propgroups = [
@@ -3042,7 +3125,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                     'MacularDensity', 'MacularDensityAlgorithm'}, 'Macular')
                 matlab.mixin.util.PropertyGroup(outputCfg, 'Output Configuration')
                 matlab.mixin.util.PropertyGroup({'NormalizationMethod', ...
-                    'NormalizationConfig'}, 'Normalization')
+                    'NormalizationGrid'}, 'Normalization')
             ];
         end
 
@@ -3050,58 +3133,35 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % COPYELEMENT  Create a deep copy of the IndividualCMF object.
             %   Overrides matlab.mixin.Copyable to properly copy internal state.
             %   - Creates a NEW NormalizationCache instance linked to the copy
-            %   - Deep copies the GenotypeState dictionary
+            %   - Re-creates the three templates, which are handle classes
+            %   - Re-attaches the PostSet listeners
+            %
+            %   GenotypeState (a dictionary) and p_Parameters (an
+            %   ObserverParameters) are value types, so the shallow copy
+            %   already gave the copy its own independent instances.
 
             % Shallow copy via parent class
             cpObj = copyElement@matlab.mixin.Copyable(obj);
 
             % Create a NEW NormalizationCache instance linked to the copy
             cpObj.p_NormalizationCache = NormalizationCache(cpObj);
-            cpObj.p_NormalizationCache.setConfig(cpObj.p_NormalizationConfig);
+            cpObj.p_NormalizationCache.setConfig(cpObj.NormalizationMethod, cpObj.NormalizationGrid);
 
-            % Deep copy the GenotypeState dictionary
-            if ~isempty(obj.GenotypeState) && numEntries(obj.GenotypeState) > 0
-                cpObj.GenotypeState = dictionary(keys(obj.GenotypeState), values(obj.GenotypeState));
-            else
-                cpObj.GenotypeState = dictionary;
-            end
-
-            % Deep copy the LensTemplate (handle class requires explicit copy)
-            switch obj.p_LensTemplate.ShortName
-                case "StockmanRider2023"
-                    cpObj.p_LensTemplate = StockmanRiderLensTemplate();
-                case "Pokorny1987"
-                    cpObj.p_LensTemplate = Pokorny1987LensTemplate();
-                case "VanDeKraats2007"
-                    cpObj.p_LensTemplate = VanDeKraatsVanNorren2007LensTemplate();
-                otherwise
-                    cpObj.p_LensTemplate = StockmanRiderLensTemplate();
-            end
-
-            % Deep copy the MacularTemplate (handle class requires explicit copy)
-            switch obj.p_MacularTemplate.ShortName
-                case "StockmanRider2023"
-                    cpObj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-                otherwise
-                    cpObj.p_MacularTemplate = StockmanRider2023MacularTemplate();
-            end
-
-            % Deep copy the ObserverParameters snapshot. Although ObserverParameters
-            % is a value class, we explicitly reconstruct it to ensure complete
-            % independence between the original and copied observer.
-            cpObj.p_Parameters = ObserverParameters( ...
-                LCone=obj.p_Parameters.LCone, ...
-                MCone=obj.p_Parameters.MCone, ...
-                SCone=obj.p_Parameters.SCone, ...
-                Lens=obj.p_Parameters.Lens, ...
-                Macular=obj.p_Parameters.Macular, ...
-                Age=obj.p_Parameters.Age, ...
-                FieldSize=obj.p_Parameters.FieldSize);
+            % Templates are handle classes, so re-create rather than share.
+            % create() errors on an unregistered ShortName instead of
+            % silently substituting a default, which is what the switch
+            % statements this replaces used to do.
+            cpObj.p_LensTemplate = LensTemplate.create(obj.p_LensTemplate.ShortName);
+            cpObj.p_MacularTemplate = MacularTemplate.create(obj.p_MacularTemplate.ShortName);
+            cpObj.p_PhotopigmentTemplate = PhotopigmentTemplate.create( ...
+                obj.p_PhotopigmentTemplate.ShortName);
 
             % Re-add listeners (listeners are not copied by shallow copy)
             addlistener(cpObj, 'OutputFormat',   'PostSet', @(s,e) cpObj.invalidateNormalizationCache());
             addlistener(cpObj, 'LogOutput',      'PostSet', @(s,e) cpObj.invalidateNormalizationCache());
             addlistener(cpObj, 'NormalizeOutput','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
+            addlistener(cpObj, 'NormalizationMethod','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
+            addlistener(cpObj, 'NormalizationGrid','PostSet', @(s,e) cpObj.invalidateNormalizationCache());
         end
     end
 
@@ -3139,34 +3199,47 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   of the observer's current OutputFormat / LogOutput /
             %   NormalizeOutput state.
             %
-            %   Used by Luminance, MacLeodBoynton, lmChromaticity, and the
-            %   evaluate(Data='chromaticity') path. CMFPlotter.plotChromaticity
+            %   Used by Luminance, MacLeodBoynton, and lmChromaticity.
+            %   evaluate reaches it through those methods. plotChromaticity
             %   delegates to obs.lmChromaticity, so it picks up this basis
             %   transitively.
             LMS = obj.LMS(wl, OutputFormat="energy", ...
                 NormalizeOutput=true, LogOutput=false);
         end
 
-        function ax = resolvePlotAxes(~, parent)
-            % RESOLVEPLOTAXES  Pick a target axes for a shortcut plot method.
+        function [ax, wasHeld] = beginLinePlot(~, parent)
+            % BEGINLINEPLOT  Resolve and reset the target axes for a plot method.
             %
-            %   Returns parent if non-empty, otherwise gca. Used by the
-            %   plot* shortcut methods to default to the current axes
-            %   instead of creating a new figure -- this keeps the plot
-            %   inline when called from a Live Script section.
+            %   Returns the axes (parent if supplied, else gca) and the
+            %   caller's prior hold state. Defaulting to gca instead of
+            %   creating a figure keeps the plot inline when called from a
+            %   Live Script section.
+            %
+            %   Clears the axes and resets the four limit and aspect modes
+            %   so a previous section's axis equal or explicit limits do
+            %   not leak in, then turns hold on for multi-line drawing.
+            %   finalizeLinePlot restores the hold state.
             if isempty(parent)
                 ax = gca;
             else
                 ax = parent;
             end
+            wasHeld = ishold(ax);
+            cla(ax);
+            ax.XLimMode = 'auto';
+            ax.YLimMode = 'auto';
+            ax.DataAspectRatioMode = 'auto';
+            ax.PlotBoxAspectRatioMode = 'auto';
+            hold(ax, 'on');
         end
 
-        function finalizeLinePlot(~, ax, p, titleStr, yLabelStr)
-            % FINALIZELINEPLOT  Apply shared styling to a line plot.
+        function finalizeLinePlot(~, ax, p, titleStr, yLabelStr, wasHeld)
+            % FINALIZELINEPLOT  Apply shared styling and restore hold state.
             %
             %   Sets x/y labels, title, grid, and a 'best'-located legend
             %   over the supplied line handles. Drops gobjects placeholders
             %   (absent-cone slots) so the legend only lists drawn lines.
+            %   Restores the hold state captured by beginLinePlot.
             valid = isgraphics(p);
             xlabel(ax, 'Wavelength (nm)');
             ylabel(ax, yLabelStr);
@@ -3177,6 +3250,9 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             if any(valid)
                 legend(ax, p(valid), 'Location', 'bestoutside', 'Box', 'off');
             end
+            if ~wasHeld
+                hold(ax, 'off');
+            end
         end
 
         function invalidateNormalizationCache(obj)
@@ -3184,7 +3260,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   Called when any property affecting sensitivity calculations changes.
             if ~isempty(obj.p_NormalizationCache)
-                obj.p_NormalizationCache.setConfig(obj.p_NormalizationConfig);
+                obj.p_NormalizationCache.setConfig(obj.NormalizationMethod, obj.NormalizationGrid);
             end
         end
 
@@ -3231,22 +3307,35 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
 
             % Skip if warnings are disabled or already issued
-            if ~obj.WavelengthWarning || obj.p_WavelengthWarningIssued
+            if ~obj.ModelRangeWarning || obj.p_WavelengthWarningIssued
                 return;
             end
 
-            % Get valid range from template
-            validRange = obj.p_PhotopigmentTemplate.getValidRange();
-            minWl = validRange(1);
-            maxWl = validRange(2);
+            % Check every active template, not just the photopigment one.
+            % The lens and macular models have their own fitted ranges, and
+            % a query outside any of them is equally unreliable.
+            sources = { ...
+                obj.p_PhotopigmentTemplate, ...
+                obj.p_LensTemplate, ...
+                obj.p_MacularTemplate};
 
-            % Find out-of-range wavelengths
-            belowRange = wl < minWl;
-            aboveRange = wl > maxWl;
-            outOfRange = belowRange | aboveRange;
+            for s = 1:numel(sources)
+                tmpl = sources{s};
+                if isempty(tmpl)
+                    continue
+                end
 
-            if any(outOfRange)
-                % Mark that we've issued the warning
+                validRange = tmpl.ValidRange;
+                minWl = validRange(1);
+                maxWl = validRange(2);
+                outOfRange = (wl < minWl) | (wl > maxWl);
+                if ~any(outOfRange)
+                    continue
+                end
+
+                % One warning per observer regardless of how many templates
+                % are out of range: three warnings for one call would train
+                % people to filter the channel.
                 obj.p_WavelengthWarningIssued = true;
 
                 % Build informative message
@@ -3264,61 +3353,57 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 warning('IndividualCMF:WavelengthOutOfRange', ...
                     ['Wavelengths [%s] nm are outside the valid range [%.0f-%.0f nm] ' ...
                     'for the %s template. Results may be unreliable.'], ...
-                    wlStr, minWl, maxWl, obj.p_PhotopigmentTemplate.ShortName);
+                    wlStr, minWl, maxWl, tmpl.ShortName);
+                break
             end
         end
 
-        function cfg = validateSampledConfig(~, val)
-            % VALIDATESAMPLEDCONFIG  Validate and normalize Sampled configuration struct.
+        function validateAgeForLensModel(obj)
+            % VALIDATEAGEFORLENSMODEL  Guard Age against the active lens model.
             %
-            %   INPUTS:
-            %       val - Configuration struct with Method="Sampled" (struct)
+            %   Errors outside AgeDomain, the span the source publication
+            %   permits the model to be evaluated over. Warns once per
+            %   observer outside AgeValidRange, the span it presents.
+            age = obj.p_Parameters.Age;
+            if isempty(age) || isnan(age)
+                return
+            end
+
+            dom = obj.p_LensTemplate.AgeDomain;
+            if age < dom(1) || age > dom(2)
+                error("IndividualCMF:AgeOutsideModelDomain", ...
+                    "Age %g is outside the %g-%g year range the %s lens " + ...
+                    "model is defined over, and its authors do not sanction " + ...
+                    "extrapolation. Use LensModel=""VanDeKraats2007"", whose " + ...
+                    "aging formula is stated to apply at any age.", ...
+                    age, dom(1), dom(2), obj.p_LensTemplate.ShortName);
+            end
+
+            valid = obj.p_LensTemplate.AgeValidRange;
+            if (age < valid(1) || age > valid(2)) && ...
+                    obj.ModelRangeWarning && ~obj.p_AgeWarningIssued
+                obj.p_AgeWarningIssued = true;
+                warning("IndividualCMF:AgeOutOfRange", ...
+                    "Age %g is outside the %g-%g year span the %s lens " + ...
+                    "model presents. Its authors permit the aging formula " + ...
+                    "at any age, but the result is an extrapolation.", ...
+                    age, valid(1), valid(2), obj.p_LensTemplate.ShortName);
+            end
+        end
+
+        function d = activeDomain(obj)
+            % ACTIVEDOMAIN  Intersection of the active templates' Domains.
+            %
+            %   Outside this span no active template can produce a finite,
+            %   physically admissible value, so the toolbox reports nothing
+            %   rather than a number the model cannot support.
             %
             %   OUTPUTS:
-            %       cfg - Validated configuration with defaults applied (struct)
-            arguments
-                ~
-                val (1,1) struct
-            end
-
-            if ~isfield(val, 'Method') || string(val.Method) ~= "Sampled"
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Struct configuration requires Method="Sampled". For continuous normalization, use NormalizationMethod="Continuous".');
-            end
-
-            % Apply defaults for missing fields
-            if ~isfield(val, 'Start'), val.Start = IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(1); end
-            if ~isfield(val, 'Stop'),  val.Stop  = IndividualCMF.DEFAULT_SAMPLED_RANGE_NM(2); end
-            if ~isfield(val, 'Step'),  val.Step  = IndividualCMF.DEFAULT_SAMPLED_STEP_NM; end
-
-            % Finite-scalar guards run BEFORE the relational checks --
-            % NaN and Inf bypass `a >= b` / `a <= 0` (NaN comparisons
-            % return false; Inf passes `>= Stop` only if Stop is also
-            % Inf) and would otherwise be stored in the config, where
-            % `Start:Step:Stop` later produces an invalid wavelength
-            % vector or an accidental huge grid.
-            for fieldName = ["Start", "Stop", "Step"]
-                v = val.(fieldName);
-                if ~(isscalar(v) && isnumeric(v) && isfinite(v))
-                    error('IndividualCMF:InvalidNormalizationConfig', ...
-                        '%s must be a finite numeric scalar.', fieldName);
-                end
-            end
-
-            % Relational checks
-            if val.Start >= val.Stop
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Start (%.1f) must be less than Stop (%.1f).', val.Start, val.Stop);
-            end
-            if val.Step <= 0
-                error('IndividualCMF:InvalidNormalizationConfig', ...
-                    'Step must be positive.');
-            end
-
-            cfg = struct('Method', "Sampled", ...
-                'Start', double(val.Start), ...
-                'Stop', double(val.Stop), ...
-                'Step', double(val.Step));
+            %       d - [min_nm, max_nm] (1x2 double)
+            domains = [obj.p_PhotopigmentTemplate.Domain
+                       obj.p_LensTemplate.Domain
+                       obj.p_MacularTemplate.Domain];
+            d = [max(domains(:,1)), min(domains(:,2))];
         end
 
         function logAbs = computePigmentAbsorbance(obj, wl, coneType)
@@ -3346,96 +3431,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj.p_PhotopigmentTemplate, wl, coneType, shift, templateOpts);
         end
 
-        function absorptance = computeRetinalAbsorptance(obj, coneType, logAbs)
-            % COMPUTERETINALABSORPTANCE  Apply self-screening to get absorptance.
-            %
-            %   Converts pigment absorbance to retinal absorptance by applying
-            %   the optical density (self-screening) of the photopigment.
-            %
-            %   INPUTS:
-            %       coneType - 'L', 'M', or 'S' (char)
-            %       logAbs - Log10 absorbance from Stage 1 (vector)
-            %
-            %   OUTPUTS:
-            %       absorptance - Retinal absorptance spectrum (0 to 1) (vector)
-            arguments
-                obj
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})}
-                logAbs (:,1) double
-            end
 
-            od = obj.getConeOD(coneType);
 
-            % Public OutputFormat="absorptance" is RELATIVE retinal
-            % absorptance: (1 - 10^(-OD*A)) / (1 - 10^(-OD)), where A is
-            % the linear photopigment absorbance normalised to peak 1.
-            % Both template families use this convention so the user gets
-            % the same physical quantity regardless of PhotopigmentModel.
-            % The raw Beer-Lambert fraction 1 - 10^(-OD*A) is still
-            % available through pipeline.PhotopigmentStage.absorptanceFromAbsorbance
-            % with Normalize=false.
-            absorptance = pipeline.PhotopigmentStage.retinalAbsorptance(logAbs, od, true);
-        end
-
-        function quantal = computeCornealQuantal(obj, wl, absorptance)
-            % COMPUTECORNEALQUANTAL  Apply pre-receptoral filtering.
-            %
-            %   Applies macular pigment and lens filtering to get corneal
-            %   (external) quantal sensitivity.
-            %
-            %   INPUTS:
-            %       wl - Wavelengths in nm (vector)
-            %       absorptance - Retinal absorptance from Stage 2 (vector)
-            %
-            %   OUTPUTS:
-            %       quantal - Corneal quantal sensitivity (vector)
-            arguments
-                obj
-                wl (:,1) double {validators.mustBeWavelengthVector}
-                absorptance (:,1) double
-            end
-
-            quantal = pipeline.PreReceptoralStage.applyFilters( ...
-                absorptance, wl, ...
-                LensTemplate=obj.p_LensTemplate, ...
-                LensDensity=obj.LensDensity, ...
-                MacularTemplate=obj.p_MacularTemplate, ...
-                MacularDensity=obj.MacularDensity, ...
-                Age=obj.p_Parameters.Age, ...
-                FieldSize=obj.p_Parameters.FieldSize);
-        end
-
-        function energy = convertToEnergy(~, wl, quantal)
-            % CONVERTTOENERGY  Convert quantal to energy-based sensitivity.
-            %
-            %   Multiplies by wavelength to convert from photon-based to
-            %   energy-based (Watt) sensitivity units.
-            %
-            %   INPUTS:
-            %       wl - Wavelengths in nm (vector)
-            %       quantal - Quantal sensitivity from Stage 3 (vector)
-            %
-            %   OUTPUTS:
-            %       energy - Energy-based sensitivity (vector)
-            arguments
-                ~
-                wl (:,1) double {validators.mustBeWavelengthVector}
-                quantal (:,1) double
-            end
-
-            energy = pipeline.OutputStage.quantalToEnergy(quantal, wl);
-        end
 
         % Internal sensitivity calculator (must bind to L/M/S properties)
-        function val = calculateSensitivity(obj, nm, cone_type)
-            arguments
-                obj
-                nm double {mustBeNumeric}
-                cone_type (1,1) char
-            end
-            val = obj.computeSensitivityCore(nm, cone_type, obj.OutputFormat, obj.NormalizeOutput, obj.LogOutput);
-        end
-
         function applyStandardObserver(obj, options)
             % APPLYSTANDARDOBSERVER  Configure for strict CIE 170-1:2006 Standard Observer.
             %   Forces: Age=32, Shifts=0, Templates="Mean", Lens=Standard, Algorithms="CIE170".
@@ -3443,10 +3442,10 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
                 options
             end
-            if ~isnan(options.Age) || ~isnan(options.FieldSize)
+            if ~isempty(options.Age) || ~isempty(options.FieldSize)
                 error('IndividualCMF:Conflict', 'Cannot specify Age/FieldSize with StandardObserver.');
             end
-            if ~isnan(options.Lod) || ~isnan(options.Mod) || ~isnan(options.Sod) || ~isnan(options.MacularDensity) || ~isnan(options.LensDensity)
+            if ~isempty(options.Lod) || ~isempty(options.Mod) || ~isempty(options.Sod) || ~isempty(options.MacularDensity) || ~isempty(options.LensDensity)
                 error('IndividualCMF:Conflict', 'Cannot override biophysical parameters when StandardObserver is set.');
             end
             if options.L_LambdaMaxShift ~= 0 || options.M_LambdaMaxShift ~= 0 || options.S_LambdaMaxShift ~= 0 || options.L_OpsinTemplate ~= "Mean" || options.M_OpsinTemplate ~= "Mean"
@@ -3457,6 +3456,39 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
             if options.PhotopigmentModel ~= "StockmanRider2023"
                 error('IndividualCMF:Conflict', 'Standard Observer requires PhotopigmentModel="StockmanRider2023".');
+            end
+            % The CIE standard observers are defined on the Stockman-Rider
+            % pre-receptoral filters. Another lens or macular model gives a
+            % different LensDensity and a different spectrum, so the result
+            % would read StandardObserver=2 while no longer being one.
+            % Build it as a manual observer instead; that is what
+            % Type="Individualized" is for.
+            if options.LensModel ~= "StockmanRider2023"
+                error('IndividualCMF:Conflict', ...
+                    ['Standard Observer requires LensModel="StockmanRider2023". ' ...
+                     'Build a manual observer (Age=, FieldSize=) to use %s.'], ...
+                    options.LensModel);
+            end
+            if options.MacularModel ~= "StockmanRider2023"
+                error('IndividualCMF:Conflict', ...
+                    'Standard Observer requires MacularModel="StockmanRider2023".');
+            end
+
+            % The density algorithms follow from the standard configuration
+            % and are not selectable alongside it. Custom in particular is
+            % never assignable anywhere, so name it explicitly rather than
+            % letting it fall through as a silently ignored option.
+            algorithms = ["PhotopigmentDensityAlgorithm", ...
+                          "MacularDensityAlgorithm", "LensDensityAlgorithm"];
+            for k = 1:numel(algorithms)
+                requested = options.(algorithms(k));
+                if requested == ""
+                    continue
+                end
+                IndividualCMF.rejectCustomAssignment(requested == "Custom", ...
+                    algorithms(k), "the corresponding density");
+                error('IndividualCMF:Conflict', ...
+                    'Cannot specify %s with StandardObserver.', algorithms(k));
             end
 
             obj.snapToStandardObserver(options.StandardObserver);
@@ -3475,7 +3507,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %
             %   Output-shape settings (OutputFormat, NormalizeOutput,
             %   LogOutput, NormalizationMethod, Primaries,
-            %   WavelengthWarning) are intentionally preserved.
+            %   ModelRangeWarning) are intentionally preserved.
             arguments
                 obj
                 fieldSize (1,1) double {mustBeMember(fieldSize, [2, 10])}
@@ -3533,24 +3565,36 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 end
             end
 
-            if isnan(options.Age)
+            if isempty(options.Age)
                 obj.p_Parameters.Age = CIE170.STD_AGE;
             else
                 obj.p_Parameters.Age = options.Age;
             end
-            if isnan(options.FieldSize)
+            if isempty(options.FieldSize)
                 obj.p_Parameters.FieldSize = 10;
             else
                 obj.p_Parameters.FieldSize = options.FieldSize;
             end
 
             % Check if photopigment, macular, or lens densities are explicitly provided
-            hasPhotopigmentOverride = ~isnan(options.Lod) || ~isnan(options.Mod) || ~isnan(options.Sod);
-            hasMacularOverride = ~isnan(options.MacularDensity);
-            hasLensOverride = ~isnan(options.LensDensity);
+            hasPhotopigmentOverride = ~isempty(options.Lod) || ~isempty(options.Mod) || ~isempty(options.Sod);
+            hasMacularOverride = ~isempty(options.MacularDensity);
+            hasLensOverride = ~isempty(options.LensDensity);
+
+            % Custom is entailed by passing a density value, never named
+            % directly -- the same rule the algorithm setters enforce.
+            IndividualCMF.rejectCustomAssignment( ...
+                options.PhotopigmentDensityAlgorithm == "Custom", ...
+                "PhotopigmentDensityAlgorithm", "Lod / Mod / Sod");
+            IndividualCMF.rejectCustomAssignment( ...
+                options.MacularDensityAlgorithm == "Custom", ...
+                "MacularDensityAlgorithm", "MacularDensity");
+            IndividualCMF.rejectCustomAssignment( ...
+                options.LensDensityAlgorithm == "Custom", ...
+                "LensDensityAlgorithm", "LensDensity");
 
             % Check if field size is standard (2 or 10)
-            isStandardFieldSize = (obj.p_Parameters.FieldSize == 2 || obj.p_Parameters.FieldSize == 10);
+            isStandardFieldSize = obj.isStandardFieldSize();
 
             % Smart algorithm defaults: density override forces Custom;
             % otherwise an explicit algorithm wins; otherwise the
@@ -3577,11 +3621,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.recalcBiophysics();
 
             % Apply explicit density overrides (for Custom mode)
-            if ~isnan(options.Lod), obj.Lod = options.Lod; end
-            if ~isnan(options.Mod), obj.Mod = options.Mod; end
-            if ~isnan(options.Sod), obj.Sod = options.Sod; end
-            if ~isnan(options.MacularDensity), obj.MacularDensity = options.MacularDensity; end
-            if ~isnan(options.LensDensity), obj.LensDensity = options.LensDensity; end
+            if ~isempty(options.Lod), obj.Lod = options.Lod; end
+            if ~isempty(options.Mod), obj.Mod = options.Mod; end
+            if ~isempty(options.Sod), obj.Sod = options.Sod; end
+            if ~isempty(options.MacularDensity), obj.MacularDensity = options.MacularDensity; end
+            if ~isempty(options.LensDensity), obj.LensDensity = options.LensDensity; end
 
             obj.L_LambdaMaxShift = options.L_LambdaMaxShift;
             obj.M_LambdaMaxShift = options.M_LambdaMaxShift;
@@ -3731,7 +3775,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             %   by the existing MinL / LinM template machinery in Nomograms.
             %
             %   The genotype/codon path resolves the template by amino-acid
-            %   identity (setGenotype / fromGenotype) and is left untouched:
+            %   identity (setGenotype / Genotype=) and is left untouched:
             %   when a genotype is active it is the arbiter, so the magnitude
             %   switch is skipped (mirroring useCodons == True).
             %
@@ -3750,11 +3794,11 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % Trip points computed from the named parity constants (not a
             % hardcoded 18.41 / -16.0345): the exon-5 base shifts (positions
             % 277 and 285) scaled by 23.67 / bases-sum, the same scale the
-            % genotype path uses in ObserverParameters.fromGenotype. The two
+            % genotype path uses in Genotype.computeShift. The two
             % directions use different bases-sums (27 vs 31); the asymmetry
             % is intentional and follows pycone.
-            mScale = Genotype.LSER_MLMAX_DIFF / Genotype.M_BASES_SUM;
-            lScale = Genotype.LSER_MLMAX_DIFF / Genotype.L_BASES_SUM;
+            mScale = Genotype.mShift();
+            lScale = Genotype.lShift();
             mThreshold = (Genotype.GENOTYPE_SHIFTS("M_277_Tyr") ...
                 + Genotype.GENOTYPE_SHIFTS("M_285_Thr")) * mScale;
             lThreshold = (Genotype.GENOTYPE_SHIFTS("L_277_Phe") ...
@@ -3766,14 +3810,6 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             if obj.p_Parameters.LCone.LambdaMaxShift <= lThreshold
                 effL = enums.LOpsinTemplate.MinL;
             end
-        end
-
-        function usesAnalyticalPeak = templateSupportsAnalyticalPeak(obj)
-            % TEMPLATESUPPORTSANALYTICALPEAK  Whether the active photopigment
-            % template can return its peak in closed form. Delegates to the
-            % template's SupportsAnalyticalPeak constant property -- new
-            % PhotopigmentTemplate subclasses declare their own truth.
-            usesAnalyticalPeak = obj.p_PhotopigmentTemplate.SupportsAnalyticalPeak;
         end
 
         function val = computeSensitivityCore(obj, nm, cone_type, fmt, normalizeOutput, logOutput)
@@ -3811,7 +3847,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 return;
             end
 
+            % Outside the active domain no template has an admissible
+            % value. Report zero sensitivity -- the cone does not respond
+            % where the model cannot see -- rather than a diverged or
+            % fabricated number. validateWavelengths has already warned.
+            dom = obj.activeDomain();
+            outOfDomain = (nm_col < dom(1)) | (nm_col > dom(2));
+
             % Absorbance: raw template output, no normalization via cache
+            % Absorbance deliberately bypasses normalization: pycone
+            % emits a raw absorbance stage, and the parity harness compares
+            % against it, so honouring NormalizeOutput here would break
+            % faithfulness to the reference implementation. See the
+            % NormalizeOutput property help.
             if fmt == "absorbance"
                 logAbs = obj.computePigmentAbsorbance(nm_col, cone_type);
                 if logOutput
@@ -3819,6 +3867,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 else
                     val = pipeline.OutputStage.cleanNaN(10.^(logAbs), false);
                 end
+                val = IndividualCMF.applyDomainFloor(val, outOfDomain, logOutput);
                 if wasRow, val = val'; end
                 return;
             end
@@ -3839,6 +3888,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 val = pipeline.OutputStage.cleanNaN(val, false);
             end
 
+            val = IndividualCMF.applyDomainFloor(val, outOfDomain, logOutput);
+
             % Restore input shape
             if wasRow
                 val = val';
@@ -3854,43 +3905,106 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             obj.recalcLensFromAge();
         end
 
-        function setInternalUpdateFalse(obj)
-            % SETINTERNALUPDATEFALSE  Helper to reset the internal update flag.
-            obj.p_IsInternalUpdate = false;
+        function revertMacularDensity(obj)
+            % REVERTMACULARDENSITY  Leave Custom mode and recompute macular density.
+            %   Re-derives the algorithm the same way the constructor does
+            %   for an observer with no macular override, so the value
+            %   returns to whatever the current field size implies.
+            obj.p_MacularDensityAlgorithm = IndividualCMF.chooseAlgorithm( ...
+                false, "", obj.isStandardFieldSize(), "CIE170", "MorelandAlexander");
+            obj.updateMacularDensity();
+            obj.invalidateNormalizationCache();
+        end
+
+        function setConeParameter(obj, cone, field, v)
+            % SETCONEPARAMETER  Rewrite one field of one cone's parameters.
+            %
+            %   PhotopigmentParameters is a value class, so updating one
+            %   field means reconstructing it with the other carried over.
+            %
+            %   INPUTS:
+            %       cone - 'L', 'M', or 'S' (char)
+            %       field - "OpticalDensity" or "LambdaMaxShift" (string)
+            %       v - The new value (scalar double)
+            arguments
+                obj
+                cone (1,1) char {mustBeMember(cone, {'L','M','S'})}
+                field (1,1) string {mustBeMember(field, ...
+                    ["OpticalDensity", "LambdaMaxShift"])}
+                v (1,1) double
+            end
+            prop = cone + "Cone";
+            current = obj.p_Parameters.(prop);
+            opticalDensity = current.OpticalDensity;
+            lambdaMaxShift = current.LambdaMaxShift;
+            if field == "OpticalDensity"
+                opticalDensity = v;
+            else
+                lambdaMaxShift = v;
+            end
+            obj.p_Parameters.(prop) = PhotopigmentParameters( ...
+                OpticalDensity=opticalDensity, ...
+                LambdaMaxShift=lambdaMaxShift);
+        end
+
+        function revertPhotopigmentDensities(obj)
+            % REVERTPHOTOPIGMENTDENSITIES  Leave Custom mode and recompute Lod/Mod/Sod.
+            %   Re-derives the algorithm the same way the constructor does
+            %   for an observer with no cone-density override. The formulas
+            %   produce all three densities together, so this reverts the
+            %   group rather than a single cone.
+            obj.p_PhotopigmentDensityAlgorithm = IndividualCMF.chooseAlgorithm( ...
+                false, "", obj.isStandardFieldSize(), "CIE170", "PokornySmith");
+            obj.updatePhotopigmentDensities();
+            obj.invalidateNormalizationCache();
+        end
+
+        function tf = isStandardFieldSize(obj)
+            % ISSTANDARDFIELDSIZE  True when CIE publishes a table for this field size.
+            tf = obj.p_Parameters.FieldSize == 2 || obj.p_Parameters.FieldSize == 10;
         end
 
         function updateMacularDensity(obj)
             % UPDATEMACULARDENSITY  Update macular density based on MacularDensityAlgorithm.
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-
+            % Writes backing storage rather than the public property: a
+            % formula recompute must not re-tag the algorithm mode the way
+            % a user assignment does.
             fieldSize = obj.p_Parameters.FieldSize;
             switch obj.MacularDensityAlgorithm
                 case "Custom"
                     % Preserve user values
                     return
                 case "CIE170"
-                    obj.MacularDensity = PreReceptoralFilter.macularDensityCIEStandard(fieldSize);
+                    v = PreReceptoralFilter.macularDensityCIEStandard(fieldSize);
                 case "MorelandAlexander"
-                    obj.MacularDensity = PreReceptoralFilter.macularDensityAtFieldSize(fieldSize);
+                    v = PreReceptoralFilter.macularDensityAtFieldSize(fieldSize);
             end
+            obj.p_Parameters.Macular = PreReceptoralFilter(Type="macular", Density=v);
+            obj.invalidateNormalizationCache();
         end
 
         function updatePhotopigmentDensities(obj)
             % UPDATEPHOTOPIGMENTDENSITIES  Update photopigment densities based on PhotopigmentDensityAlgorithm.
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-
+            % Writes backing storage rather than the public properties, so
+            % the recompute does not re-tag the algorithm mode. One cache
+            % invalidation at the end replaces the three the old
+            % multi-assignment triggered.
             fieldSize = obj.p_Parameters.FieldSize;
             switch obj.PhotopigmentDensityAlgorithm
                 case "Custom"
                     % Preserve user values
                     return
                 case "CIE170"
-                    [obj.Lod, obj.Mod, obj.Sod] = PhotopigmentParameters.densitiesCIEStandard(fieldSize);
+                    [newLod, newMod, newSod] = ...
+                        PhotopigmentParameters.densitiesCIEStandard(fieldSize);
                 case "PokornySmith"
-                    [obj.Lod, obj.Mod, obj.Sod] = PhotopigmentParameters.densitiesAtFieldSize(fieldSize);
+                    [newLod, newMod, newSod] = ...
+                        PhotopigmentParameters.densitiesAtFieldSize(fieldSize);
             end
+            obj.setConeParameter('L', "OpticalDensity", newLod);
+            obj.setConeParameter('M', "OpticalDensity", newMod);
+            obj.setConeParameter('S', "OpticalDensity", newSod);
+            obj.invalidateNormalizationCache();
         end
 
         function updatePhotopigmentAlgorithmFromValues(obj)
@@ -3937,14 +4051,25 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 obj
             end
 
+            % Before the Custom early return: an out-of-domain age is
+            % invalid whether or not the density happens to be pinned, and
+            % skipping the check here would let a bad age hide until the
+            % algorithm switched back.
+            obj.validateAgeForLensModel();
+
             if obj.p_LensDensityAlgorithm == "Custom"
                 return
             end
 
-            obj.p_IsInternalUpdate = true;
-            cleanup = onCleanup(@() obj.setInternalUpdateFalse());
-            obj.LensDensity = obj.p_LensTemplate.computeDensityAt400( ...
+            % Writes backing storage rather than the public property, so
+            % the recompute does not tag the mode Custom and freeze the
+            % value against later Age changes. validateAgeForLensModel
+            % above has already refused any age the model cannot evaluate,
+            % which is what stands in for set.LensDensity's validators on
+            % this path.
+            obj.p_LensDensity = obj.p_LensTemplate.computeDensityAt400( ...
                 obj.p_Parameters.Age, FieldSize=obj.p_Parameters.FieldSize);
+            obj.invalidateNormalizationCache();
         end
     end
 
@@ -4013,6 +4138,76 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static, Access = private)
+        function out = projectiveNormalize(num, denom)
+            % PROJECTIVENORMALIZE  Divide columns by a denominator, NaN at zero.
+            %
+            %   Chromaticity coordinates are a projective normalization, so
+            %   every one of them divides by a sum that can reach zero
+            %   outside the photopic range. Mark those samples NaN
+            %   explicitly rather than letting 0/0 decide.
+            %
+            %   INPUTS:
+            %       num - Numerator columns (Nx2 double)
+            %       denom - Shared denominator (Nx1 double)
+            %
+            %   OUTPUTS:
+            %       out - num ./ denom, NaN where denom was zero (Nx2 double)
+            arguments
+                num (:,:) double
+                denom (:,1) double
+            end
+            denom(denom == 0) = NaN;
+            out = num ./ denom;
+        end
+
+        function val = applyDomainFloor(val, outOfDomain, logOutput)
+            % APPLYDOMAINFLOOR  Report no sensitivity outside the active domain.
+            %
+            %   In log mode the floor is -10, the value the toolbox uses
+            %   elsewhere for "below dynamic range"; -Inf would poison any
+            %   downstream arithmetic.
+            %
+            %   INPUTS:
+            %       val - Sensitivity values (vector)
+            %       outOfDomain - Mask of samples with no admissible value (logical)
+            %       logOutput - Whether val is log-transformed (logical)
+            %
+            %   OUTPUTS:
+            %       val - Values with out-of-domain samples floored (vector)
+            if ~any(outOfDomain)
+                return
+            end
+            if logOutput
+                val(outOfDomain) = -10;
+            else
+                val(outOfDomain) = 0;
+            end
+        end
+
+        function rejectCustomAssignment(isCustom, algorithmName, densityName)
+            % REJECTCUSTOMASSIGNMENT  Block Custom on an algorithm property.
+            %   Custom is entailed by pinning a density value, so it is a
+            %   state to read rather than a mode to select. Assigning it
+            %   directly would claim a pinned value that does not exist.
+            %
+            %   INPUTS:
+            %       isCustom - Caller asked for Custom (logical)
+            %       algorithmName - Property being assigned (string)
+            %       densityName - Density that engages Custom (string)
+            arguments
+                isCustom (1,1) logical
+                algorithmName (1,1) string
+                densityName (1,1) string
+            end
+            if ~isCustom
+                return
+            end
+            error("IndividualCMF:CustomIsNotAssignable", ...
+                "%s cannot be set to ""Custom"". Custom is engaged by " + ...
+                "assigning a value to %s, and cleared by assigning [] to it.", ...
+                algorithmName, densityName);
+        end
+
         function alg = chooseAlgorithm(hasOverride, explicit, isStandardFS, fsStandardDefault, fsFormulaDefault)
             % CHOOSEALGORITHM  Pick a density algorithm name from constructor options.
             %

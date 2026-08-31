@@ -54,14 +54,23 @@ classdef Nomograms
         GOV_B_OFFSET = 0.922
         GOV_C_OFFSET = 1.104
 
-        % Govardovskii parameter 'a' is lambda-max dependent, expressed as p/A
-        % where p = 61.3 + 3.2*exp(-((lambda_max-300)^2)/11940).
-        % These constants define the p calculation.
-        % Source: Govardovskii et al. (2000), Eq. 2.
-        GOV_P_BASE = 61.3
-        GOV_P_AMPLITUDE = 3.2
-        GOV_P_CENTER = 300
-        GOV_P_WIDTH = 11940
+        % Govardovskii parameter 'a' is lambda-max dependent:
+        %   a = 0.8795 + 0.0459*exp(-((lambda_max-300)^2)/11940)
+        % Source: Govardovskii et al. (2000), Eq. 2, journal p. 515,
+        % stored verbatim as printed.
+        %
+        % These were previously held as p = 61.3 + 3.2*exp(...) with
+        % a = p/A. That is Eq. 2's coefficients multiplied by A = 69.7 and
+        % rounded to three significant figures -- 0.8795*69.7 = 61.30115
+        % and 0.0459*69.7 = 3.19923 -- which put a-base 1.65e-05 below and
+        % a-amplitude 1.10e-05 above the published values. Lamb (1995),
+        % which Eq. 1 builds on, does not publish 61.3 or 3.2 either; his
+        % constants give 70*0.880 = 61.6. The A2 branch below already
+        % stores Eq. 6b verbatim, so this makes A1 consistent with it.
+        GOV_a_BASE = 0.8795
+        GOV_a_AMPLITUDE = 0.0459
+        GOV_a_CENTER = 300
+        GOV_a_WIDTH = 11940
 
         % Beta-band coefficients. Modeled as a Gaussian in wavelength space:
         %   S_beta = A_beta * exp(-((lambda - lambda_m_beta)/d)^2)
@@ -282,9 +291,8 @@ classdef Nomograms
             % Parameter 'a' is lambda-max dependent (Eq. 2).
             % This modification from Lamb's original constant a=0.88 improves
             % fits for short-wavelength pigments by steepening the long-wave slope.
-            p = Nomograms.GOV_P_BASE + Nomograms.GOV_P_AMPLITUDE * ...
-                exp(-((lambdaMax - Nomograms.GOV_P_CENTER)^2) / Nomograms.GOV_P_WIDTH);
-            a = p / Nomograms.GOV_A;
+            a = Nomograms.GOV_a_BASE + Nomograms.GOV_a_AMPLITUDE * ...
+                exp(-((lambdaMax - Nomograms.GOV_a_CENTER)^2) / Nomograms.GOV_a_WIDTH);
 
             term1 = exp(Nomograms.GOV_A * (a - x));
             term2 = exp(Nomograms.GOV_B * (Nomograms.GOV_B_OFFSET - x));
@@ -542,7 +550,7 @@ classdef Nomograms
             if minWl < validRange(1) || maxWl > validRange(2)
                 % Only flip the once-per-session latch when the warning
                 % is actually emitted. If the caller (typically
-                % IndividualCMF when WavelengthWarning=false) has
+                % IndividualCMF when ModelRangeWarning=false) has
                 % suppressed Nomograms:WavelengthOutOfRange, leave
                 % hasWarned alone so the warning will fire next time the
                 % suppression is lifted.

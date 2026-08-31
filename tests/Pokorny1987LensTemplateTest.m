@@ -30,12 +30,6 @@ classdef Pokorny1987LensTemplateTest < matlab.unittest.TestCase
             testCase.verifyEqual(t.ShortName, "Pokorny1987");
         end
 
-        function testSupportsAging(testCase)
-            % Verify SupportsAging is true
-            t = Pokorny1987LensTemplate();
-            testCase.verifyTrue(t.SupportsAging);
-        end
-
         function testTemplateNormalizedTo1At400nm(testCase)
             % Template should equal 1.0 at 400nm for any age
             t = Pokorny1987LensTemplate();

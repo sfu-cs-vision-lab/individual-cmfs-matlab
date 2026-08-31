@@ -36,12 +36,12 @@ classdef PerformanceTest < matlab.unittest.TestCase
             wl = (380:780)';
 
             % Warm-up
-            obs.evaluate(wl);
+            obs.LMS(wl);
 
             % Timed run
             tic;
             for i = 1:100
-                obs.evaluate(wl);
+                obs.LMS(wl);
             end
             elapsed = toc;
 

@@ -27,7 +27,6 @@ individual-cmfs-matlab/
 |   |-- CIE170.m                CIE 170-1:2006 / 170-2:2015 constants
 |   |-- Nomograms.m             Raw absorbance computations (Fourier series, alpha/beta bands)
 |   |-- NormalizationCache.m    Per-observer peak cache for fast normalization
-|   |-- CMFPlotter.m            Visualization layer used by IndividualCMF plot wrappers
 |   |-- +pipeline/              Pure-function compute stages (Photopigment, PreReceptoral, Output)
 |   |-- +enums/                 Strategy/algorithm enum types
 |   |-- +validators/            Reusable mustBe* validators
@@ -74,10 +73,9 @@ graph TD
         VdK_Lens[VanDeKraatsVanNorren2007LensTemplate]
         SR_Mac[StockmanRider2023MacularTemplate]
     end
-    subgraph L1["Layer 1 - Utilities and visualization"]
+    subgraph L1["Layer 1 - Utilities"]
         Nomograms
         NormalizationCache
-        CMFPlotter
     end
     subgraph L0["Layer 0 - Leaf modules: constants and types"]
         CIE170
@@ -87,7 +85,6 @@ graph TD
 
     IndividualCMF --> ObserverParameters
     IndividualCMF --> Genotype
-    IndividualCMF --> CMFPlotter
     IndividualCMF --> NormalizationCache
     IndividualCMF --> PhotopigmentTemplate
     IndividualCMF --> LensTemplate
@@ -116,7 +113,6 @@ graph TD
     SR_Mac --> CIE170
 
     Nomograms --> Validators
-    CMFPlotter --> IndividualCMF
 ```
 
 Three constraints hold:
@@ -134,20 +130,22 @@ Three constraints hold:
 
 A call to `obs.LMS(wl)` traverses four computation stages. The
 dispatcher `computeSensitivityCore` calls `computeRawSensitivity`,
-which in turn invokes a dedicated method for each stage and returns
-early once the requested `OutputFormat` is reached. The math for each
-stage lives in a pure-function class under `toolbox/+pipeline/`; the
-`IndividualCMF` methods are thin orchestrators that gather inputs from
-observer state and delegate. See [Compute pipeline (`+pipeline/`)](#compute-pipeline-pipeline)
+which walks the stages in order and returns early once the requested
+`OutputFormat` is reached. The math for each stage lives in a
+pure-function class under `toolbox/+pipeline/`, called directly.
+Only stage 1 keeps an `IndividualCMF` method of its own
+(`computePigmentAbsorbance`), because resolving the template, the
+lambda-max shifts and the genotype takes more observer state than the
+other three combined. See [Compute pipeline (`+pipeline/`)](#compute-pipeline-pipeline)
 below for the rationale.
 
 ```mermaid
 flowchart LR
     Input[Wavelengths wl] --> S1
     S1[1. Photopigment absorbance<br/>pipeline.PhotopigmentStage.logAbsorbance<br/>via computePigmentAbsorbance]
-    S2[2. Self-screening<br/>pipeline.PhotopigmentStage.retinalAbsorptance<br/>via computeRetinalAbsorptance]
-    S3[3. Pre-receptoral filtering<br/>pipeline.PreReceptoralStage.applyFilters<br/>via computeCornealQuantal]
-    S4[4. Quantal -> energy<br/>pipeline.OutputStage.quantalToEnergy<br/>via convertToEnergy]
+    S2[2. Self-screening<br/>pipeline.PhotopigmentStage.retinalAbsorptance]
+    S3[3. Pre-receptoral filtering<br/>pipeline.PreReceptoralStage.applyFilters]
+    S4[4. Quantal -> energy<br/>pipeline.OutputStage.quantalToEnergy]
     S1 --> S2 --> S3 --> S4 --> Out
     S1 -.->|"OutputFormat='absorbance'"| Out[LMS]
     S2 -.->|"OutputFormat='absorptance'"| Out
@@ -155,22 +153,42 @@ flowchart LR
     S4 -.->|"OutputFormat='energy'"| Out
 ```
 
+Every one of those four exits passes through `applyDomainFloor` before
+returning, so a wavelength outside the observer's `Domain` reads zero
+whichever format the caller asked for. The floor lives in
+`computeRawSensitivity` rather than in its callers because there are
+four of those -- `computeSensitivityCore`, `RGB`, the sampled peak in
+`NormalizationCache`, and the `fminbnd` peak objective -- and guarding
+only the first left the other three returning values as large as
+4.2e+153.
+
 Stage details:
 
-| Stage | Pure-function owner | Orchestrator | Key formula |
+| Stage | Pure-function owner | Called from | Key formula |
 |---|---|---|---|
 | 1a. Absorbance | `pipeline.PhotopigmentStage.logAbsorbance` (delegates to `PhotopigmentTemplate` subclass) | `IndividualCMF.computePigmentAbsorbance` | log10 absorbance shape, positioned at lambda-max |
-| 1b/2. Absorptance | `pipeline.PhotopigmentStage.retinalAbsorptance` | `IndividualCMF.computeRetinalAbsorptance` | Relative retinal absorptance `(1 - 10^(-OD * absorbance)) / (1 - 10^(-OD))`. The raw physical fraction `1 - 10^(-OD * absorbance)` is available via `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`. |
-| 3. Pre-receptoral filtering | `pipeline.PreReceptoralStage.applyFilters` | `IndividualCMF.computeCornealQuantal` | `* 10^(-lens density - macular density)` |
-| 4. Energy conversion | `pipeline.OutputStage.quantalToEnergy` | `IndividualCMF.convertToEnergy` | `* lambda` (S&R 2023 Eq. 8) |
+| 1b/2. Absorptance | `pipeline.PhotopigmentStage.retinalAbsorptance` | `computeRawSensitivity` | Relative retinal absorptance `(1 - 10^(-OD * absorbance)) / (1 - 10^(-OD))`. The raw physical fraction `1 - 10^(-OD * absorbance)` is available via `pipeline.PhotopigmentStage.absorptanceFromAbsorbance(..., Normalize=false)`. |
+| 3. Pre-receptoral filtering | `pipeline.PreReceptoralStage.applyFilters` | `computeRawSensitivity` | `* 10^(-lens density - macular density)` |
+| 4. Energy conversion | `pipeline.OutputStage.quantalToEnergy` | `computeRawSensitivity` | `* lambda` (S&R 2023 Eq. 8) |
 | post: Normalize / log / NaN | `pipeline.OutputStage.{normalize, applyLog, cleanNaN}` | `IndividualCMF.computeSensitivityCore` | divide by cached peak; log10 with NaN/Inf -> -10 |
 
 When `NormalizeOutput=true` (the default), the returned spectrum is
-divided by its peak. For `absorptance`, `quantal`, and `energy` the
-peak is supplied by `NormalizationCache` (per-cone, per-format).
-The `absorbance` format bypasses the cache: the raw template output
-is returned directly because it is already shape-normalized at
-`lambda-max`.
+divided by its peak. Three of the four formats are normalized --
+`absorptance`, `quantal`, and `energy` -- with the peak supplied by
+`NormalizationCache` (per-cone, per-format).
+
+`absorbance` is never normalized, whatever `NormalizeOutput` says. Its
+absolute scale is load-bearing: the templates are defined with
+`A(lambda-max) = 1`, which is what makes the `Lod` / `Mod` / `Sod`
+parameters mean peak *axial* optical density. Divide the spectrum by
+anything and those three stop meaning what the literature says they
+mean. `getPeak(cone, OutputFormat="absorbance")` still reports a
+number, but it is diagnostic and never applied as a divisor -- it is
+how you read the template's true maximum, which is not 1 and does not
+sit exactly at lambda-max (0.9949448501 for the Stockman-Rider L cone,
+1.0349751181 for the Govardovskii A2 S cone, where the beta band pushes
+the maximum off the alpha peak). This matches pycone, which normalizes
+the same three stages and leaves absorbance alone.
 
 The optional `LogOutput=true` post-processes the final output through
 `log10(...)`. This is independent of `OutputFormat` and is applied last.
@@ -197,9 +215,11 @@ published CIE tables:
 | `xyChromaticity(wl)` | Nx2 (x, y) | XYZ divided by X+Y+Z sum. |
 | `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | L/(L+M), S/(L+M). |
 
-`evaluate(wl, Data=..., Format=...)` is the entry point that returns
-any of these in `"array"`, `"table"`, or `"struct"` form; the `"table"`
-form is paired with `writetable` for CSV / Excel export.
+`evaluate(wl, Data=...)` returns any of these as a table -- a
+`Wavelength_nm` column followed by one column per channel -- ready for
+`writetable` CSV / Excel export. Each branch delegates to the method
+named by `Data`, so the two never diverge. Call the method directly when
+you want the bare numeric array.
 
 The pre-receptoral filter spectra used internally by stage 3 are also
 exposed directly:
@@ -238,6 +258,14 @@ enum (`enums.PhotopigmentModel` for photopigment, `enums.LensModel` for
 lens, `enums.MacularModel` for macular pigment); `IndividualCMF` swaps
 the strategy object on property change.
 
+Each base class owns a `REGISTRY` mapping enum member names to
+zero-argument constructor thunks, and a `create(name)` that resolves
+through it. Adding a model means adding a subclass, an enum member and
+one registry line -- `IndividualCMF` has no dispatch to edit. Thunks
+rather than bare class handles, because `Govardovskii2000` and
+`Govardovskii2000A2` share a class and differ only in a constructor
+argument.
+
 ```mermaid
 classDiagram
     class PhotopigmentTemplate {
@@ -247,12 +275,12 @@ classDiagram
         +BASE_LAMBDA_MAX_L double
         +BASE_LAMBDA_MAX_M double
         +BASE_LAMBDA_MAX_S double
-        +SupportsShift logical
-        +SupportsAnalyticalPeak logical
         +ValidRange [min,max]
+        +Domain [min,max]
+        +REGISTRY dictionary
+        +create(name)$
         +computeAbsorbance(wl, cone, shift, options)
         +computePeakAbsorbance(cone, shift, options)
-        +getValidRange()
         +getLambdaMax(cone, shift)
     }
     class StockmanRiderPhotopigmentTemplate
@@ -261,7 +289,12 @@ classDiagram
         <<abstract>>
         +Name string
         +ShortName string
-        +SupportsAging logical
+        +ValidRange [min,max]
+        +Domain [min,max]
+        +AgeValidRange [min,max]
+        +AgeDomain [min,max]
+        +REGISTRY dictionary
+        +create(name)$
         +computeTemplate(wl, age, FieldSize=fs)
         +computeDensityAt400(age, FieldSize=fs)
     }
@@ -272,6 +305,10 @@ classDiagram
         <<abstract>>
         +Name string
         +ShortName string
+        +ValidRange [min,max]
+        +Domain [min,max]
+        +REGISTRY dictionary
+        +create(name)$
         +computeTemplate(wl)
     }
     class StockmanRider2023MacularTemplate
@@ -284,9 +321,18 @@ classDiagram
     MacularTemplate <|-- StockmanRider2023MacularTemplate
 ```
 
-The class-level invariants (`BASE_LAMBDA_MAX_*`, `Supports*`) are
-declared as abstract Constant properties, so the base class can dispatch
-without `isa()` checks.
+The class-level invariants (`BASE_LAMBDA_MAX_*`, `ValidRange`,
+`Domain`) are declared as abstract Constant properties, so the base
+class can dispatch without `isa()` checks.
+
+`ValidRange` and `Domain` are deliberately two properties, not one.
+`ValidRange` is where the source publication has a basis; `Domain` is
+where the implementation has any answer at all. Between them the value
+is kept and warned about once, so a smooth decay past the end of a fit
+survives intact. Outside `Domain` there is no value: sensitivities read
+0 and density spectra read NaN. The Stockman-Rider Fourier templates
+are why the second bound has to exist -- they are fitted over half a
+period and diverge rather than decay outside it.
 
 `LensTemplate` and `MacularTemplate` both follow a unit-peak
 normalization convention -- `computeTemplate` returns a spectrum
@@ -316,12 +362,16 @@ reference `IndividualCMF`, and have their own dedicated test files
 (`PhotopigmentStageTest.m`, `PreReceptoralStageTest.m`,
 `OutputStageTest.m`) that exercise each helper in isolation.
 
-`IndividualCMF` orchestrates the pipeline: its `computePigmentAbsorbance`
-/ `computeRetinalAbsorptance` / `computeCornealQuantal` /
-`convertToEnergy` methods read state from observer fields, pass the
-resolved values to the corresponding stage method, and return the
-result. The `computeSensitivityCore` dispatcher then composes the
-stage outputs into the final response.
+`IndividualCMF` orchestrates the pipeline from `computeRawSensitivity`,
+which gathers the state each stage needs and calls the stage methods
+in turn. Only stage 1 keeps a method of its own,
+`computePigmentAbsorbance`, because resolving the template, the
+lambda-max shifts and the genotype takes more observer state than the
+other three stages combined. Stages 2-4 are called directly: the
+wrappers they used to have took one argument from observer state and
+forwarded the rest unchanged, so they added a name without adding a
+decision. The `computeSensitivityCore` dispatcher composes the stage
+outputs into the final response.
 
 This split exists because the math at each stage is fully determined by
 its inputs -- the previous mixing of math and observer-state access made
@@ -338,34 +388,68 @@ model selections, and algorithm modes. Because it is a value class,
 assigning a property produces a copy rather than mutating shared state,
 so a captured snapshot is decoupled from the live observer.
 `getParameters()` returns such a snapshot; `setParameters(params)`
-applies one. The round-trip preserves observer state exactly:
-`obs2.setParameters(obs1.getParameters())` reproduces `obs1`'s LMS
-output bit-for-bit.
+applies one.
+
+The round-trip carries **who the observer is**, and
+`ObserverParametersRoundTripTest` sweeps every settable public property
+to keep that precise:
+
+| Category | Round-trips | Properties |
+|---|---|---|
+| Physiology, model selections, algorithm modes | exactly (delta 0) | `Age`, `FieldSize`, `LensModel`, `PhotopigmentModel`, `L`/`M_OpsinTemplate`, the three lambda-max shifts, `Lod`/`Mod`/`Sod`, `MacularDensity`, `MacularDensityAlgorithm`, `PhotopigmentDensityAlgorithm` |
+| Lens density | to ~1e-12 relative | `LensDensity` |
+| Output-shape settings | **not carried, by design** | `OutputFormat`, `LogOutput`, `NormalizeOutput`, `Primaries`, `NormalizationMethod`, `ModelRangeWarning` |
+
+`LensDensity` is stored in the snapshot as a ratio to
+`CIE170.STD_LENS_DENSITY_400` -- which is what lets
+`isStandardConfiguration` test it against exactly 1.0 -- so the
+round-trip divides and multiplies by that constant and `x/c*c` does not
+return `x` bit-for-bit. The residual is ~1e-12 relative, and the
+standard-observer ratio of 1.0 is lossless.
+
+Output-shape settings are excluded deliberately: a snapshot describes an
+observer, not the mode you happen to be viewing them in, so transferring
+physiology from a log-mode observer must not flip the receiver's display
+mode. `IndividualCMF.snapToStandardObserver` names the same group and
+preserves it across a physiology reset, so this is one decision applied
+consistently.
 
 ### Formula vs Custom algorithm modes
 
 Three derived physiological quantities have an `*Algorithm` companion
 enum that selects how they are computed:
 
-| Quantity | Algorithm enum | Formula values | Custom value |
+| Quantity | Algorithm enum | Assignable formula values | Read-only state |
 |---|---|---|---|
 | Lens density | `enums.LensDensityAlgorithm` | `Auto` (delegates to active `LensTemplate`) | `Custom` |
 | Macular density | `enums.MacularDensityAlgorithm` | `CIE170`, `MorelandAlexander` | `Custom` |
 | Photopigment optical densities | `enums.PhotopigmentDensityAlgorithm` | `CIE170`, `PokornySmith` | `Custom` |
 
 Each quantity defaults to a formula mode and recomputes when its inputs
-(age, field size, template) change. Assigning the dependent property
-directly auto-engages `Custom` and pins the value:
+(age, field size, template) change. Pinning a value engages `Custom`;
+assigning `[]` is the inverse and hands the quantity back to the formula:
 
 ```matlab
-obs.LensDensity = 1.85;            % auto-engages LensDensityAlgorithm="Custom"
-obs.Age = 70;                      % does NOT recompute LensDensity (still Custom)
-obs.LensDensityAlgorithm = "Auto"; % switches back; recomputes from age via the lens template
+obs.LensDensity = 1.85;   % pins it; LensDensityAlgorithm now READS "Custom"
+obs.Age = 70;             % does NOT recompute LensDensity (still Custom)
+obs.LensDensity = [];     % back to the formula, recomputed from the current Age
 ```
 
-The pattern protects user intent from being clobbered by subsequent
-property changes. Modes are enum-typed, so string assignments like
-`"Auto"` and `"Custom"` are validated at assignment.
+`Custom` is a state you observe, not a mode you select: assigning it to an
+`*Algorithm` property, or naming it in the constructor, raises
+`IndividualCMF:CustomIsNotAssignable`. There is no pinned value to claim
+unless you supplied one. The formula values stay assignable, because
+choosing *which* formula is a genuine choice.
+
+Clearing a cone density reverts the whole group. `Lod`, `Mod` and `Sod`
+are produced together by one formula, so `obs.Lod = []` restores all
+three.
+
+To freeze whatever the model computed, read the value and assign it back:
+
+```matlab
+obs.LensDensity = obs.LensDensity;   % pin the model's own value
+```
 
 ### NormalizationCache
 
@@ -375,12 +459,20 @@ The cache stores the peak per (cone, format) pair and invalidates when
 relevant observer state changes, via `addlistener` hooks on
 `OutputFormat`, `LogOutput`, `NormalizeOutput`, and the upstream
 parameters that affect the spectrum. Cache misses are filled by
-analytical peaks (for templates with `SupportsAnalyticalPeak=true`,
-i.e. Govardovskii absorptance) or numerical search (`fminbnd` /
-`Sampled` grid). Configurable via
-`NormalizationMethod = "Continuous" | "Sampled"`. Note that the
-`absorbance` format does not flow through the cache: the template is
-already shape-normalized to 1 at lambda-max.
+numerical search -- `fminbnd` in `Continuous` mode, a grid maximum in
+`Sampled` -- selected by
+`NormalizationMethod = "Continuous" | "Sampled"`, with the grid itself
+supplied as `NormalizationGrid`.
+
+There is no analytical-peak shortcut. Templates used to be able to
+declare `SupportsAnalyticalPeak` and return a closed-form maximum, but
+both Stockman-Rider templates returned a hardcoded `1.0` against a
+measured `0.9944520`, so every caller of the "exact" value got a worse
+number than the search would have found. The mechanism is gone; the
+search runs for every cache miss.
+
+The `absorbance` format does not flow through the cache at all, since
+it is not normalized.
 
 ### CIE170 as leaf-level constants
 
@@ -402,7 +494,8 @@ accepts the three persistent flags as per-call Name=Value overrides
 that don't mutate the observer. Implementation routes directly to
 `computeSensitivityCore(...)` with the resolved arguments, bypassing
 the L/M/S getters that read persistent state. This was added to remove
-the capture/restore dance from `CMFPlotter`'s plot methods.
+the capture/restore dance the plot methods previously performed. `L`,
+`M`, and `S` accept the same overrides.
 
 ## Extension points
 
@@ -411,20 +504,27 @@ the capture/restore dance from `CMFPlotter`'s plot methods.
 1. Create `toolbox/MyModelPhotopigmentTemplate.m` that subclasses
    `PhotopigmentTemplate`. Implement `computeAbsorbance` and
    `computePeakAbsorbance`, and declare the abstract Constant
-   properties (`BASE_LAMBDA_MAX_L/M/S`, `SupportsShift`,
-   `SupportsAnalyticalPeak`, `ValidRange`). The base class provides
-   `getValidRange()` and `getLambdaMax()` automatically.
+   properties (`BASE_LAMBDA_MAX_L/M/S`, `ValidRange`, `Domain`). The
+   base class provides `getLambdaMax()` automatically.
 2. Add the enum value to `toolbox/+enums/PhotopigmentModel.m`.
-3. In `IndividualCMF.set.PhotopigmentModel`, add a branch that instantiates
-   your subclass when the new enum value is selected.
-4. Add tests under `tests/`.
+3. Add one line to `PhotopigmentTemplate.REGISTRY` mapping that enum
+   member name to `@() MyModelPhotopigmentTemplate(...)`.
+4. Add tests under `tests/`. `TemplateRegistryTest` already checks that
+   the registry keys and enum members agree in both directions, so a
+   step-2-without-step-3 mistake fails there rather than at runtime.
+
+Nothing in `IndividualCMF` changes.
 
 ### Add a new lens template
 
 Same pattern as above with `LensTemplate`, `enums.LensModel`, and
-`IndividualCMF.set.LensModel`. `LensTemplate.computeTemplate(wl, age)`
+`LensTemplate.REGISTRY`. `LensTemplate.computeTemplate(wl, age)`
 returns the OD spectrum normalized to 1.0 at 400 nm; `computeDensityAt400(age)`
-returns the absolute peak. Both methods accept an optional Name-Value
+returns the absolute peak. Lens templates declare two extra abstract
+Constants, `AgeValidRange` and `AgeDomain`, on the same
+publication-basis / implementation-basis split as the wavelength pair:
+Pokorny 1987 fitted 20-80 years and errors outside it, while the other
+two accept any positive age. Both methods accept an optional Name-Value
 `FieldSize` argument for templates whose density depends on observer
 field size (e.g. the small-field vs large-field Rayleigh-loss
 coefficient in vK&vN 2007); templates that don't model field size
@@ -435,10 +535,10 @@ age- and field-size-dependent multi-component example.
 
 1. Create `toolbox/MyModelMacularTemplate.m` subclassing
    `MacularTemplate`. Implement `computeTemplate(wl)` returning the OD
-   spectrum normalized to 1.0 at 460 nm; set `Name` and `ShortName`.
+   spectrum normalized to 1.0 at 460 nm; set `Name`, `ShortName`,
+   `ValidRange` and `Domain`.
 2. Add the enum value to `toolbox/+enums/MacularModel.m`.
-3. In `IndividualCMF.set.MacularModel`, add a branch that instantiates
-   your subclass.
+3. Add one line to `MacularTemplate.REGISTRY`.
 4. Add tests; update the parity harness if the new template diverges
    from the pycone macular shape (the current parity rig assumes the
    S&R 2023 macular template, just as it assumes the S&R 2023 lens
@@ -462,16 +562,47 @@ class (e.g., a Pokorny 1987 coefficient goes on `Pokorny1987LensTemplate`).
 
 ### Add a new plot method
 
-Add a method to `CMFPlotter.m` returning `[p, ax]` consistent with the
-other plot methods. If the method should be discoverable from
-`IndividualCMF`, add a thin `varargout`-forwarding wrapper alongside the
-other plot wrappers in `IndividualCMF.m` (`plotLMS`, `plotXYZ`,
+Plot methods live directly on `IndividualCMF.m` (`plotLMS`, `plotXYZ`,
 `plotRGBCMFs`, `plotChromaticity`, `plotAbsorbance`, `plotAbsorptance`,
 `plotQuantalEnergy`, `plotLens`, `plotMacular`, `plotDiagnostics`,
-`compareTo`). All wrappers reset axis state (`XLimMode`, `YLimMode`,
-`DataAspectRatioMode`, `PlotBoxAspectRatioMode`) after `cla(ax)` so a
-prior section's `axis equal` / explicit limits don't leak in; follow
-that pattern.
+`compareTo`, `plot`). There is no plotter class to add to.
+
+Follow the shape the others use:
+
+```matlab
+function varargout = plotMyThing(obj, options)
+    arguments
+        obj
+        options.Title (1,1) string = "My Thing"
+        options.Wavelength (:,1) double = IndividualCMF.DEFAULT_WL
+        options.ConeColors (3,3) double = IndividualCMF.CONE_COLORS
+        options.Parent = []
+    end
+    [ax, wasHeld] = obj.beginLinePlot(options.Parent);
+    p = plot(ax, options.Wavelength, y, ...);
+    obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
+    if nargout > 0, varargout{1} = p; end
+end
+```
+
+`beginLinePlot` resolves the target axes (`Parent` if given, else
+`gca`), captures the caller's hold state, clears the axes and resets
+`XLimMode`, `YLimMode`, `DataAspectRatioMode` and
+`PlotBoxAspectRatioMode` so a prior section's `axis equal` or explicit
+limits cannot leak in. `finalizeLinePlot` applies labels, title, grid
+and legend, and restores the hold state. Defaulting to `gca` rather
+than creating a figure is what keeps plots inline in a Live Script
+section, and taking `Parent` is what lets a caller compose panels with
+`tiledlayout` / `nexttile`.
+
+Two ordering traps, both already tripped over: anything that sets an
+aspect ratio (`axis equal` in `plotChromaticity`) must come *after*
+`finalizeLinePlot`, since `beginLinePlot` resets
+`DataAspectRatioMode`; and cone line colours come from
+`IndividualCMF.CONE_COLORS` with a per-call `ConeColors` override
+rather than literals, so a caller can restyle without editing the
+method. Reference and comparison colours that are not L/M/S (as in
+`plotLens` and `plotMacular`) stay literal and take no override.
 
 ### Verify pycone parity after a change
 

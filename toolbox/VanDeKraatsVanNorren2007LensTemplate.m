@@ -75,11 +75,28 @@ classdef VanDeKraatsVanNorren2007LensTemplate < LensTemplate
     end
 
     properties (Constant)
-        % SupportsAging  True; vdK&vN's component density coefficients
-        % depend on age via the quadratic d_i = d_{i,0} + alpha_i * age^2
-        % relationship (Eq. 7), so the spectral SHAPE shifts with age as
-        % the relative contributions of the five components evolve.
-        SupportsAging = true
+        % ValidRange  300-700 nm, the span the five-component model is
+        %   fitted on.
+        ValidRange = [300, 700]
+
+        % Domain  Unbounded. Outside the fit the model stays positive and
+        %   bounded (0.0577 of the 400 nm reference at 700 nm, 0.0473 at
+        %   830), so the values are admissible and the ValidRange warning
+        %   carries the caveat. Truncating them would put a cliff in the
+        %   long-wavelength tail.
+        Domain = [0, Inf]
+
+        % AgeValidRange  The span the paper presents: Fig. 15 gives each
+        %   decade from 20 to 80, and Figs. 9 and 11 fit data from age 0 to
+        %   about 75.
+        AgeValidRange = [0, 80]
+
+        % AgeDomain  Unbounded. Section 6: "To arrive at the density
+        %   coefficients at any age, the aging formula has to be applied",
+        %   and the paper constructs a newborn case from the age-0
+        %   donor-lens coefficients. Extrapolation is explicitly permitted,
+        %   so outside AgeValidRange the toolbox warns and still computes.
+        AgeDomain = [0, Inf]
     end
 
     properties (Constant, Access = private)

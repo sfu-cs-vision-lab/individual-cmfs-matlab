@@ -3,10 +3,9 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
     %   These tests verify the concrete and abstract methods in the PhotopigmentTemplate
     %   class hierarchy:
     %   - computeAbsorbance
-    %   - computePeakAbsorbance
+    %   - template peak absorbance via IndividualCMF.getPeak
     %   - getLambdaMax
-    %   - getValidRange
-    %   - SupportsShift
+    %   - ValidRange
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
     %
@@ -135,79 +134,24 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
                 'Positive shift should move peak to longer wavelength');
         end
 
-        %% getValidRange Tests
+        %% ValidRange Tests
 
-        function testGetValidRangeGov(testCase)
-            % Test getValidRange for Govardovskii
-            range = testCase.GovTemplate.getValidRange();
+        function testValidRangeGov(testCase)
+            % Test ValidRange for Govardovskii
+            range = testCase.GovTemplate.ValidRange;
 
             testCase.verifySize(range, [1, 2]);
             testCase.verifyEqual(range, [380, 780], ...
                 'Govardovskii valid range should be [380, 780]');
         end
 
-        function testGetValidRangeSR(testCase)
-            % Test getValidRange for StockmanRider
-            range = testCase.SRTemplate.getValidRange();
+        function testValidRangeSR(testCase)
+            % Test ValidRange for StockmanRider
+            range = testCase.SRTemplate.ValidRange;
 
             testCase.verifySize(range, [1, 2]);
             testCase.verifyEqual(range, [360, 830], ...
                 'StockmanRider valid range should be [360, 830]');
-        end
-
-        %% SupportsShift Tests
-
-        function testSupportsShiftGov(testCase)
-            % Test SupportsShift for Govardovskii
-            tf = testCase.GovTemplate.SupportsShift;
-
-            testCase.verifyTrue(tf, 'Govardovskii should support shifts');
-        end
-
-        function testSupportsShiftSR(testCase)
-            % Test SupportsShift for StockmanRider
-            tf = testCase.SRTemplate.SupportsShift;
-
-            testCase.verifyTrue(tf, 'StockmanRider should support shifts');
-        end
-
-        %% GovardovskiiPhotopigmentTemplate Specific Tests
-
-        function testGovardovskiiPeakAbsorbanceAnalytical(testCase)
-            options = struct();
-
-            for coneType = {'L', 'M', 'S'}
-                ct = coneType{1};
-                peakAbs = testCase.GovTemplate.computePeakAbsorbance(ct, 0, options);
-
-                % Peak should be close to 1.0 (template is normalized)
-                testCase.verifyEqual(peakAbs, 1.0, 'AbsTol', 0.02, ...
-                    sprintf('%s-cone peak absorbance should be ~1.0', ct));
-            end
-        end
-
-        function testGovardovskiiPeakAbsorbanceWithShift(testCase)
-            % Test peak absorbance with shift
-            options = struct();
-
-            peakAbs_base = testCase.GovTemplate.computePeakAbsorbance('L', 0, options);
-            peakAbs_shifted = testCase.GovTemplate.computePeakAbsorbance('L', 10, options);
-
-            % Both should be close to 1.0
-            testCase.verifyEqual(peakAbs_base, 1.0, 'AbsTol', 0.02);
-            testCase.verifyEqual(peakAbs_shifted, 1.0, 'AbsTol', 0.02);
-        end
-
-        %% StockmanRiderPhotopigmentTemplate Specific Tests
-
-        function testStockmanRiderPeakAbsorbanceNumerical(testCase)
-            options = struct('L_Template', "Serine");
-
-            peakAbs = testCase.SRTemplate.computePeakAbsorbance('L', 0, options);
-
-            % Peak should be close to 1.0
-            testCase.verifyGreaterThan(peakAbs, 0.9);
-            testCase.verifyLessThan(peakAbs, 1.1);
         end
 
         function testStockmanRiderDefaultOptions(testCase)
@@ -267,21 +211,6 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
             testCase.verifyNotEqual(logAbs1, logAbs2);
         end
 
-        function testGovardovskiiPeakAbsorbance(testCase)
-            % Test Govardovskii peak absorbance calculation
-            template = GovardovskiiPhotopigmentTemplate();
-            options = struct();
-
-            peakL = template.computePeakAbsorbance('L', 0, options);
-            peakM = template.computePeakAbsorbance('M', 0, options);
-            peakS = template.computePeakAbsorbance('S', 0, options);
-
-            % Peaks should be close to 1.0
-            testCase.verifyEqual(peakL, 1.0, 'AbsTol', 0.01);
-            testCase.verifyEqual(peakM, 1.0, 'AbsTol', 0.01);
-            testCase.verifyEqual(peakS, 1.0, 'AbsTol', 0.01);
-        end
-
         %% PhotopigmentTemplate abstract class
 
         function testPhotopigmentTemplateGetLambdaMaxWithShift(testCase)
@@ -304,24 +233,15 @@ classdef PhotopigmentTemplateTest < matlab.unittest.TestCase
         end
 
         function testPhotopigmentTemplateGetValidRange(testCase)
-            % Test getValidRange for both template types
+            % Test ValidRange for both template types
             sr = StockmanRiderPhotopigmentTemplate();
             gov = GovardovskiiPhotopigmentTemplate();
 
-            srRange = sr.getValidRange();
+            srRange = sr.ValidRange;
             testCase.verifyEqual(srRange, [360, 830]);
 
-            govRange = gov.getValidRange();
+            govRange = gov.ValidRange;
             testCase.verifyEqual(govRange, [380, 780]);
-        end
-
-        function testPhotopigmentTemplateSupportsShift(testCase)
-            % Test SupportsShift for both template types
-            sr = StockmanRiderPhotopigmentTemplate();
-            gov = GovardovskiiPhotopigmentTemplate();
-
-            testCase.verifyTrue(sr.SupportsShift);
-            testCase.verifyTrue(gov.SupportsShift);
         end
 
         %% IndividualCMF template-related behavior

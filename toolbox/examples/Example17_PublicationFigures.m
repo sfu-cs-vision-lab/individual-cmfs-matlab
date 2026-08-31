@@ -1,5 +1,5 @@
 %[text] # Example 17: Publication-Quality Figures
-%[text] The `CMFPlotter` class wraps a tiled-layout figure with consistent styling and shorthand methods for the toolbox's standard plot types: LMS fundamentals, RGB CMFs, chromaticity diagrams, comparison overlays, and pre-receptoral filtering.
+%[text] Multi-panel publication figures use MATLAB's `tiledlayout` and `nexttile` directly. Every `IndividualCMF` plot method accepts `Parent=`, so passing `nexttile()` places that plot in the next tile of the layout. Export with `exportgraphics`.
 %[text] This is the capstone example: combine everything from the earlier scripts into figures suitable for papers and presentations.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
@@ -15,9 +15,7 @@ exampleDefaults();
 %[text] | Data lines | 1\.5-2 pt |
 %[text] | Reference lines | 0\.5-1 pt |
 %[text] | Axes | 1 pt |
-%[text] | L-cone color | Red `[1 0 0]` or `[0.8 0 0]` |
-%[text] | M-cone color | Green `[0 0.6 0]` |
-%[text] | S-cone color | Blue `[0 0 1]` or `[0 0 0.8]` |
+%[text] | Cone colors | `IndividualCMF.CONE_COLORS` rows L, M, S; override per call with `ConeColors=` |
 %[text] | Vector export | PDF / SVG / EPS preferred (via `exportgraphics`) |
 %[text] | Raster export | `-r300` minimum |
 %[text] | Single-column width | 3\.25-3.5 in (83-89 mm) |
@@ -27,7 +25,7 @@ exampleDefaults();
 %[text] ## Two paths to publication figures
 %[text] This example shows two complementary patterns:
 %[text] - **Inline plotting** (single panels in a Live Script section): call the `IndividualCMF` shortcuts (`obs.plotLMS`, `obs.compareTo`, ...). They draw into the current axes via `gca`, so the output is captured inline by the Live Editor.
-%[text] - **Standalone publication figures** (multi-panel composites, PNG/PDF export): build the figure yourself with `figure`, `tiledlayout`, and `nexttile`, or use `CMFPlotter` for a styled tiled-layout wrapper. Those produce real figure windows. \
+%[text] - **Standalone publication figures** (multi-panel composites, PNG/PDF export): build the figure with `figure`, `tiledlayout`, and `nexttile`, passing each tile to a plot method via `Parent=`. Those produce real figure windows. \
 %[text] The sections below alternate between the two patterns.
 %%
 %[text] ## Single-panel LMS plot (inline)
@@ -37,8 +35,10 @@ obs.plotLMS(Title="CIE 2006 10 deg cone fundamentals");
 %%
 %[text] ## Two-observer comparison (inline)
 %[text] `compareTo` overlays a second observer in dashed lines. Same gca pattern as `plotLMS`.
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 obs_ref  = IndividualCMF(StandardObserver=10);
 obs_comp = IndividualCMF(LensModel="VanDeKraats2007", Age=60, FieldSize=10);
+obs_comp.ModelRangeWarning = false;
 obs_ref.compareTo(obs_comp, ...
     Title="CIE 10 deg (solid) vs Age 60 VanDeKraats2007 (dashed)");
 %%
@@ -48,6 +48,7 @@ wl = (390:1:700)';
 ages = [25, 40, 55, 70];
 agecol = parula(numel(ages));
 age_observers = IndividualCMF.across('Age', ages, LensModel="VanDeKraats2007", FieldSize=10);
+[age_observers.ModelRangeWarning] = deal(false);
 %%
 %[text] ### Lens density spectrum vs age
 figure;
@@ -223,6 +224,21 @@ disp(['Exported: ' pdf_path])
 %[text] - For age sweeps, set `LensModel="VanDeKraats2007"` -- the default `StockmanRider2023` lens is age-flat
 %[text] - `sgtitle` adds a supertitle to a `tiledlayout` composite
 %[text] - `exportgraphics(gcf, path, 'ContentType', 'vector')` is the modern publication-export call -- PDF / SVG / EPS preferred over raster \
+%%
+%[text] ## Four-panel observer figure
+%[text] A 2x2 composite: cone fundamentals, RGB CMFs, lens density, and macular density for one observer. Each plot method receives its own tile through `Parent=`, so no wrapper class is involved.
+obs4 = IndividualCMF(StandardObserver=10);
+wl4 = (390:1:780)';
+figure(Position=[100 100 1000 750]);
+t4 = tiledlayout(2, 2, TileSpacing="compact", Padding="compact");
+title(t4, "CIE 170-1:2006 10-degree observer", FontWeight="bold");
+obs4.plotLMS(Parent=nexttile(t4), Wavelength=wl4, Title="Cone fundamentals");
+obs4.plotRGBCMFs(Parent=nexttile(t4), Wavelength=wl4, Title="RGB CMFs");
+obs4.plotLens(Parent=nexttile(t4), Wavelength=wl4, Title="Lens density");
+obs4.plotMacular(Parent=nexttile(t4), Wavelength=wl4, Title="Macular density");
+%[text] Export at publication resolution. `exportgraphics` picks the format from the file extension and produces vector output for PDF and EPS.
+exportgraphics(gcf, fullfile(tempdir, "observer_panel.pdf"), ContentType="vector");
+exportgraphics(gcf, fullfile(tempdir, "observer_panel.png"), Resolution=300);
 %[text] **Next:** [Example 18: Observer Metamerism](matlab:edit('Example18_ObserverMetamerism.m')) -- how a metameric pair for the standard observer breaks for an individual observer.
 
 %[appendix]{"version":"1.0"}

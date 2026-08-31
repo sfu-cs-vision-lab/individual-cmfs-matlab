@@ -123,7 +123,7 @@ classdef IndividualCMFParameterIntegrationTest < matlab.unittest.TestCase
 
         function testSetParametersAppliesConeOpticalDensities(testCase)
             obs = IndividualCMF();
-            params = ObserverParameters.standard2Deg();
+            params = IndividualCMF(StandardObserver=2).getParameters();
             obs.setParameters(params);
 
             testCase.verifyEqual(obs.Lod, 0.50, ...
@@ -150,7 +150,7 @@ classdef IndividualCMFParameterIntegrationTest < matlab.unittest.TestCase
 
         function testSetParametersAppliesMacularDensity(testCase)
             obs = IndividualCMF();
-            params = ObserverParameters.standard2Deg();
+            params = IndividualCMF(StandardObserver=2).getParameters();
             obs.setParameters(params);
 
             testCase.verifyEqual(obs.MacularDensity, 0.350, ...
@@ -179,7 +179,7 @@ classdef IndividualCMFParameterIntegrationTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(obs.LensDensityAlgorithm), "Custom");
 
             % Round-trip from a "CIE170" source preserves that mode.
-            std10 = ObserverParameters.standard10Deg();
+            std10 = IndividualCMF(StandardObserver=10).getParameters();
             obs.setParameters(std10);
             testCase.verifyEqual(string(obs.PhotopigmentDensityAlgorithm), "CIE170");
             testCase.verifyEqual(string(obs.MacularDensityAlgorithm), "CIE170");

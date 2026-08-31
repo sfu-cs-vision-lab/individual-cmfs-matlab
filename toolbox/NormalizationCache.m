@@ -20,7 +20,7 @@ classdef NormalizationCache < handle
     %
     %   EXAMPLE:
     %       cache = NormalizationCache(observer);
-    %       cache.setConfig(struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 5));
+    %       cache.setConfig(enums.NormalizationMethod.Sampled, 380:5:780);
     %       peak = cache.getPeak('L', "energy");
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
@@ -32,13 +32,20 @@ classdef NormalizationCache < handle
     % Licensed under AGPL-3.0-or-later. See LICENSE file for details.
 
     properties (SetAccess = private)
-        % Active normalization configuration.
-        Config struct = struct('Method', "Continuous")
+        % How the peak is located: Continuous or Sampled.
+        Method (1,1) enums.NormalizationMethod = enums.NormalizationMethod.Continuous
+
+        % Wavelength grid used when Method is Sampled, in nm.
+        Grid double = (380:1:780)'
     end
 
     properties (Access = private)
         % Keys: "L_energy", "M_quantal", etc.
-        Peaks containers.Map
+        %
+        % The default is explicit because a typed property with none gets a
+        % 0x0 default, and dictionary is scalar-only on R2023b, where
+        % defining the class then fails with MATLAB:class:emptyScalar.
+        Peaks dictionary = configureDictionary("string", "double")
         % Reference to IndividualCMF for computation
         Observer
     end
@@ -56,24 +63,27 @@ classdef NormalizationCache < handle
                 observer (1,1) IndividualCMF
             end
             obj.Observer = observer;
-            obj.Peaks = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            obj.Peaks = configureDictionary("string", "double");
         end
 
-        function setConfig(obj, config)
-            % SETCONFIG  Update configuration and clear cache.
+        function setConfig(obj, method, grid)
+            % SETCONFIG  Update the normalization mode and clear the cache.
             %
-            %   cache.setConfig(config) updates the normalization configuration
-            %   and clears all cached peak values.
+            %   cache.setConfig(method) selects the peak-finding mode.
+            %   cache.setConfig(method, grid) also sets the wavelength grid
+            %   used in Sampled mode.
             %
             %   INPUTS:
-            %       config - Configuration struct with Method field (struct)
-            %                         For Sampled: also Start, Stop, Step fields
+            %       method - Continuous or Sampled (enums.NormalizationMethod)
+            %       grid - Wavelength grid in nm for Sampled mode (vector)
             arguments
                 obj
-                config (1,1) struct
+                method (1,1) enums.NormalizationMethod
+                grid double {mustBeVector, mustBeNonempty} = (380:1:780)'
             end
-            obj.Config = config;
-            obj.Peaks = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            obj.Method = method;
+            obj.Grid = grid;
+            obj.invalidate();
         end
 
         function invalidate(obj)
@@ -81,7 +91,7 @@ classdef NormalizationCache < handle
             %
             %   cache.invalidate() clears all cached peak values, forcing
             %   recalculation on next access.
-            obj.Peaks = containers.Map('KeyType', 'char', 'ValueType', 'double');
+            obj.Peaks = configureDictionary("string", "double");
         end
 
         function peak = getPeak(obj, coneType, outputFormat)
@@ -103,9 +113,9 @@ classdef NormalizationCache < handle
                 outputFormat (1,1) string
             end
 
-            key = sprintf('%s_%s', coneType, outputFormat);
+            key = coneType + "_" + outputFormat;
 
-            if obj.Peaks.isKey(key)
+            if isKey(obj.Peaks, key)
                 peak = obj.Peaks(key);
             else
                 peak = obj.computePeak(coneType, outputFormat);
@@ -120,7 +130,7 @@ classdef NormalizationCache < handle
             %
             %   Dispatches to either computeSampledPeak or computeContinuousPeak
             %   based on the current configuration.
-            if obj.Config.Method == "Sampled"
+            if obj.Method == enums.NormalizationMethod.Sampled
                 peak = obj.computeSampledPeak(coneType, outputFormat);
             else
                 peak = obj.computeContinuousPeak(coneType, outputFormat);
@@ -140,9 +150,10 @@ classdef NormalizationCache < handle
         function peak = computeSampledPeak(obj, coneType, outputFormat)
             % COMPUTESAMPLEDPEAK  Compute peak from sampled spectrum.
             %
-            %   Uses the configured Start, Stop, and Step values to create
-            %   a wavelength grid and finds the maximum value.
-            wl = (obj.Config.Start : obj.Config.Step : obj.Config.Stop)';
+            %   Takes the maximum over the configured wavelength grid.
+            %   The grid is stored as written by the caller, so force a
+            %   column here: computeRawSensitivity requires (:,1).
+            wl = obj.Grid(:);
             values = obj.Observer.computeRawSensitivity(wl, coneType, outputFormat);
             peak = max(values);
         end

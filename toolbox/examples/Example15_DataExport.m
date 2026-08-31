@@ -1,46 +1,53 @@
 %[text] # Example 15: Data Export Workflows
 %[text] How to get cone-fundamental data out of an observer in a form usable by other tools -- CSV, Excel, MAT, or directly into a MATLAB table or struct.
-%[text] The unified entry point is `obs.evaluate(wl, Data=..., Format=...)`. The `Format` argument selects how the data is packaged; `Data` selects what is returned.
+%[text] The unified entry point is `obs.evaluate(wl, Data=...)`, which always returns a table: a `Wavelength_nm` column followed by one column per channel. `Data` selects which quantity you get. For a bare numeric array, call the named method (`obs.LMS(wl)`, `obs.RGB(wl)`, ...) instead.
 %[text] **Time:** about 10 minutes.
 exampleDefaults();
 %%
 %[text] ## The `evaluate` method
-%[text] **Syntax:** `[result, wl] = obs.evaluate(wl, Data=..., Format=...)`
+%[text] **Syntax:** `[result, wl] = obs.evaluate(wl, Data=...)`
+%[text] Each `Data` value delegates to the method of the same name, so the table and the direct call always agree.
 %[text:table]
-%[text] | Argument | Options |
-%[text] | --- | --- |
-%[text] | `Data` | `"LMS"` *(default)*, `"L"`, `"M"`, `"S"`, `"RGB"`, `"chromaticity"` |
-%[text] | `Format` | `"array"` *(default)*, `"table"`, `"struct"` |
+%[text] | `Data` | Columns | Equivalent method |
+%[text] | --- | --- | --- |
+%[text] | `"LMS"` *(default)* | `L`, `M`, `S` | `obs.LMS(wl)` |
+%[text] | `"L"`, `"M"`, `"S"` | one cone | `obs.L(wl)` |
+%[text] | `"RGB"` | `R`, `G`, `B` | `obs.RGB(wl)` |
+%[text] | `"XYZ"` | `X`, `Y`, `Z` | `obs.XYZ(wl)` |
+%[text] | `"Luminance"` | `V` | `obs.Luminance(wl)` |
+%[text] | `"lmChromaticity"` | `l`, `m` | `obs.lmChromaticity(wl)` |
+%[text] | `"xyChromaticity"` | `x`, `y` | `obs.xyChromaticity(wl)` |
+%[text] | `"MacLeodBoynton"` | `l_MB`, `s_MB` | `obs.MacLeodBoynton(wl)` |
 %[text:table]
 obs = IndividualCMF();
 wl = (380:5:780)';
 %%
-%[text] ## Format = `array` -- raw numeric matrix
-%[text] The fastest format for downstream computation. Returns an NxK numeric matrix.
-data_array = obs.evaluate(wl, Data='LMS', Format='array');
+%[text] ## A labelled table
+%[text] Each cone gets its own named column, with `Wavelength_nm` first. This is the form to hand straight to `writetable`, `stackedplot`, or `groupsummary`.
+data_table = obs.evaluate(wl, Data='LMS');
+head(data_table, 5)
+%%
+%[text] ## Getting a raw numeric matrix
+%[text] For downstream computation, call the named method. It skips the table wrapper entirely, so there is nothing to unpack.
+data_array = obs.LMS(wl);
 size(data_array)
 data_array(1:5, :)
 %%
-%[text] ## Format = `table` -- labelled columns
-%[text] Best for exploratory analysis and direct CSV / Excel export. Each cone gets its own named column, with `Wavelength_nm` as the first.
-data_table = obs.evaluate(wl, Data='LMS', Format='table');
-head(data_table, 5)
-%%
-%[text] ## Format = `struct` -- named fields
-%[text] Convenient for programmatic access and storage in MAT files.
-data_struct = obs.evaluate(wl, Data='LMS', Format='struct');
+%[text] ## Getting a struct
+%[text] `table2struct` with `ToScalar=true` gives one field per column, which is what you want for MAT-file storage.
+data_struct = table2struct(data_table, ToScalar=true);
 fieldnames(data_struct)
 %%
 %[text] ## Other `Data` selections
-%[text] `evaluate` returns more than just LMS. RGB color matching functions and chromaticity coordinates are also available.
-L_only = obs.evaluate(wl, Data='L', Format='array');
-RGB    = obs.evaluate(wl, Data='RGB', Format='array');
-chrom  = obs.evaluate(wl, Data='chromaticity', Format='array');
-table(size(L_only,2), size(RGB,2), size(chrom,2), ...
-      'VariableNames', {'L_cols', 'RGB_cols', 'chromaticity_cols'})
+%[text] `evaluate` covers more than LMS. RGB and XYZ color matching functions, luminance, and all three chromaticity conventions are available from the same call.
+L_only = obs.evaluate(wl, Data='L');
+RGB    = obs.evaluate(wl, Data='RGB');
+chrom  = obs.evaluate(wl, Data='lmChromaticity');
+table(width(L_only) - 1, width(RGB) - 1, width(chrom) - 1, ...
+      'VariableNames', {'L_cols', 'RGB_cols', 'lmChromaticity_cols'})
 %%
 %[text] ## Export to CSV
-%[text] `writetable` handles CSV output directly. Pair with `Format='table'` for clean column labels.
+%[text] `writetable` takes the `evaluate` output as-is; the column names carry through to the header row.
 csv_path = fullfile(tempdir, 'cone_fundamentals.csv');
 writetable(data_table, csv_path);
 csv_lines = readlines(csv_path);
@@ -70,8 +77,10 @@ whos('-file', mat_path)
 %[text] ## Multi-observer comparison export
 %[text] A common workflow: scan over a parameter (here, age), pull the L-cone for each, and assemble a single CSV. This makes comparing observers in external tools trivial.
 ages = [25, 50, 75];
+%[text] The `VanDeKraats2007` lens is fitted on 300-700 nm, so evaluating it past 700 raises `IndividualCMF:WavelengthOutOfRange` once per observer. The extrapolation there is a smooth bounded decay and the values are kept; the warning is silenced below because model range is not what this example is about. See [Example 04](matlab:edit('Example04_AgingEffects.m')) for the `ValidRange` / `Domain` contract.
 age_observers = IndividualCMF.across('Age', ages, ...
     LensModel="VanDeKraats2007", FieldSize=10);
+[age_observers.ModelRangeWarning] = deal(false);
 comparison = table(wl, 'VariableNames', {'Wavelength_nm'});
 for i = 1:numel(ages)
     comparison.(sprintf('L_age%d', ages(i))) = age_observers(i).L(wl);
@@ -83,14 +92,14 @@ head(comparison, 5)
 %[text] For pure-MATLAB persistence of an observer's *configuration* (rather than its evaluated data), use `getParameters` to get an `ObserverParameters` value object and save that; `setParameters` restores. The full demonstration is in [Example 14: Advanced Customization](matlab:edit('Example14_AdvancedCustomization.m')).
 %%
 %[text] ## Direct array methods
-%[text] When you don't need the structured output, `obs.LMS(wl)` and `obs.RGB(wl)` return arrays directly without going through `evaluate`. They're a hair faster and produce identical numbers.
+%[text] `evaluate` delegates to the named methods rather than reimplementing them, so the two agree bit for bit. Use whichever fits the calling code.
 LMS_direct = obs.LMS(wl);
-LMS_via_evaluate = obs.evaluate(wl, Data='LMS', Format='array');
+LMS_via_evaluate = table2array(data_table(:, 2:end));
 isequal(LMS_direct, LMS_via_evaluate)
 %%
 %[text] ## Key takeaways
-%[text] - `evaluate(wl, Data=..., Format=...)` is the unified structured-output interface
-%[text] - Three formats: `array` (numeric), `table` (CSV/Excel-friendly), `struct` (MAT-friendly)
+%[text] - `evaluate(wl, Data=...)` always returns a labelled table, one column per channel
+%[text] - For an array call the named method; for a struct use `table2struct(t, ToScalar=true)`
 %[text] - `writetable` handles CSV and multi-sheet Excel; `save` handles MAT
 %[text] - Include metadata (observer parameters) so exports are self-documenting
 %[text] - For pure observer-state persistence, use `getParameters`/`setParameters` round-trip \

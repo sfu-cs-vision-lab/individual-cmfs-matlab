@@ -116,13 +116,6 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
-            <File Location="CMFPlotterTest.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="test"/>
-                    </Category>
-                </Info>
-            </File>
             <File Location="GenotypeIntegrationTest.m">
                 <Info>
                     <Category UUID="FileClassCategory">
@@ -236,6 +229,13 @@
                 </Info>
             </File>
             <File Location="PreReceptoralFilterTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="TemplateRegistryTest.m">
                 <Info>
                     <Category UUID="FileClassCategory">
                         <Label UUID="test"/>
@@ -550,13 +550,6 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
-            <File Location="CMFPlotter.m">
-                <Info>
-                    <Category UUID="FileClassCategory">
-                        <Label UUID="design"/>
-                    </Category>
-                </Info>
-            </File>
             <File Location="Genotype.m">
                 <Info>
                     <Category UUID="FileClassCategory">

@@ -43,6 +43,69 @@ classdef (Abstract) MacularTemplate < handle
         ShortName
     end
 
+    properties (Abstract, Constant)
+        % ValidRange  [min_nm, max_nm] over which the publication has a basis.
+        %
+        %   Where the source paper fitted or tabulated the model -- NOT
+        %   where the output happens to be non-zero. A template that
+        %   deliberately returns zero outside a support band is giving the
+        %   model's answer, not extrapolating, and its ValidRange should
+        %   still cover the full query range.
+        %
+        %   IndividualCMF.validateWavelengths warns once per observer when
+        %   a query falls outside this range. Mirrors
+        %   PhotopigmentTemplate.ValidRange.
+        ValidRange (1,2) double
+
+        % Domain  [min_nm, max_nm] where the implementation has an answer.
+        %
+        %   Where the math can produce a finite, physically admissible
+        %   number. Distinct from ValidRange: outside ValidRange but inside
+        %   Domain the value is kept and warned about, so a smooth decay
+        %   past the fit survives intact. Outside Domain no value exists,
+        %   and IndividualCMF reports zero sensitivity or a NaN density
+        %   rather than a number the model cannot support.
+        Domain (1,2) double
+    end
+
+    properties (Constant)
+        % REGISTRY  Maps enums.MacularModel member names to constructors.
+        %
+        %   One entry today; the registry is what makes a second macular
+        %   shape a one-line change rather than an IndividualCMF edit.
+        %   TemplateRegistryTest keeps these keys and the enum members in
+        %   agreement.
+        REGISTRY = dictionary( ...
+            "StockmanRider2023", ...
+            {@() StockmanRider2023MacularTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the macular template for a model name.
+            %
+            %   t = MacularTemplate.create("StockmanRider2023") returns a new
+            %   StockmanRider2023MacularTemplate. Accepts an
+            %   enums.MacularModel directly.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.MacularModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A MacularTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(MacularTemplate.REGISTRY, model)
+                error("MacularTemplate:UnknownModel", ...
+                    "No macular template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(MacularTemplate.REGISTRY)', ", "));
+            end
+            ctor = MacularTemplate.REGISTRY{model};
+            t = ctor();
+        end
+    end
+
     methods (Abstract)
         % computeTemplate  Returns OD spectrum normalized to 1.0 at 460 nm.
         %

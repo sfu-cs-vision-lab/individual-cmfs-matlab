@@ -323,8 +323,8 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
             obs_gov.NormalizeOutput = true;
             obs_sr.NormalizeOutput = true;
 
-            LMS_gov = obs_gov.evaluate(wl);
-            LMS_sr = obs_sr.evaluate(wl);
+            LMS_gov = obs_gov.LMS(wl);
+            LMS_sr = obs_sr.LMS(wl);
 
             testCase.verifyNotEqual(LMS_gov, LMS_sr, ...
                 'Different template models should produce different LMS values');
@@ -340,11 +340,11 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
 
             % Initial model
             obs.PhotopigmentModel = "StockmanRider2023";
-            LMS_sr = obs.evaluate(wl);
+            LMS_sr = obs.LMS(wl);
 
             % Switch model
             obs.PhotopigmentModel = "Govardovskii2000";
-            LMS_gov = obs.evaluate(wl);
+            LMS_gov = obs.LMS(wl);
 
             testCase.verifyNotEqual(LMS_sr, LMS_gov, ...
                 'Switching template model should change output');
@@ -367,25 +367,6 @@ classdef ConeTemplateTest < matlab.unittest.TestCase
         end
 
         %% computePeakAbsorbance Tests
-
-        function testComputePeakAbsorbance(testCase)
-            % computePeakAbsorbance should return positive value close to 1
-            gov = GovardovskiiPhotopigmentTemplate();
-            sr = StockmanRiderPhotopigmentTemplate();
-            options = struct();
-
-            gov_peak = gov.computePeakAbsorbance('L', 0, options);
-            sr_peak = sr.computePeakAbsorbance('L', 0, options);
-
-            testCase.verifyGreaterThan(gov_peak, 0, ...
-                'Govardovskii peak absorbance should be positive');
-            testCase.verifyGreaterThan(sr_peak, 0, ...
-                'StockmanRider peak absorbance should be positive');
-
-            % For normalized templates, peak should be close to 1
-            testCase.verifyEqual(gov_peak, 1.0, 'AbsTol', 0.01, ...
-                'Govardovskii peak absorbance should be ~1.0');
-        end
 
         %% L-cone Template Shift Warning Tests
 

@@ -122,13 +122,17 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testConstructorRejectsInfAgeAndFieldSize(testCase)
-            % validators.mustBePositiveOrNaN previously accepted Inf
-            % (Inf > 0 is true). The constructor's NaN sentinel for
-            % "value not provided" stays valid; Inf does not.
+            % The constructor's "not supplied" sentinel is [], and the
+            % stdlib validators pass vacuously on empty. Inf must not slip
+            % through the way it did past the old custom OrNaN validator,
+            % where Inf > 0 read as positive.
             testCase.verifyError(@() IndividualCMF(Age=Inf), ...
-                'IndividualCMF:NotPositiveOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(FieldSize=Inf), ...
-                'IndividualCMF:NotPositiveOrNan');
+                'MATLAB:validators:mustBeFinite');
+
+            % And the sentinel itself still means "use the default".
+            testCase.verifyEqual(IndividualCMF(Age=[]).Age, CIE170.STD_AGE);
         end
 
         function testPhotopigmentParametersRejectsNonFiniteShift(testCase)
@@ -145,56 +149,72 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
                 'MATLAB:validators:mustBeFinite');
         end
 
-        function testSampledConfigRejectsNonFiniteGrid(testCase)
-            % validateSampledConfig used to do only relational checks,
-            % which NaN and some Inf values pass. A NaN/Inf Start/Stop/
-            % Step would then produce an invalid colon grid in
-            % computeSampledPeak.
+        function testSampledGridRejectsNonFiniteWavelengths(testCase)
+            % A NaN or Inf anywhere in the grid would reach
+            % computeSampledPeak and poison max(). The property validator
+            % rejects it at assignment instead.
             obs = IndividualCMF();
-            badStart = struct('Method', "Sampled", 'Start', NaN, 'Stop', 780, 'Step', 1);
-            badStop  = struct('Method', "Sampled", 'Start', 380, 'Stop', Inf, 'Step', 1);
-            badStep  = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', NaN);
-            for cfg = {badStart, badStop, badStep}
+            for bad = {[NaN 500 780], [380 Inf 780], [380 500 NaN]}
                 testCase.verifyError( ...
-                    @() setNorm(obs, cfg{1}), ...
-                    'IndividualCMF:InvalidNormalizationConfig');
+                    @() setNormGrid(obs, bad{1}), ...
+                    'MATLAB:validators:mustBeFinite');
             end
         end
 
         function testConstructorRejectsInfDensities(testCase)
             % Constructor options for Lod/Mod/Sod/MacularDensity/
-            % LensDensity accept NaN as a sentinel ("value not provided")
-            % but must reject Inf so the constructor matches the
-            % now-stricter property setters and downstream value objects.
+            % LensDensity use [] as the "value not provided" sentinel and
+            % must reject Inf so the constructor matches the property
+            % setters and downstream value objects.
             testCase.verifyError(@() IndividualCMF(Lod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(Mod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(Sod=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(MacularDensity=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             testCase.verifyError(@() IndividualCMF(LensDensity=Inf), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeFinite');
             % And negatives.
             testCase.verifyError(@() IndividualCMF(Lod=-0.1), ...
-                'IndividualCMF:NotNonnegativeFiniteOrNan');
+                'MATLAB:validators:mustBeNonnegative');
+            % The sentinel still means "use the field-size formula".
+            testCase.verifyEqual(IndividualCMF(StandardObserver=10, Lod=[]).Lod, ...
+                IndividualCMF(StandardObserver=10).Lod, 'AbsTol', 0);
         end
 
-        function testLargeSConeShiftFallsBackToValidRange(testCase)
-            % A large but finite S shift can push the base [380, 500]
-            % search window entirely off the template's valid range, so
-            % naive endpoint-clamping produces lb >= ub and fminbnd
-            % errors. Peak search must fall back to the full valid
-            % range when the shifted window no longer overlaps it.
+        function testSConeShiftIsBoundedToTheEvaluableWindow(testCase)
+            % This used to set S_LambdaMaxShift = 500 and assert the peak
+            % search survived it. It did survive -- and returned garbage.
+            % The Stockman-Rider Fourier template is fitted over half a
+            % period (360-850 nm mapped to 0-pi), and a shift slides the
+            % query window along that arc; past it the series climbs
+            % again. Raw template at 830 nm: 1.2e-10 at shift -40 but
+            % 2.2e+03 at -55. The peak search never samples there, so
+            % normalization cannot catch it.
             obs = IndividualCMF();
-            obs.S_LambdaMaxShift = 500;  % well beyond physiological
-            obs.NormalizeOutput = true;
-            % Should not throw, and S(wl) should be a finite Nx1 vector.
-            wl = (380:1:780)';
-            S = obs.S(wl);
-            testCase.verifyTrue(all(isfinite(S)), ...
-                'Large S shift must produce finite S(wl)');
+            testCase.verifyError(@() setSshift(obs, 500), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() setSshift(obs, -55), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() setSshift(obs, 35), ...
+                'MATLAB:validators:mustBeInRange');
+            testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=-50), ...
+                'MATLAB:validators:mustBeInRange');
+
+            % The endpoints are the same ones L and M already use, and
+            % everything inside stays normalized and finite.
+            wl = (360:0.1:830)';
+            for shift = [-40 -20 0 20 30]
+                inRange = IndividualCMF(S_LambdaMaxShift=shift);
+                inRange.ModelRangeWarning = false;
+                S = inRange.S(wl);
+                testCase.verifyTrue(all(isfinite(S)), ...
+                    sprintf('S shift %d must produce finite output', shift));
+                testCase.verifyLessThanOrEqual(max(S), 1 + 1e-5, ...
+                    sprintf('S shift %d must stay normalized', shift));
+            end
             testCase.verifyEqual(numel(S), numel(wl));
         end
 
@@ -217,9 +237,9 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
             % Setter rejected NaN/Inf; the constructor option needed the
             % same guard for parity.
             testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=Inf), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
             testCase.verifyError(@() IndividualCMF(S_LambdaMaxShift=NaN), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
         end
 
         function testSetGenotypeRejectsInvalidPosition(testCase)
@@ -237,18 +257,22 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testNonFiniteSConeShiftRejected(testCase)
-            % S_LambdaMaxShift is otherwise unbounded (L/M are clamped to
-            % a physiological window). Non-finite values still need to be
-            % rejected: they would propagate into the fminbnd peak-search
-            % bounds in computePeakForFormat and produce non-finite spectra.
+            % S_LambdaMaxShift is now clamped to [-40, 30] like L and M,
+            % and mustBeInRange rejects NaN and Inf along with everything
+            % else outside the window. Pinned separately because these
+            % would otherwise reach the fminbnd peak-search bounds in
+            % computePeakForFormat and produce non-finite spectra.
             obs = IndividualCMF();
+            % mustBeInRange subsumes mustBeFinite: NaN and Inf are both
+            % outside [-40, 30], so they raise the range identifier now.
             testCase.verifyError(@() setSshift(obs, NaN), ...
-                'MATLAB:validators:mustBeFinite');
+                'MATLAB:validators:mustBeInRange');
             testCase.verifyError(@() setSshift(obs, Inf), ...
-                'MATLAB:validators:mustBeFinite');
-            % Sanity: large finite shifts still allowed.
-            testCase.verifyWarningFree(@() setSshift(obs, 50), ...
-                'Large finite S shifts must remain accepted');
+                'MATLAB:validators:mustBeInRange');
+            % Sanity: shifts inside the window are still accepted, and
+            % the endpoints themselves are inclusive.
+            testCase.verifyWarningFree(@() setSshift(obs, -40));
+            testCase.verifyWarningFree(@() setSshift(obs, 30));
         end
 
         function testNearSingularPrimariesRaiseClearError(testCase)
@@ -324,21 +348,37 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
         end
 
         function testExtremeAgeValues(testCase)
-            % Test age boundary conditions
-            % Use Pokorny1987 lens model for age-dependent comparisons
+            % Test age boundary conditions. Ages 1 and 100 are outside the
+            % 20-80 span Pokorny 1987 publishes, and the toolbox now
+            % refuses those rather than extrapolating, so this uses
+            % VanDeKraats2007 -- whose authors state the aging formula
+            % applies at any age -- for the extremes.
+            % Age 100 is past the 0-80 span vdK&vN presents, so construction
+            % warns; the extrapolation itself is sanctioned.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'IndividualCMF:AgeOutOfRange'));
 
-            % Young observer
-            obs_young = IndividualCMF(Age=1, FieldSize=2, LensModel="Pokorny1987");
+            obs_young = IndividualCMF(Age=1, FieldSize=2, LensModel="VanDeKraats2007");
             testCase.verifyWarningFree(@() obs_young.L(550));
 
-            % Elderly observer
-            obs_old = IndividualCMF(Age=100, FieldSize=2, LensModel="Pokorny1987");
+            obs_old = IndividualCMF(Age=100, FieldSize=2, LensModel="VanDeKraats2007");
             testCase.verifyWarningFree(@() obs_old.L(550));
 
             % Older should have more lens absorption at short wavelengths
-            % due to increased lens optical density (yellowing) with Pokorny1987 model
+            % due to increased lens optical density (yellowing).
             testCase.verifyLessThan(obs_old.S(420), obs_young.S(420), ...
-                'Older observer should have reduced short-wavelength sensitivity with Pokorny1987');
+                'Older observer should have reduced short-wavelength sensitivity');
+        end
+
+        function testExtremeAgesAtTheEdgeOfThePokornySpan(testCase)
+            % The published Pokorny endpoints must still work, and the
+            % same monotonic relationship must hold inside the span.
+            obs_young = IndividualCMF(Age=20, FieldSize=2, LensModel="Pokorny1987");
+            obs_old = IndividualCMF(Age=80, FieldSize=2, LensModel="Pokorny1987");
+            testCase.verifyWarningFree(@() obs_young.L(550));
+            testCase.verifyWarningFree(@() obs_old.L(550));
+            testCase.verifyLessThan(obs_old.S(420), obs_young.S(420));
         end
 
         function testExtremeFieldSizes(testCase)
@@ -366,8 +406,8 @@ classdef EdgeCaseTest < matlab.unittest.TestCase
             obs = IndividualCMF(StandardObserver=2);
             wl = linspace(380, 780, 10000)';
 
-            testCase.verifyWarningFree(@() obs.evaluate(wl));
-            result = obs.evaluate(wl);
+            testCase.verifyWarningFree(@() obs.LMS(wl));
+            result = obs.LMS(wl);
             testCase.verifySize(result, [10000, 3]);
         end
 
@@ -402,6 +442,6 @@ function setMacularDensity(obs, v)
     obs.MacularDensity = v;
 end
 
-function setNorm(obs, cfg)
-    obs.NormalizationMethod = cfg;
+function setNormGrid(obs, grid)
+    obs.NormalizationGrid = grid;
 end

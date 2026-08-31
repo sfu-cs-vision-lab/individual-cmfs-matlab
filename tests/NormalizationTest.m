@@ -1,7 +1,7 @@
 classdef NormalizationTest < matlab.unittest.TestCase
     % NORMALIZATIONTEST  Tests for normalization configuration and behavior.
     %
-    %   Tests the NormalizationMethod property, NormalizationConfig, and
+    %   Tests the NormalizationMethod and NormalizationGrid properties, and
     %   the NormalizationCache class for correct behavior.
     %
     %   Key concepts:
@@ -18,8 +18,9 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testContinuousIsDefault(testCase)
             % Verify Continuous is the default normalization method
             obs = IndividualCMF();
-            testCase.verifyEqual(obs.NormalizationMethod, "Continuous");
-            testCase.verifyEqual(obs.NormalizationConfig.Method, "Continuous");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Continuous);
+            testCase.verifyEqual(obs.NormalizationGrid, (380:1:780)');
         end
 
         function testSampledStringExpandsToStruct(testCase)
@@ -27,99 +28,89 @@ classdef NormalizationTest < matlab.unittest.TestCase
             obs = IndividualCMF();
             obs.NormalizationMethod = "Sampled";
 
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
-
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Method, "Sampled");
-            testCase.verifyEqual(cfg.Start, 380);
-            testCase.verifyEqual(cfg.Stop, 780);
-            testCase.verifyEqual(cfg.Step, 1);
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
+            testCase.verifyEqual(obs.NormalizationGrid, (380:1:780)');
         end
 
         function testSampledStructWithExplicitResolution(testCase)
             % Verify struct with explicit resolution is accepted
             obs = IndividualCMF();
-            obs.NormalizationMethod = struct('Method', "Sampled", ...
-                'Start', 390, 'Stop', 730, 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 390:5:730;
 
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
 
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Start, 390);
-            testCase.verifyEqual(cfg.Stop, 730);
-            testCase.verifyEqual(cfg.Step, 5);
+            testCase.verifyEqual(obs.NormalizationGrid, 390:5:730);
         end
 
         function testSampledStructWithPartialFields(testCase)
             % Verify struct with partial fields gets defaults
             obs = IndividualCMF();
-            obs.NormalizationMethod = struct('Method', "Sampled", 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 380:5:780;
 
-            cfg = obs.NormalizationConfig;
-            testCase.verifyEqual(cfg.Start, 380);  % Default
-            testCase.verifyEqual(cfg.Stop, 780);   % Default
-            testCase.verifyEqual(cfg.Step, 5);     % Specified
+            testCase.verifyEqual(obs.NormalizationGrid, 380:5:780);
         end
 
         function testConstructorAcceptsContinuousString(testCase)
             % Verify constructor accepts "Continuous" string
             obs = IndividualCMF(NormalizationMethod="Continuous");
-            testCase.verifyEqual(obs.NormalizationMethod, "Continuous");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Continuous);
         end
 
         function testConstructorAcceptsSampledString(testCase)
             % Verify constructor accepts "Sampled" string
             obs = IndividualCMF(NormalizationMethod="Sampled");
-            testCase.verifyEqual(obs.NormalizationMethod, "Sampled");
+            testCase.verifyEqual(obs.NormalizationMethod, ...
+                enums.NormalizationMethod.Sampled);
         end
 
         function testConstructorAcceptsSampledStruct(testCase)
             % Verify constructor accepts Sampled struct
-            obs = IndividualCMF(NormalizationMethod=struct('Method', "Sampled", 'Step', 5));
-            testCase.verifyEqual(obs.NormalizationConfig.Step, 5);
-        end
-
-        function testNormalizationConfigIsReadOnly(testCase)
-            % Verify NormalizationConfig cannot be set directly
-            obs = IndividualCMF();
-            testCase.verifyError(@() setNormConfig(obs), 'MATLAB:class:noSetMethod');
+            obs = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=380:5:780);
+            testCase.verifyEqual(obs.NormalizationGrid, 380:5:780);
         end
 
         %% --- Error Handling Tests ---
 
-        function testInvalidStructMissingMethodErrors(testCase)
-            % Verify error when struct is missing Method field
+        function testDescendingGridErrors(testCase)
+            % 800:1:400 and 380:-1:780 both produce an empty vector. An
+            % empty grid must error: max() over it would silently return
+            % empty and break normalization rather than fail.
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Start', 380)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            testCase.verifyError(@() setNormGrid(obs, 800:1:400), ...
+                'MATLAB:validators:mustBeNonempty');
+            testCase.verifyError(@() setNormGrid(obs, 380:-1:780), ...
+                'MATLAB:validators:mustBeNonempty');
         end
 
-        function testInvalidStructWrongMethodErrors(testCase)
-            % Verify error when struct has invalid Method value
+        function testNonFiniteGridErrors(testCase)
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Invalid")), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            testCase.verifyError(@() setNormGrid(obs, [380 NaN 780]), ...
+                'MATLAB:validators:mustBeFinite');
+            testCase.verifyError(@() setNormGrid(obs, [380 Inf 780]), ...
+                'MATLAB:validators:mustBeFinite');
         end
 
-        function testInvalidStructStartGTEStopErrors(testCase)
-            % Verify error when Start >= Stop
+        function testGridAcceptsEitherOrientation(testCase)
+            % 390:5:830 is a row; the toolbox's wl convention is a column.
+            % Both must be accepted, since start:step:stop yields a row.
             obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Sampled", 'Start', 800, 'Stop', 400)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
-        end
-
-        function testInvalidStructNegativeStepErrors(testCase)
-            % Verify error when Step is negative
-            obs = IndividualCMF();
-            testCase.verifyError(@() setNormMethod(obs, struct('Method', "Sampled", 'Step', -1)), ...
-                'IndividualCMF:InvalidNormalizationConfig');
+            obs.NormalizationGrid = 390:5:830;
+            testCase.verifyEqual(obs.NormalizationGrid, 390:5:830);
+            obs.NormalizationGrid = (390:5:830)';
+            testCase.verifyEqual(obs.NormalizationGrid, (390:5:830)');
         end
 
         function testInvalidStringErrors(testCase)
             % Verify error for invalid string values
             obs = IndividualCMF();
             testCase.verifyError(@() setNormMethod(obs, "Invalid"), ...
-                'IndividualCMF:InvalidNormalizationMethod');
+                'MATLAB:validation:UnableToConvert');
         end
 
         %% --- Continuous Normalization Behavior Tests ---
@@ -169,11 +160,12 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testSampledPeakMatchesGridMaximum(testCase)
             % Sampled normalization peak should equal max of the sampling grid
 
-            cfg = struct('Method', "Sampled", 'Start', 400, 'Stop', 700, 'Step', 5);
-            obs = IndividualCMF(NormalizationMethod=cfg, OutputFormat="energy");
+            grid = 400:5:700;
+            obs = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid, OutputFormat="energy");
 
             % The configured grid
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
 
             % Evaluate raw (unnormalized) at grid points
             L_raw = obs.computeRawSensitivity(wl_grid, 'L', "energy");
@@ -189,11 +181,13 @@ classdef NormalizationTest < matlab.unittest.TestCase
         function testSampledResolutionAffectsPeak(testCase)
             % Coarser Sampled resolution may find a different (lower) peak
 
-            cfg_fine = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 1);
-            cfg_coarse = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 20);
+            grid_fine = 380:1:780;
+            grid_coarse = 380:20:780;
 
-            obs_fine = IndividualCMF(NormalizationMethod=cfg_fine, OutputFormat="energy");
-            obs_coarse = IndividualCMF(NormalizationMethod=cfg_coarse, OutputFormat="energy");
+            obs_fine = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid_fine, OutputFormat="energy");
+            obs_coarse = IndividualCMF(NormalizationMethod="Sampled", ...
+                NormalizationGrid=grid_coarse, OutputFormat="energy");
 
             peak_fine = obs_fine.getPeak('L', OutputFormat="energy");
             peak_coarse = obs_coarse.getPeak('L', OutputFormat="energy");
@@ -224,11 +218,11 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % Sampled normalization guarantees values never exceed 1.0
             % ONLY when evaluated at the same grid used for normalization
 
-            cfg = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 5);
-            obs = IndividualCMF(NormalizationMethod=cfg);
+            grid = 380:5:780;
+            obs = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=grid);
 
             % Evaluate at the normalization grid
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
 
             testCase.verifyLessThanOrEqual(max(obs.L(wl_grid)), 1.0, ...
                 'Sampled L at grid points');
@@ -244,8 +238,8 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % This is expected behavior - documenting it here.
 
             % Use coarse normalization grid
-            cfg = struct('Method', "Sampled", 'Start', 380, 'Stop', 780, 'Step', 10);
-            obs = IndividualCMF(NormalizationMethod=cfg);
+            grid = 380:10:780;
+            obs = IndividualCMF(NormalizationMethod="Sampled", NormalizationGrid=grid);
 
             % Evaluate at finer resolution (off-grid points)
             wl_fine = (380:0.5:780)';
@@ -257,7 +251,7 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Sampled peak at fine resolution should be approximately 1.0');
 
             % The key point: at the actual normalization grid, it should be exactly <= 1.0
-            wl_grid = (cfg.Start : cfg.Step : cfg.Stop)';
+            wl_grid = grid(:);
             testCase.verifyLessThanOrEqual(max(obs.L(wl_grid)), 1.0, ...
                 'But at grid points, should not exceed 1.0');
         end
@@ -357,7 +351,7 @@ classdef NormalizationTest < matlab.unittest.TestCase
             cache = NormalizationCache(obs);
 
             % Set configuration
-            cache.setConfig(struct('Method', "Continuous"));
+            cache.setConfig(enums.NormalizationMethod.Continuous);
 
             % Get peak (should compute and cache)
             peak1 = cache.getPeak('L', "energy");
@@ -396,7 +390,8 @@ classdef NormalizationTest < matlab.unittest.TestCase
             % Sampled normalization for Pycone compatibility.
             % Peak should be exactly 1.0 when evaluated at normalization grid.
             obs = IndividualCMF(StandardObserver=10);
-            obs.NormalizationMethod = struct('Method', "Sampled", 'Start', 390, 'Stop', 830, 'Step', 5);
+            obs.NormalizationMethod = "Sampled";
+            obs.NormalizationGrid = 390:5:830;
             obs.OutputFormat = "absorptance";
             obs.NormalizeOutput = true;
 
@@ -480,61 +475,6 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Govardovskii absorptance should not exceed 1.0');
             testCase.verifyGreaterThan(max(LMS_gov, [], 'all'), 0.99, ...
                 'Govardovskii absorptance peak should be close to 1.0');
-        end
-
-        %% --- Analytical Peak Absorbance Tests ---
-
-        function testStockmanRiderPeakAbsorbanceIsOne(testCase)
-            % Stockman-Rider templates are pre-normalized to peak at 1.0
-            % due to the 's' renormalization factor in the Fourier coefficients.
-            template = StockmanRiderPhotopigmentTemplate();
-
-            for coneType = ['L', 'M', 'S']
-                peakAbs = template.computePeakAbsorbance(coneType, 0, struct());
-                testCase.verifyEqual(peakAbs, 1.0, ...
-                    sprintf('%s-cone peak absorbance should be exactly 1.0', coneType));
-            end
-        end
-
-        function testGovardovskiiPeakAbsorbanceNearOne(testCase)
-            % Govardovskii peaks near 1.0 at lambda-max.
-            % The alpha-band peaks at 1.0 by construction, but beta-band
-            % contribution may cause slight deviation.
-            template = GovardovskiiPhotopigmentTemplate();
-
-            for coneType = ['L', 'M', 'S']
-                peakAbs = template.computePeakAbsorbance(coneType, 0, struct());
-
-                % Should be very close to 1.0
-                testCase.verifyEqual(peakAbs, 1.0, 'RelTol', 0.01, ...
-                    sprintf('%s-cone peak absorbance should be near 1.0', coneType));
-            end
-        end
-
-        function testAnalyticalAbsorptancePeakFormula(testCase)
-            % Verify the relative retinal absorptance peak formula for
-            % Govardovskii. Under the helper-norm convention, the
-            % analytical peak is (1-10^(-OD*peakA)) / (1-10^(-OD)). The
-            % Govardovskii alpha-band absorbance peaks very close to but
-            % not exactly 1.0 (within ~0.15% of the analytical maximum),
-            % so the relative absorptance peak is very close to 1 but
-            % can deviate by a similarly small amount. The contract this
-            % test pins is the formula itself, not that the peak equals
-            % 1 exactly.
-            obs = IndividualCMF();
-            obs.PhotopigmentModel = "Govardovskii2000";
-
-            for coneType = ['L', 'M', 'S']
-                peak = obs.computeAnalyticalAbsorptancePeak(coneType);
-
-                % Peak must be positive and within ~1% of 1.0 (matches
-                % the existing peakAbsorbance-near-1 contract enforced
-                % by testGovardovskiiPeakAbsorbanceNormalized).
-                testCase.verifyGreaterThan(peak, 0, ...
-                    sprintf('%s analytical peak must be positive', coneType));
-                testCase.verifyEqual(peak, 1.0, 'RelTol', 0.01, ...
-                    sprintf('%s analytical peak should be near 1.0 under the relative formula', coneType));
-            end
         end
 
         function testGovardovskiiAbsentConePeakIsFinite(testCase)
@@ -648,6 +588,138 @@ classdef NormalizationTest < matlab.unittest.TestCase
                 'Raw peak must equal 1-10^(-OD), not 1');
         end
 
+
+        % Absorbance is never normalized -- pycone's convention
+
+        function testAbsorbanceIgnoresNormalizeOutput(testCase)
+            % pycone never renormalizes the absorbance stage:
+            % run_pycone.py's NORMALIZED_STAGES excludes it, and
+            % CMFcalc.absorptancefromabsorbance has no max division. The
+            % templates carry A(lambda_max) = 1 in their published
+            % coefficients, and that absolute scale is what multiplies the
+            % optical density in Beer-Lambert self-screening, so Lod / Mod
+            % / Sod mean "peak axial density". Dividing by a sampled peak
+            % would redefine them.
+            %
+            % Making the flag apply here broke all 38 parity
+            % configurations. This pins the contract so it cannot regress
+            % silently again.
+            % Govardovskii is fitted 380-780, so the wide sweep warns at
+            % the lower layer too. Range behaviour is asserted in its own
+            % tests; this one is about the normalization flag.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    'Nomograms:WavelengthOutOfRange'));
+
+            wl = (360:0.5:830)';
+            for model = ["StockmanRider2023", "StockmanRider2023Common", ...
+                         "Govardovskii2000", "Govardovskii2000A2"]
+                obs = IndividualCMF(PhotopigmentModel=model);
+                obs.ModelRangeWarning = false;
+
+                normalized = obs.LMS(wl, OutputFormat="absorbance", NormalizeOutput=true);
+                raw = obs.LMS(wl, OutputFormat="absorbance", NormalizeOutput=false);
+
+                testCase.verifyEqual(normalized, raw, 'AbsTol', 0, ...
+                    model + ": NormalizeOutput must be inert for absorbance");
+            end
+        end
+
+        function testAbsorbancePeakIsDiagnosticNotADivisor(testCase)
+            % getPeak still reports the absorbance peak, and it is
+            % informative: it is how a user sees that the published
+            % Stockman-Rider L template peaks slightly below 1, and that
+            % the Govardovskii beta band carries the summed curve above it.
+            % Neither value is ever divided out.
+            obs = IndividualCMF();
+            obs.ModelRangeWarning = false;
+            wl = (360:0.01:830)';
+
+            srPeak = obs.getPeak('L', OutputFormat="absorbance");
+            testCase.verifyEqual(srPeak, 0.9949448501, 'AbsTol', 1e-9, ...
+                'The Stockman-Rider L template peaks just below 1 by construction');
+            testCase.verifyEqual(max(obs.L(wl, OutputFormat="absorbance")), srPeak, ...
+                'RelTol', 1e-6, 'The reported peak must be the curve''s actual maximum');
+
+            gov = IndividualCMF(PhotopigmentModel="Govardovskii2000A2");
+            gov.ModelRangeWarning = false;
+            govPeak = gov.getPeak('S', OutputFormat="absorbance");
+            testCase.verifyEqual(govPeak, 1.0349751181, 'AbsTol', 1e-9, ...
+                'The Govardovskii A2 beta band carries the S curve above 1');
+            testCase.verifyGreaterThan(max(gov.S(wl, OutputFormat="absorbance")), 1, ...
+                'And that overshoot survives into the output, undivided');
+        end
+
+
+        % Template peak absorbance -- the real values
+
+        function testTemplatePeakAbsorbanceMatchesTheCurve(testCase)
+            % Replaces a family of tests that asserted computePeakAbsorbance
+            % returned 1.0. That method returned a hardcoded 1.0 for both
+            % Stockman-Rider templates while the L(ser) polynomial actually
+            % peaks at 0.9944520 -- so those tests checked a constant, not a
+            % peak, and the one number they pinned was wrong. getPeak reads
+            % the normalization cache, which finds the true maximum.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    {'IndividualCMF:WavelengthOutOfRange', ...
+                     'Nomograms:WavelengthOutOfRange'}));
+            wl = (360:0.01:830)';
+
+            cases = { ...
+                "StockmanRider2023",       'L', 0.9949448501; ...
+                "StockmanRider2023",       'M', 1.0000000000; ...
+                "Govardovskii2000A2",      'S', 1.0349751181};
+
+            for k = 1:size(cases, 1)
+                obs = IndividualCMF(PhotopigmentModel=cases{k,1});
+                obs.ModelRangeWarning = false;
+                cone = cases{k,2};
+
+                reported = obs.getPeak(cone, OutputFormat="absorbance");
+                testCase.verifyEqual(reported, cases{k,3}, 'AbsTol', 1e-9, ...
+                    sprintf('%s %s absorbance peak', cases{k,1}, cone));
+
+                % And the reported peak must be the curve's real maximum,
+                % which is the property the deleted method never had.
+                actual = max(obs.(cone)(wl, OutputFormat="absorbance"));
+                testCase.verifyEqual(reported, actual, 'RelTol', 1e-6, ...
+                    sprintf('%s %s: reported peak must equal the curve max', ...
+                    cases{k,1}, cone));
+            end
+        end
+
+        function testGovardovskiiAbsorptanceNormalizesToOne(testCase)
+            % The point of removing the analytical shortcut. The Govardovskii
+            % template returns alpha + beta, whose maximum sits away from
+            % lambda-max -- 416.749 nm against 420.7 for A2 -- so anchoring
+            % the divisor at lambda-max let normalized absorptance reach
+            % 1.0024. Every format must now honour NormalizeOutput's promise.
+            testCase.applyFixture( ...
+                matlab.unittest.fixtures.SuppressedWarningsFixture( ...
+                    {'IndividualCMF:WavelengthOutOfRange', ...
+                     'Nomograms:WavelengthOutOfRange'}));
+
+            % A fine grid: the old bound passed only because a 5 nm grid
+            % stepped over the excursion.
+            wl = (380:0.05:780)';
+            for model = ["Govardovskii2000", "Govardovskii2000A2"]
+                for shift = [0 -20 -40]
+                    obs = IndividualCMF(PhotopigmentModel=model, S_LambdaMaxShift=shift);
+                    obs.ModelRangeWarning = false;
+                    for fmt = ["absorptance", "quantal", "energy"]
+                        % 1e-6 is the numerical peak search's own tolerance,
+                        % not slack: fminbnd locates the maximum to about
+                        % that precision, so a bound tighter than its
+                        % convergence would be testing fminbnd, not us.
+                        testCase.verifyLessThanOrEqual( ...
+                            max(obs.LMS(wl, OutputFormat=fmt), [], 'all'), 1 + 1e-6, ...
+                            sprintf('%s shift %d %s must not exceed 1', model, shift, fmt));
+                    end
+                end
+            end
+        end
+
     end
 end
 
@@ -655,8 +727,8 @@ function setNormMethod(obs, val)
     obs.NormalizationMethod = val;
 end
 
-function setNormConfig(obs)
-    obs.NormalizationConfig = struct('Method', "Continuous");
+function setNormGrid(obs, val)
+    obs.NormalizationGrid = val;
 end
 
 function verifyRelativeFormula(testCase, photopigmentModel, wl, ods)

@@ -156,13 +156,11 @@ classdef Genotype
         POSITIONS = [116, 180, 230, 277, 285]
 
         % L(Serine)-to-M lambda_max gap used to scale the raw shift
-        % coefficients to nanometers. The 23.67 nm value is a pycone
-        % parity convention (LMStemplateCMFs.py: Lser_Mlmax_diff =
-        % Lserlmax_template - Mlmax_template = 554.86 - 531.19 = 23.67),
-        % not a value prescribed by S&R 2023 p. 826. The toolbox's own
-        % numerical L(Ser)-M gap is 23.31 nm; preserving 23.67 keeps
-        % the genotype-derived shifts identical to pycone output.
-        LSER_MLMAX_DIFF = 23.67
+        % coefficients to nanometers. Declared once, in Nomograms, which
+        % also owns the templates the gap is measured between; this alias
+        % keeps it readable from the genotype side without a second copy
+        % of the number to keep in sync.
+        LSER_MLMAX_DIFF = Nomograms.SR_LSER_M_LMAX_DIFF
 
         % Sum of absolute basis weights for M-cone genotype shifts.
         % The raw shift coefficients are scaled by
@@ -178,6 +176,32 @@ classdef Genotype
         % (pycone LMStemplateCMFs.py: L_M_scale = -Lser_Mlmax_diff /
         % L_M_allbaseshifts.)
         L_BASES_SUM = 31
+    end
+
+    methods (Static)
+        function s = mShift()
+            % MSHIFT  Scale from M-cone codon weights to nanometres.
+            %
+            %   Chosen so a hypothetical M cone with every codon at its
+            %   L-cone value shifts by the full L-M gap. Pycone convention
+            %   (LMStemplateCMFs.py: M_L_scale).
+            %
+            %   OUTPUTS:
+            %       s - Nanometres per unit codon weight (scalar)
+            s = Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.M_BASES_SUM;
+        end
+
+        function s = lShift()
+            % LSHIFT  Scale from L-cone codon weights to nanometres.
+            %
+            %   Mirror of mShift for the L cone. The two use different
+            %   bases sums (27 vs 31); the asymmetry is intentional and
+            %   follows pycone.
+            %
+            %   OUTPUTS:
+            %       s - Nanometres per unit codon weight (scalar)
+            s = Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.L_BASES_SUM;
+        end
     end
 
     methods
@@ -379,9 +403,9 @@ classdef Genotype
             end
 
             if coneType == 'M'
-                scale = obj.LSER_MLMAX_DIFF / obj.M_BASES_SUM;
+                scale = Genotype.mShift();
             else
-                scale = obj.LSER_MLMAX_DIFF / obj.L_BASES_SUM;
+                scale = Genotype.lShift();
             end
 
             total = 0;

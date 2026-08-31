@@ -13,19 +13,14 @@ classdef (Abstract) PhotopigmentTemplate < handle
     %       BASE_LAMBDA_MAX_L       - Base L-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_M       - Base M-cone lambda-max in nm.
     %       BASE_LAMBDA_MAX_S       - Base S-cone lambda-max in nm.
-    %       SupportsShift           - True if the template supports wavelength
-    %                                 shifts.
-    %       SupportsAnalyticalPeak  - True if the template can return its peak
     %                                 absorbance analytically (closed form),
     %                                 false if peak finding is numerical.
     %
     %   PhotopigmentTemplate Abstract Methods:
     %       computeAbsorbance       - Compute log10 absorbance spectrum.
-    %       computePeakAbsorbance   - Compute analytical peak absorbance.
     %
     %   PhotopigmentTemplate Concrete Methods:
     %       getLambdaMax  - Get lambda-max for a cone type with shift.
-    %       getValidRange - Returns the ValidRange constant of the subclass.
 
     % SPDX-License-Identifier: AGPL-3.0-or-later
     %
@@ -56,28 +51,65 @@ classdef (Abstract) PhotopigmentTemplate < handle
         BASE_LAMBDA_MAX_M (1,1) double
         BASE_LAMBDA_MAX_S (1,1) double
 
-        % SupportsShift  Whether the template supports wavelength shifts.
-        %
-        %   Some templates (StockmanRider, Govardovskii) support shifting the
-        %   absorbance curve along the wavelength axis to model individual
-        %   variation in cone lambda-max. Concrete subclasses declare this
-        %   constant directly so callers don't need to dispatch on type.
-        SupportsShift (1,1) logical
-
-        % SupportsAnalyticalPeak  Whether the peak is available in closed form.
-        %
-        %   True if the template's peak absorbance has a closed-form
-        %   expression that computePeakAbsorbance can evaluate without
-        %   numerical search; false if the consumer must locate the peak
-        %   numerically (e.g. fminbnd on a wavelength grid).
-        SupportsAnalyticalPeak (1,1) logical
 
         % ValidRange  [min_nm, max_nm] over which the template was fitted.
         %
         %   Queries outside this range may produce unreliable results due
-        %   to limitations of the template's parametric formulas. The
-        %   base class exposes this constant via getValidRange().
+        %   to limitations of the template's parametric formulas. Read it
+        %   directly from the template instance. Drives the warning only.
         ValidRange (1,2) double
+
+        % Domain  [min_nm, max_nm] where the implementation has an answer.
+        %
+        %   Where the math can produce a finite, physically admissible
+        %   number. Outside ValidRange but inside Domain the value is kept
+        %   and warned about; outside Domain no value exists and
+        %   IndividualCMF reports zero sensitivity instead.
+        Domain (1,2) double
+    end
+
+    properties (Constant)
+        % REGISTRY  Maps enums.PhotopigmentModel member names to constructors.
+        %
+        %   Govardovskii2000 and Govardovskii2000A2 share a class and are
+        %   distinguished by the Pigment constructor argument, which is why
+        %   the values are thunks rather than bare class handles.
+        %
+        %   TemplateRegistryTest keeps these keys and the enum members in
+        %   agreement.
+        REGISTRY = dictionary( ...
+            ["StockmanRider2023", "Govardovskii2000", ...
+             "Govardovskii2000A2", "StockmanRider2023Common"], ...
+            {@() StockmanRiderPhotopigmentTemplate(), ...
+             @() GovardovskiiPhotopigmentTemplate(), ...
+             @() GovardovskiiPhotopigmentTemplate(Pigment="A2"), ...
+             @() StockmanRiderCommonPhotopigmentTemplate()})
+    end
+
+    methods (Static)
+        function t = create(model)
+            % CREATE  Instantiate the photopigment template for a model name.
+            %
+            %   t = PhotopigmentTemplate.create("Govardovskii2000A2") returns
+            %   a GovardovskiiPhotopigmentTemplate configured for the A2
+            %   chromophore. Accepts an enums.PhotopigmentModel directly.
+            %
+            %   INPUTS:
+            %       model - Model name or enums.PhotopigmentModel (string)
+            %
+            %   OUTPUTS:
+            %       t - A PhotopigmentTemplate subclass instance
+            arguments
+                model (1,1) string
+            end
+            if ~isKey(PhotopigmentTemplate.REGISTRY, model)
+                error("PhotopigmentTemplate:UnknownModel", ...
+                    "No photopigment template registered for ""%s"". Known models: %s.", ...
+                    model, strjoin(keys(PhotopigmentTemplate.REGISTRY)', ", "));
+            end
+            ctor = PhotopigmentTemplate.REGISTRY{model};
+            t = ctor();
+        end
     end
 
     methods (Abstract)
@@ -95,27 +127,10 @@ classdef (Abstract) PhotopigmentTemplate < handle
         %       logAbs - Log10 absorbance spectrum (vector)
         logAbs = computeAbsorbance(obj, wl, coneType, shift, options)
 
-        % computePeakAbsorbance  Compute analytical peak absorbance value.
-        %
-        %   INPUTS:
-        %       coneType - Cone type: 'L', 'M', or 'S' (char)
-        %       shift - Wavelength shift in nm (double)
-        %       options - Template-specific options (struct)
-        %
-        %   OUTPUTS:
-        %       peakAbs - Peak absorbance value (linear scale) (double)
-        peakAbs = computePeakAbsorbance(obj, coneType, shift, options)
 
     end
 
     methods
-        function range = getValidRange(obj)
-            % GETVALIDRANGE  Returns the [min, max] wavelength range
-            %   over which this template was fitted. Defers to each
-            %   subclass's ValidRange constant property.
-            range = obj.ValidRange;
-        end
-
         function lmax = getLambdaMax(obj, coneType, shift)
             % GETLAMBDAMAX  Get lambda-max wavelength for a cone type.
             %

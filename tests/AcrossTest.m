@@ -80,7 +80,7 @@ classdef AcrossTest < matlab.unittest.TestCase
             % Age=-5 violates the constructor's validator.
             testCase.verifyError( ...
                 @() IndividualCMF.across('Age', [-5 50]), ...
-                'IndividualCMF:NotPositiveOrNan');
+                'MATLAB:validators:mustBePositive');
         end
 
         function testHandleIndependence(testCase)

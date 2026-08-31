@@ -76,21 +76,23 @@ classdef StockmanRiderPhotopigmentTemplate < PhotopigmentTemplate
         BASE_LAMBDA_MAX_M = 529.9
         BASE_LAMBDA_MAX_S = 416.9
 
-        % SupportsShift  True; Stockman-Rider templates are defined in
-        % log-wavelength space and accept lambda-max shifts.
-        SupportsShift = true
-
-        % SupportsAnalyticalPeak  False; Stockman-Rider is an 8th-order
-        % Fourier polynomial fit pre-normalized so the peak is approximately
-        % 1.0 in linear units. The exact peak location and value have no
-        % closed form -- consumers must locate the peak numerically (e.g.
-        % fminbnd over the active wavelength grid).
-        SupportsAnalyticalPeak = false
-
         % ValidRange  The Stockman-Rider Fourier templates are designed
         % to produce accurate absorbance over 360-830 nm, covering the
         % full visible spectrum plus near-UV and near-IR extension.
         ValidRange = [360, 830]
+
+        % Domain  Floored at the log10(360) expansion anchor
+        %   (Nomograms.SR_LOG_WL_CENTER, which equals log10(360) exactly).
+        %   The 8th-order Fourier polynomial does not diverge below it, but
+        %   it stops meaning anything: absorbance oscillates to 8.5e-27 at
+        %   300 nm and back up to 0.99 at 100 nm, a spurious near-unity
+        %   value. Only wavelengths at or above the anchor are answerable.
+        %
+        %   ponytail: the same oscillation puts a false 0.16 absorbance at
+        %   2000 nm, which this open upper bound admits. Nothing queries
+        %   there, and bounding it would truncate the genuine tail just past
+        %   830 nm; add an upper Domain if a real caller reaches that far.
+        Domain = [360, Inf]
     end
 
     methods
@@ -135,34 +137,6 @@ classdef StockmanRiderPhotopigmentTemplate < PhotopigmentTemplate
                 case 'S'
                     logAbs = Nomograms.stockmanRider(wl, 'S', Shift=shift);
             end
-        end
-
-        function peakAbs = computePeakAbsorbance(obj, coneType, shift, options)
-            % COMPUTEPEAKABSORBANCE  Return peak absorbance value.
-            %
-            %   For Stockman-Rider templates, the Fourier coefficients include a
-            %   normalization factor 's' that ensures absorbance peaks at exactly 1.0
-            %   at lambda-max. This is by construction of the template.
-            %
-            %   Source: Stockman & Rider (2023), Table 1 - the 's' coefficient is
-            %   "a renormalisation factor added after the polynomial fit so that the
-            %   linear absorbance spectra peak exactly at 1 at lambda-max"
-            %
-            %   INPUTS:
-            %       coneType - Cone type: 'L', 'M', or 'S' (char)
-            %       shift - Wavelength shift in nm (unused) (double)
-            %       options - Template-specific options (unused) (struct)
-            %
-            %   OUTPUTS:
-            %       peakAbs - Peak absorbance value (always 1.0) (double)
-            arguments
-                obj %#ok<INUSA>
-                coneType (1,1) char {mustBeMember(coneType, {'L', 'M', 'S'})} %#ok<INUSA>
-                shift (1,1) double %#ok<INUSA>
-                options (1,1) struct = struct() %#ok<INUSA>
-            end
-
-            peakAbs = 1.0;
         end
 
     end

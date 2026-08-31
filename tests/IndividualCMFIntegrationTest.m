@@ -51,8 +51,8 @@ classdef IndividualCMFIntegrationTest < matlab.unittest.TestCase
                 'LensDensity', 2.00, ...
                 'OutputFormat', "energy", ...
                 'NormalizeOutput', true, ...
-                'NormalizationMethod', struct('Method', "Sampled", ...
-                    'Start', 380, 'Stop', 780, 'Step', 5));  % Match CSV grid
+                'NormalizationMethod', "Sampled", ...
+                'NormalizationGrid', 380:5:780);  % Match the CSV wavelength grid
 
             % 1. Compare L-Cone Energy - normalization now handled by the class
             L_energy_matlab = obs.L(testCase.Wavelengths);
@@ -91,8 +91,8 @@ classdef IndividualCMFIntegrationTest < matlab.unittest.TestCase
                 'LensDensity', 2.00, ...
                 'OutputFormat', "quantal", ...
                 'NormalizeOutput', true, ...
-                'NormalizationMethod', struct('Method', "Sampled", ...
-                    'Start', 380, 'Stop', 780, 'Step', 5));  % Match CSV grid
+                'NormalizationMethod', "Sampled", ...
+                'NormalizationGrid', 380:5:780);  % Match the CSV wavelength grid
 
             L_quantal_matlab = obs.L(testCase.Wavelengths);
 
@@ -229,10 +229,12 @@ classdef IndividualCMFIntegrationTest < matlab.unittest.TestCase
             
             obs = IndividualCMF();
             
-            % 1. Set Custom Densities
+            % 1. Set Custom Densities. Assigning the value is what engages
+            % Custom; there is no separate lock step.
             obs.MacularDensity = 0.8;
-            obs.MacularDensityAlgorithm = "Custom"; % Explicitly lock it
-            
+            testCase.assertEqual(string(obs.MacularDensityAlgorithm), "Custom");
+
+
             % 2. Change Field Size (which usually triggers recalc)
             obs.FieldSize = 2; 
             
