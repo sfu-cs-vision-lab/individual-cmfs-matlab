@@ -179,7 +179,8 @@ divided by its peak. Three of the four formats are normalized --
 
 `absorbance` is never normalized, whatever `NormalizeOutput` says. Its
 absolute scale is load-bearing: the templates are defined with
-`A(lambda-max) = 1`, which is what makes the `Lod` / `Mod` / `Sod`
+`A(lambda-max) = 1` by convention -- the Fourier fit actually peaks at
+0.9949 for L -- which is what makes the `Lod` / `Mod` / `Sod`
 parameters mean peak *axial* optical density. Divide the spectrum by
 anything and those three stop meaning what the literature says they
 mean. `getPeak(cone, OutputFormat="absorbance")` still reports a
@@ -209,11 +210,11 @@ published CIE tables:
 | Method | Returns | Definition |
 |---|---|---|
 | `XYZ(wl)` | Nx3 CIE XYZ CMFs | LMS->XYZ matrix from `CIE170` (2-deg under 4 deg FieldSize, otherwise 10-deg). |
-| `RGB(wl)` | Nx3 RGB CMFs | Solve `Primaries * w = LMS` per wavelength, normalize so the primaries sum to white. |
+| `RGB(wl)` | Nx3 RGB CMFs | Solve `Primaries * w = LMS` per wavelength on peak-normalized energy fundamentals. Each cone is divided by its own peak before the solve, so the CMFs come out as the identity at the three primary wavelengths. |
 | `Luminance(wl)` | Nx1 V*(lambda) | y-bar row of the active LMS->XYZ matrix (`a L + b M`). |
 | `lmChromaticity(wl)` | Nx2 (l, m) | LMS divided by L+M+S sum. |
 | `xyChromaticity(wl)` | Nx2 (x, y) | XYZ divided by X+Y+Z sum. |
-| `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | L/(L+M), S/(L+M). |
+| `MacLeodBoynton(wl)` | Nx2 (l_MB, s_MB) | `aL/(aL+bM)`, `S/(aL+bM)`, with `(a, b)` the V* luminance weights -- the denominator is luminance, not the unweighted L+M sum. |
 
 `evaluate(wl, Data=...)` returns any of these as a table -- a
 `Wavelength_nm` column followed by one column per channel -- ready for
@@ -621,7 +622,7 @@ the comparison protocol.
   `Lens` (e.g., `StockmanRiderPhotopigmentTemplate.m`,
   `Pokorny1987LensTemplate.m`).
 - Tests: `<ClassName>Test.m`.
-- Examples: `Example<NN>_<TitleCase>.m` where `<NN>` is a 2-digit sequence number (e.g., `Example05_GeneticVariants.m`).
+- Examples: `Example<NN>_<TitleCase>.m` where `<NN>` is a 2-digit sequence number (e.g., `Example09_GeneticVariants.m`).
 
 ## Public vs internal
 

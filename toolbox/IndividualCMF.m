@@ -369,7 +369,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
         %
         %   Ignored for OutputFormat="absorbance". Absorbance is always the
         %   raw photopigment template, matching pycone, which never
-        %   renormalizes that stage: the templates carry A(lambda_max) = 1
+        %   renormalizes that stage: the templates are anchored at A(lambda_max) = 1 (a convention; the L fit peaks at 0.995)
         %   in their published constants, and that absolute scale is what
         %   multiplies the optical density in Beer-Lambert self-screening,
         %   so Lod / Mod / Sod mean "peak axial density". Re-dividing by a
@@ -2420,7 +2420,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = options.Wavelength;
             chrom = obj.lmChromaticity(wl);
 
-            p = plot(ax, chrom(:,1), chrom(:,2), 'k-', 'LineWidth', 2, ...
+            p = plot(ax, chrom(:,1), chrom(:,2), '-', ...
+                'Color', IndividualCMF.neutralColor(ax), 'LineWidth', 2, ...
                 'DisplayName', 'Spectral locus');
 
             xlabel(ax, 'l');
@@ -2570,7 +2571,8 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             end
             % RGB CMFs go negative outside the primary gamut; the zero line
             % marks where.
-            plot(ax, wl, zeros(size(wl)), 'k--', 'LineWidth', 0.5, ...
+            plot(ax, wl, zeros(size(wl)), '--', ...
+                'Color', IndividualCMF.neutralColor(ax), 'LineWidth', 0.5, ...
                 'HandleVisibility', 'off');
 
             obj.finalizeLinePlot(ax, p, options.Title, "Tristimulus Value", wasHeld);
@@ -2604,12 +2606,19 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             wl = options.Wavelength;
             A = obj.LMS(wl, OutputFormat="absorbance", LogOutput=options.Log);
 
+            % An absent cone (optical density 0) has no absorbance to show:
+            % the pipeline returns an identically zero column, so drawing it
+            % puts a flat line on the axis and a meaningless legend entry.
+            % Skipped, matching plotLMS and plotAbsorptance.
+            od = [obj.Lod, obj.Mod, obj.Sod];
             names = ["L", "M", "S"];
             p = gobjects(3, 1);
             for k = 1:3
-                p(k) = plot(ax, wl, A(:,k), '-', ...
-                    'Color', options.ConeColors(k,:), ...
-                    'LineWidth', 2, 'DisplayName', names(k));
+                if od(k) > 0
+                    p(k) = plot(ax, wl, A(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), ...
+                        'LineWidth', 2, 'DisplayName', names(k));
+                end
             end
 
             if options.Log
@@ -2697,15 +2706,21 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             Q = obj.LMS(wl, OutputFormat="quantal");
             E = obj.LMS(wl, OutputFormat="energy");
 
+            % Absent cones are skipped in both traces, leaving gobjects
+            % placeholders so the returned array stays 6x1. Same rule as
+            % plotLMS and plotAbsorptance.
+            od = [obj.Lod, obj.Mod, obj.Sod];
             names = ["L", "M", "S"];
             p = gobjects(6, 1);
             for k = 1:3
-                p(k) = plot(ax, wl, Q(:,k), '--', ...
-                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
-                    'DisplayName', names(k) + " (quantal)");
-                p(k+3) = plot(ax, wl, E(:,k), '-', ...
-                    'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
-                    'DisplayName', names(k) + " (energy)");
+                if od(k) > 0
+                    p(k) = plot(ax, wl, Q(:,k), '--', ...
+                        'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                        'DisplayName', names(k) + " (quantal)");
+                    p(k+3) = plot(ax, wl, E(:,k), '-', ...
+                        'Color', options.ConeColors(k,:), 'LineWidth', 2, ...
+                        'DisplayName', names(k) + " (energy)");
+                end
             end
 
             obj.finalizeLinePlot(ax, p, options.Title, "Sensitivity", wasHeld);
@@ -2781,7 +2796,7 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
 
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Lens Density"; end
-                p = plot(ax, wl, lens, '-', 'Color', [0 0 0], ...
+                p = plot(ax, wl, lens, '-', 'Color', IndividualCMF.neutralColor(ax), ...
                     'LineWidth', 2, 'DisplayName', 'Lens');
             else
                 if ~isa(options.Compare, 'IndividualCMF')
@@ -2833,15 +2848,15 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
             % macularTemplate peaks at CIE170.STD_2DEG_MACULAR_DENSITY
             % (~0.350 OD); rescale to the observer's MacularDensity so the
             % plotted curve peaks at obs.MacularDensity, not at
-            % 0.35 * obs.MacularDensity. Matches the manual rescale in
-            % Example12.
+            % 0.35 * obs.MacularDensity. This is the same rescale
+            % getMacularDensitySpectrum applies.
             macTemplate = PreReceptoralFilter.macularTemplate(wl);
             macScale = obj.MacularDensity / CIE170.STD_2DEG_MACULAR_DENSITY;
             mac = macTemplate * macScale;
 
             if isempty(options.Compare)
                 if options.Title == "", options.Title = "Macular Pigment Density"; end
-                p = plot(ax, wl, mac, '-', 'Color', [0 0 0], ...
+                p = plot(ax, wl, mac, '-', 'Color', IndividualCMF.neutralColor(ax), ...
                     'LineWidth', 2, 'DisplayName', 'Macular');
             else
                 if ~isa(options.Compare, 'IndividualCMF')
@@ -2890,8 +2905,17 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                 options.Parent = []
             end
 
-            if isempty(options.Parent)
-                layout = tiledlayout(1, 3, TileSpacing="compact", Padding="compact");
+            ownsFigure = isempty(options.Parent);
+            if ownsFigure
+                % Three panels side by side need a wide, short figure. A
+                % default figure is usually taller than a third of its
+                % width, which squeezes each tile to roughly 1:2.5 and
+                % turns the curves into spikes. Only resize when this
+                % method created the layout: with Parent= the caller owns
+                % the figure and its shape is not ours to change.
+                fig = gcf;
+                fig.Position(3:4) = [1000 380];
+                layout = tiledlayout(fig, 1, 3, TileSpacing="compact", Padding="compact");
                 title(layout, "IndividualCMF Diagnostics");
             else
                 layout = options.Parent;
@@ -2925,6 +2949,23 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
                         'LineWidth', 2, 'DisplayName', names(k));
                 end
                 obj.finalizeLinePlot(ax(s), p{s}, cfg.Title, cfg.YLabel, wasHeld);
+
+                % All three panels carry the same L/M/S curves, so three
+                % identical legends are redundant and each one costs about
+                % a third of its panel's width. Keep the last.
+                if s < 3
+                    lgd = get(ax(s), 'Legend');
+                    if ~isempty(lgd), lgd.Visible = "off"; end
+                end
+
+                % Pin a common y scale so the three stages are comparable.
+                % Stages 2 and 3 are normalized and autoscale to exactly 1,
+                % but stage 1 is raw absorbance peaking near 0.995, which
+                % autoscales to 1.2 and made panel 1 read on a different
+                % scale from its neighbours. Take the ceiling rather than a
+                % literal 1: Govardovskii A2 absorbance peaks at 1.035, and
+                % a hard [0 1] would clip it.
+                ylim(ax(s), [0, max(1, max(LMS, [], "all"))]);
             end
 
             outputs = {p, ax};
@@ -4074,6 +4115,76 @@ classdef IndividualCMF < handle & matlab.mixin.Copyable & matlab.mixin.CustomDis
     end
 
     methods (Static)
+        function c = neutralColor(target)
+            % NEUTRALCOLOR  Line colour that stays legible in either theme.
+            %
+            %   c = IndividualCMF.neutralColor() returns black on a light
+            %   figure theme and white on a dark one, so a curve drawn in
+            %   it reads against the axes background either way. A literal
+            %   black line disappears on MATLAB's dark theme, which is what
+            %   this exists to avoid.
+            %
+            %   c = IndividualCMF.neutralColor(ax) resolves the theme from
+            %   that axes or figure rather than from the current figure.
+            %
+            %   The colour is resolved when you call this, not bound to the
+            %   figure: switching theme afterwards will not recolour a line
+            %   already drawn. Re-run the plot after switching. MATLAB
+            %   offers no supported way to bind a line colour to the theme
+            %   as of R2025b.
+            %
+            %   Before R2025a, figures have no Theme property and this
+            %   always returns black, matching the pre-theme behaviour.
+            %
+            %   OPTIONAL INPUTS:
+            %       target - Axes, figure, or any graphics handle whose
+            %                figure ancestor carries the theme.
+            %                Default: gcf (graphics handle)
+            %
+            %   OUTPUTS:
+            %       c - 1x3 RGB triplet, [0 0 0] or [1 1 1] (double)
+            %
+            %   EXAMPLE:
+            %       obs = IndividualCMF();
+            %       plot(400:700, obs.Luminance((400:700)'), ...
+            %           'Color', IndividualCMF.neutralColor())
+            arguments
+                target = []
+            end
+
+            % gcf rather than groot().CurrentFigure, so that calling this
+            % as a plot argument with no figure open still resolves the
+            % theme: gcf creates the figure the plot is about to draw
+            % into, and a new figure inherits the desktop theme. Reading
+            % CurrentFigure would return empty there and answer black on a
+            % dark desktop, which is the case this method exists to fix.
+            if isempty(target)
+                fig = gcf;
+            else
+                fig = ancestor(target, 'figure');
+            end
+
+            % The read is what gets guarded, not the property test. Before
+            % R2025a a figure already has a Theme property, but it holds a
+            % matlab.graphics.GraphicsPlaceholder, and isprop reports
+            % BaseColorStyle on a placeholder even though reading it errors.
+            % Testing for either property therefore passes on a release that
+            % cannot answer, which took out every plot method drawing a
+            % neutral line.
+            c = [0 0 0];
+            if isempty(fig)
+                return;
+            end
+            try
+                style = string(fig.Theme.BaseColorStyle);
+            catch
+                return;
+            end
+            if style == "dark"
+                c = [1 1 1];
+            end
+        end
+
         function observers = across(parameter, values, fixedArgs)
             % ACROSS  Construct an array of IndividualCMF observers across a parameter axis.
             %

@@ -7,7 +7,14 @@ function exampleDefaults(action)
 %     - no enclosing axis box (only left/bottom spines visible),
 %     - no frame around legends,
 %     - grid on by default,
-%     - line width of 2 for plotted curves.
+%     - line width of 2 for plotted curves,
+%     - padded y limits, so a curve peaking at 1.0 gets headroom above
+%       it instead of touching the top of the axes,
+%     - the TeX interpreter for titles and axis labels, which several
+%       examples rely on for symbols such as V*(lambda) and s_MB. This
+%       is MATLAB's factory setting, and is set here because a user
+%       startup.m that turns it off would otherwise leave those labels
+%       showing their markup.
 %
 %   These are groot defaults, so they persist for the MATLAB session and
 %   affect every figure you draw afterwards, including ones unrelated to
@@ -37,6 +44,8 @@ function exampleDefaults(action)
         'defaultAxesTickDir',    'out'; ...
         'defaultAxesXGrid',      'on'; ...
         'defaultAxesYGrid',      'on'; ...
+        'defaultAxesYLimitMethod', 'padded'; ...
+        'defaultTextInterpreter', 'tex'; ...
         'defaultLegendBox',      'off'; ...
         'defaultLegendLocation', 'bestoutside'; ...
         'defaultLineLineWidth',  2};
