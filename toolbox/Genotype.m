@@ -188,6 +188,9 @@ classdef Genotype
             %
             %   OUTPUTS:
             %       s - Nanometres per unit codon weight (scalar)
+            %
+            %   EXAMPLE:
+            %       nmPerUnit = Genotype.mShift();
             s = Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.M_BASES_SUM;
         end
 
@@ -200,6 +203,9 @@ classdef Genotype
             %
             %   OUTPUTS:
             %       s - Nanometres per unit codon weight (scalar)
+            %
+            %   EXAMPLE:
+            %       nmPerUnit = Genotype.lShift();
             s = Nomograms.SR_LSER_M_LMAX_DIFF / Genotype.L_BASES_SUM;
         end
     end
@@ -291,6 +297,10 @@ classdef Genotype
             %
             %   OUTPUTS:
             %       tf - True if L-cone is M-in-L hybrid (logical)
+            %
+            %   EXAMPLE:
+            %       g = Genotype("LSAFA/SAAFA");
+            %       tf = g.isLHybrid();
             tf = false;
 
             if isempty(obj.LGenotype)
@@ -313,6 +323,10 @@ classdef Genotype
             %
             %   OUTPUTS:
             %       tf - True if M-cone is L-in-M hybrid (logical)
+            %
+            %   EXAMPLE:
+            %       g = Genotype("LSAYT/SAAYT");
+            %       tf = g.isMHybrid();
             tf = false;
 
             if isempty(obj.MGenotype)

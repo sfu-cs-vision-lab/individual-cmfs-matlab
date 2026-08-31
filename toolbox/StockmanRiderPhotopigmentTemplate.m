@@ -1,5 +1,5 @@
 classdef StockmanRiderPhotopigmentTemplate < PhotopigmentTemplate
-    % STOCKMANRIDERTEMPLATE  Stockman & Rider (2023) cone fundamental templates.
+    % STOCKMANRIDERPHOTOPIGMENTTEMPLATE  Stockman & Rider (2023) cone fundamental templates.
     %
     %   This class implements the shifted Fourier series templates from
     %   Stockman & Rider (2023), which provide spectral absorbance curves

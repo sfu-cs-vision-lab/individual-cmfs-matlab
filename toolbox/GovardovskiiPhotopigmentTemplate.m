@@ -1,5 +1,5 @@
 classdef GovardovskiiPhotopigmentTemplate < PhotopigmentTemplate
-    % GOVARDOVSKIITEMPLATE  Govardovskii et al. (2000) visual pigment template.
+    % GOVARDOVSKIIPHOTOPIGMENTTEMPLATE  Govardovskii et al. (2000) visual pigment template.
     %
     %   This class implements the continuous visual pigment template from
     %   Govardovskii et al. (2000), which provides a parametric formula for

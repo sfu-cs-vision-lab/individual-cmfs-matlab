@@ -42,6 +42,13 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
+            <File Location="generateDocs.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
             <File Location="writeBadgeJson.m">
                 <Info>
                     <Category UUID="FileClassCategory">
@@ -116,6 +123,13 @@
             <DIR_SIGNIFIER Location="1">
                 <Info/>
             </DIR_SIGNIFIER>
+            <File Location="generateDocsTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
             <File Location="GenotypeIntegrationTest.m">
                 <Info>
                     <Category UUID="FileClassCategory">
@@ -347,6 +361,27 @@
                 <File Location="run_pycone.py">
                     <Info/>
                 </File>
+                <File Location="regen_golden.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="test"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="regen_golden.py">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="test"/>
+                        </Category>
+                    </Info>
+                </File>
+                <File Location="regen_govardovskii.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="test"/>
+                        </Category>
+                    </Info>
+                </File>
             </File>
             <File Location="CIE170Test.m">
                 <Info>
@@ -544,6 +579,34 @@
                     </Category>
                 </Info>
             </File>
+            <File Location="MagnitudeLMSwitchingTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="StockmanRiderCommonPhotopigmentTemplateTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="DocstringExampleTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ProjectRegistryTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
         </File>
         <File Location="toolbox">
             <Info/>
@@ -695,6 +758,13 @@
                         </Category>
                     </Info>
                 </File>
+                <File Location="NormalizationMethod.m">
+                    <Info>
+                        <Category UUID="FileClassCategory">
+                            <Label UUID="design"/>
+                        </Category>
+                    </Info>
+                </File>
             </File>
             <File Location="+validators">
                 <Info/>
@@ -708,21 +778,7 @@
                         </Category>
                     </Info>
                 </File>
-                <File Location="mustBePositiveOrNaN.m">
-                    <Info>
-                        <Category UUID="FileClassCategory">
-                            <Label UUID="design"/>
-                        </Category>
-                    </Info>
-                </File>
                 <File Location="mustBeWavelengthVector.m">
-                    <Info>
-                        <Category UUID="FileClassCategory">
-                            <Label UUID="design"/>
-                        </Category>
-                    </Info>
-                </File>
-                <File Location="mustBeNonnegativeFiniteOrNaN.m">
                     <Info>
                         <Category UUID="FileClassCategory">
                             <Label UUID="design"/>
@@ -987,6 +1043,20 @@
                         </Category>
                     </Info>
                 </File>
+            </File>
+            <File Location="StockmanRiderCommonPhotopigmentTemplate.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="design"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="info.xml">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="derived"/>
+                    </Category>
+                </Info>
             </File>
         </File>
         <File Location="ARCHITECTURE.md">

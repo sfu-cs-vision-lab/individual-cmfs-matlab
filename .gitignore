@@ -70,3 +70,11 @@ derived/
 # OS
 .DS_Store
 Thumbs.db
+
+# Generated API reference (buildtool doc). info.xml is source and is committed.
+toolbox/doc/html/
+toolbox/doc/helptoc.xml
+toolbox/doc/custom_toolbox.json
+
+# Written by the README usage example when run from the repo root
+cone_fundamentals.csv

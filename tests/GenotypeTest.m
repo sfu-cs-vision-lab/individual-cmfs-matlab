@@ -432,21 +432,39 @@ classdef GenotypeTest < matlab.unittest.TestCase
         %% IndividualCMF.setGenotype interaction tests
 
         function testSetGenotypeAllPositions(testCase)
-            % Test setGenotype for all positions
+            % Both shifts accumulate across the named positions, and both
+            % templates switch to their hybrid form. Phe at 277 with Ala at
+            % 285 is the M-in-L condition, and Tyr with Thr is the L-in-M one.
+            %
+            % This method used to pass one-letter codes at all six positions.
+            % The shift table is keyed by three-letter codes, so every call
+            % missed the lookup and changed nothing, and the verifyTrue(true)
+            % that closed the method reported it as a pass.
             obs = IndividualCMF(Age=32, FieldSize=2);
 
-            % Test L cone positions
-            obs.setGenotype('L', 180, 'A');
-            obs.setGenotype('L', 277, 'F');
-            obs.setGenotype('L', 285, 'A');
+            obs.setGenotype('L', 180, 'Ala');
+            obs.setGenotype('L', 277, 'Phe');
+            obs.setGenotype('L', 285, 'Ala');
 
-            % Test M cone positions
-            obs.setGenotype('M', 180, 'S');
-            obs.setGenotype('M', 277, 'Y');
-            obs.setGenotype('M', 285, 'T');
+            obs.setGenotype('M', 180, 'Ser');
+            obs.setGenotype('M', 277, 'Tyr');
+            obs.setGenotype('M', 285, 'Thr');
 
-            % Verify no errors occurred
-            testCase.verifyTrue(true);
+            Lscale = testCase.LSER_MLMAX_DIFF / testCase.L_BASES_SUM;
+            Mscale = testCase.LSER_MLMAX_DIFF / testCase.M_BASES_SUM;
+            expectedL = (-4.0 + (-7.0) + (-14.0)) * Lscale;
+            expectedM = (3.0 + 7.0 + 14.0) * Mscale;
+
+            testCase.verifyEqual(obs.L_LambdaMaxShift, expectedL, ...
+                'AbsTol', testCase.AbsTol, ...
+                'L-cone shift should accumulate over the three named positions');
+            testCase.verifyEqual(obs.M_LambdaMaxShift, expectedM, ...
+                'AbsTol', testCase.AbsTol, ...
+                'M-cone shift should accumulate over the three named positions');
+            testCase.verifyEqual(string(obs.L_OpsinTemplate), "MinL", ...
+                'Phe277 with Ala285 is the M-in-L hybrid');
+            testCase.verifyEqual(string(obs.M_OpsinTemplate), "LinM", ...
+                'Tyr277 with Thr285 is the L-in-M hybrid');
         end
 
         function testSetGenotypeLogic(testCase)

@@ -251,7 +251,7 @@ classdef ObserverParameters
             %   parameters exactly match either the CIE 170-1:2006 2-degree
             %   or 10-degree standard observer specification.
             %
-            %   The check verifies:
+            %   Criteria:
             %   - Field size is exactly 2 or 10 degrees
             %   - Age is exactly 32 years
             %   - All cone optical densities match the standard for that field size
