@@ -34,7 +34,7 @@ jobs:
           path: reports/badge/code_issues.json
 
   test:
-    name: Tests (R${{ matrix.release }})
+    name: Tests (${{ matrix.release }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
