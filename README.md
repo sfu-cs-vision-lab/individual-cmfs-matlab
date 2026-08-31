@@ -130,9 +130,12 @@ disp(obs.LensDensityAlgorithm);   % "Custom"
 obs.LensDensity = [];             % back to the model-driven value
 
 % Evaluate cone sensitivities and derived quantities.
+% Back to a standard observer: XYZ warns for a non-standard one, since the
+% transformation matrix is derived for the CIE standard.
 % Case follows the color-science convention: tristimulus quantities
 % (LMS, RGB, XYZ, V*) uppercase; chromaticity coordinates (lm, xy, ls)
 % lowercase.
+obs = IndividualCMF();
 wl  = (380:1:780)';
 LMS = obs.LMS(wl);             % L, M, S as Nx3
 RGB = obs.RGB(wl);             % RGB CMFs at the configured Primaries
