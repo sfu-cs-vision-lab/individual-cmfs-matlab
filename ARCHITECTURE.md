@@ -646,7 +646,7 @@ method. Reference and comparison colours that are not L/M/S (as in
 ### Verify pycone parity after a change
 
 `tests/parity/` runs the toolbox against the reference Python
-implementation across 28 configurations and 5 output formats. Any
+implementation across 38 configurations and 5 output formats. Any
 change to the LMS pipeline should leave parity at machine precision
 (`assertEqual` with `AbsTol=1e-12`). See `tests/parity/README.md` for
 the comparison protocol.

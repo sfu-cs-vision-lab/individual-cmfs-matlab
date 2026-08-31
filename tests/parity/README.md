@@ -9,7 +9,7 @@ when both are fed identical inputs.
 
 ```
 tests/parity/
-|-- configs.json    20-configuration list (parameters pycone supports)
+|-- configs.json    38-configuration list (parameters pycone supports)
 |-- run_pycone.py   One-shot pycone evaluator (called per-config)
 |-- compare.m       MATLAB driver: build observer, query resolved values,
 |                   invoke run_pycone.py with those values, diff outputs
@@ -73,7 +73,7 @@ parity test we use `"Sampled"` so the two implementations agree on what
 
 ## Coverage
 
-The 20 configurations exercise only features pycone supports, so every
+The 38 configurations exercise only features pycone supports, so every
 configuration is expected to match to machine precision. Configurations
 that use MATLAB-only features (Pokorny lens model, Mean->Serine
 auto-switch on L_LambdaMaxShift, un-normalized output convention) are
@@ -109,20 +109,39 @@ deliberately excluded.
 | 26 | Hybrid M-in-L (L cone uses M template at L position)       |
 | 27 | Hybrid L-in-M (M cone uses Lser template at M position)   |
 | 28 | Both hybrids combined with non-zero L/M shifts             |
+| 29 | Direct M shift +18.0 nm, below the 18.41 trip point: no swap |
+| 30 | Direct M shift +18.25 nm, inside the 18.13-18.41 gap: no swap |
+| 31 | Direct M shift +18.3 nm, just below 18.41: no swap         |
+| 32 | Direct M shift +18.5 nm, just above 18.41: M uses L template |
+| 33 | Direct M shift +22.0 nm, well above 18.41: M uses L template |
+| 34 | Direct L shift -15.8 nm, above the -16.0345 trip point: no swap |
+| 35 | Direct L shift -15.9 nm, inside the -15.79 to -16.0345 gap: no swap |
+| 36 | Direct L shift -16.2 nm, just below -16.0345: L uses M template |
+| 37 | Direct L shift -20.0 nm, well below -16.0345: L uses M template |
+| 38 | Past both trip points (M +22.0, L -20.0): both cones swap  |
 
 Each configuration is compared at all four LMS pipeline stages
 (`absorbance`, `absorptance`, `quantal`, `energy`) **plus** RGB
-color matching functions, giving 28 x 5 = 140 total comparisons.
+color matching functions, giving 38 x 5 = 190 total comparisons.
 
 ## Latest result
 
+Against pycone 1.0.3 (commit `344f779`), numpy 2.0.2, scipy 1.13.1:
+
 ```
-PASSED: 140/140 comparisons (28 configs x 5 formats: 4 LMS stages + RGB)
-maxAbs: ~2e-13 for absorbance/absorptance,
-        ~1e-11 for quantal/energy/RGB (all machine precision)
-AbsTol: 1e-10
-RelTol: 1e-9
+=== Parity summary (vs pycone, MATLAB-resolved inputs) ===
+  Comparisons: 190 (38 configs x 5 formats: 4 LMS stages + RGB)
+  PASSED:      190
+  FAILED:      0
+  AbsTol:      1e-10
+  RelTol:      1e-09
 ```
+
+Observed residuals: ~2e-13 for absorbance/absorptance and ~9e-12 for
+quantal/energy/RGB, all at machine precision. The one outlier is config
+19 (`LogOutput=true`), where the corneal stages reach ~5.5e-08 absolute;
+it passes on relative tolerance, since `log10` magnifies small
+differences where the linear value is near zero.
 
 ## Note on absorbance normalization
 

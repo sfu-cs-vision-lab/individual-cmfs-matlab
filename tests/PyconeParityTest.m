@@ -80,7 +80,7 @@ classdef PyconeParityTest < matlab.unittest.TestCase
             % class. The fixture restores the original path automatically.
             testCase.applyFixture(PathFixture(fullfile(here, 'parity')));
 
-            % Run the full 28-config x 5-format = 140-comparison sweep
+            % Run the full 38-config x 5-format = 190-comparison sweep
             % once and cache the struct array. Per-config test methods
             % below pick out the relevant rows.
             testCase.AllResults = compare(Verbose=false);
