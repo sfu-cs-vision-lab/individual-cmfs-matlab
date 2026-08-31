@@ -254,6 +254,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             % folder, so every one of them was dead in the Help Browser.
             % Resolved from this file rather than from the working directory,
             % which the test runner does not guarantee.
+            testCase.assumeFalse(isMATLABReleaseOlderThan("R2025a"), ...
+                "Exporting a plain-text Live Script needs R2025a.");
             root = fileparts(fileparts(string(mfilename("fullpath"))));
             outDir = testCase.OutDir;
             generateDocs(OutputDir=outDir, Classes="Genotype", BuildIndex=false, ...
@@ -311,6 +313,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             % A group heading in the contents tree otherwise targets the top
             % of the landing page, which a fragment cannot fix inside the
             % Help Browser frame.
+            testCase.assumeFalse(isMATLABReleaseOlderThan("R2025a"), ...
+                "Exporting a plain-text Live Script needs R2025a.");
             root = fileparts(fileparts(string(mfilename("fullpath"))));
             generateDocs(OutputDir=testCase.OutDir, ...
                 Classes=["IndividualCMF", "enums.LensModel"], ...
@@ -344,6 +348,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             % theme to choose black or white lines. The release build runs on
             % a CI runner whose theme this toolbox does not control, so a
             % dark one would ship white-on-white plots onto a light page.
+            testCase.assumeFalse(isMATLABReleaseOlderThan("R2025a"), ...
+                "Exporting a plain-text Live Script needs R2025a.");
             pref = settings().matlab.appearance.figure.GraphicsTheme;
             testCase.assumeTrue(isprop(pref, "TemporaryValue"), ...
                 "Figures gained a theme in R2025a.");
@@ -396,6 +402,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             % A one-line probe stands in for the twenty real examples, which
             % would cost three minutes to re-run for a property this test can
             % dirty directly.
+            testCase.assumeFalse(isMATLABReleaseOlderThan("R2025a"), ...
+                "Exporting a plain-text Live Script needs R2025a.");
             probeDir = fullfile(testCase.DocDir, "defaults");
             mkdir(probeDir);
             fid = fopen(fullfile(probeDir, "Example98_Defaults.m"), "w");
@@ -427,6 +435,8 @@ classdef generateDocsTest < matlab.unittest.TestCase
             % while the other nine enumerations were fine, and regenerating
             % in a clean session produced the page correctly, which is what
             % made it a build-order bug rather than a source one.
+            testCase.assumeFalse(isMATLABReleaseOlderThan("R2025a"), ...
+                "Exporting a plain-text Live Script needs R2025a.");
             root = fileparts(fileparts(string(mfilename("fullpath"))));
             generateDocs(OutputDir=testCase.OutDir, GettingStarted="", ...
                 Examples=fullfile(root, "toolbox", "examples"), ...

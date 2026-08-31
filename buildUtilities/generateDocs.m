@@ -73,8 +73,21 @@ function generateDocs(options)
     % can come back empty, which shipped a blank page for one enumeration
     % while every other class was fine. The example list is derived from the
     % filenames, so the landing page can route to pages not yet written.
-    hasGuide = strlength(options.GettingStarted) > 0 && isfile(options.GettingStarted);
+    % export reads a plain-text Live Script only from R2025a; before that it
+    % accepts .mlx alone and errors with Editor:Export:NotALiveScript. The
+    % reference itself comes from metadata and is unaffected, so the pages
+    % that are scripts are skipped rather than failing the build.
+    canRenderScripts = ~isMATLABReleaseOlderThan("R2025a");
+    hasGuide = strlength(options.GettingStarted) > 0 && ...
+               isfile(options.GettingStarted) && canRenderScripts;
     examples = listExamples(options.Examples);
+    if ~canRenderScripts
+        if ~isempty(examples) && options.Verbose
+            fprintf("Skipping %d example pages and the guide: exporting a " + ...
+                    "plain-text Live Script needs R2025a or later\n", numel(examples));
+        end
+        examples(:) = [];
+    end
 
     classes = collectMetadata(options.Classes);
     pages = pageLookup(classes);
@@ -160,10 +173,13 @@ function classes = collectMetadata(classNames)
         meths = meths(keep);
         if mc.Enumeration
             % An enumeration inherits char, strcmp, ismember and a dozen more
-            % from the enumeration machinery. None of them are this toolbox's
-            % API, and a page for each would bury the values that are.
+            % from the enumeration machinery, and which ones it inherits
+            % varies by release, so naming them is not something that holds.
+            % None of this toolbox's enumerations declares a method of its
+            % own, and the values are the only part a caller writes, so an
+            % enumeration documents its values and nothing else.
             entry.Members = string({mc.EnumerationMemberList.Name});
-            meths = meths(~ismember(string({meths.Name}), enumBuiltins()));
+            meths = meths([]);
         end
         meths = meths(~ismember(string({meths.Name}), [skip, shortName(name)]));
         [meths, entry.MethodGroups] = orderMethods(name, meths);
@@ -230,16 +246,6 @@ function out = plainMethods(meths)
     end
 end
 
-function out = enumBuiltins()
-% Methods MATLAB synthesises for every enumeration.
-%
-%   They are reported as defined by the enumeration itself, so there is no
-%   metadata that separates them from methods the class actually declares.
-%   The set is fixed, which is why naming it is safe.
-    out = ["char", "cellstr", "string", "strcmp", "strncmp", "strcmpi", ...
-           "strncmpi", "setdiff", "setxor", "union", "intersect", ...
-           "ismember", "isequal", "isequaln"];
-end
 
 function out = shortName(name)
 % Class name without its package, which is also its constructor's name.
@@ -982,6 +988,17 @@ function out = helpSections(text)
 %   reference documentation instead of a terminal dump.
     out = struct("Heading", {}, "Body", {});
     lines = splitlines(string(text));
+    % The shallowest line in this block is its base level. Measuring against
+    % a fixed column instead breaks across releases, because MATLAB does not
+    % report help text with the same leading indentation in every one, so a
+    % nested label can land on the column an outer one occupied elsewhere.
+    filled = strlength(strtrim(lines)) > 0;
+    if any(filled)
+        indents = strlength(lines) - strlength(strip(lines, "left"));
+        baseIndent = min(indents(filled));
+    else
+        baseIndent = 0;
+    end
     heading = "";
     body = strings(0);
     for k = 1:numel(lines)
@@ -991,7 +1008,7 @@ function out = helpSections(text)
         % inside the CIE170 property listing; promoting either to a heading
         % takes the rest of the block with it, which filed every CIE170
         % constant under Standard Observer.
-        atBaseIndent = strlength(lines(k)) - strlength(strip(lines(k), "left")) <= 4;
+        atBaseIndent = strlength(lines(k)) - strlength(strip(lines(k), "left")) <= baseIndent;
         % Two standalone label styles appear in this toolbox's help.
         % Uppercase ones such as OUTPUTS: and OPTIONAL INPUTS (Name-Value
         % arguments):, and mixed case ones such as Reference: and Note:.
