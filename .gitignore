@@ -75,3 +75,6 @@ Thumbs.db
 toolbox/doc/html/
 toolbox/doc/helptoc.xml
 toolbox/doc/custom_toolbox.json
+
+# Written by the README usage example when run from the repo root
+cone_fundamentals.csv

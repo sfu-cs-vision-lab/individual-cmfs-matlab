@@ -593,6 +593,20 @@
                     </Category>
                 </Info>
             </File>
+            <File Location="DocstringExampleTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
+            <File Location="ProjectRegistryTest.m">
+                <Info>
+                    <Category UUID="FileClassCategory">
+                        <Label UUID="test"/>
+                    </Category>
+                </Info>
+            </File>
         </File>
         <File Location="toolbox">
             <Info/>
