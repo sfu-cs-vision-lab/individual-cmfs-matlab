@@ -59,9 +59,9 @@ See [`tests/parity/README.md`](tests/parity/README.md) for the configurations co
 - **MATLAB R2023b** or later (uses `dictionary`, `configureDictionary`, `arguments` blocks, and modern Name=Value syntax). Plain Text Live Script rendering of the examples requires R2025a or newer.
 - **Toolbox dependencies:** none. The toolbox uses only core MATLAB functions.
 
-## Install (beta)
+## Install
 
-The toolbox is distributed as a `.mltbx` Add-On while in beta (not yet on MATLAB Central). Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
+The toolbox installs as a `.mltbx` Add-On. Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
 
 - **Double-click** the `.mltbx` file -- MATLAB's Add-On Explorer will install it.
 - **Or from the MATLAB command window** (downloads and installs the latest release):
@@ -78,7 +78,7 @@ Once installed, the reference is in MATLAB's own Help Browser:
 doc Individual CMF Toolbox
 ```
 
-To file beta-testing feedback, open an issue at the [GitHub Issues page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/issues).
+To report a problem or request a feature, open an issue at the [GitHub Issues page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/issues).
 
 ## Quick Start
 
