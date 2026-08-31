@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.0]
+
+First release outside the beta line, and the first listed on MATLAB File Exchange. No code changes from 0.1.0-beta.7; the seven beta entries below record how it was built.
+
+Under Semantic Versioning a major version of zero means the interface is still developing, and that remains true here. The one change already anticipated is the continuous L to M template morph, which is deferred until the reference implementation settles it.
+
+What the toolbox does:
+
+- Computes observer-specific LMS cone fundamentals from biophysical inputs: opsin genotype, age, retinal field size, and lens, macular and photopigment optical densities.
+- Derives RGB colour matching functions, CIE XYZ, photopic luminance, and MacLeod-Boynton, lm and CIE xy chromaticity from those fundamentals.
+- Reproduces the CIE 170-1:2006 two and ten degree standard observers with its defaults, through the Stockman and Rider (2023) formulae.
+- Matches the pycone reference implementation to machine precision across 38 parity configurations.
+- Offers alternative published models for research use: Govardovskii et al. (2000) A1 and A2 photopigment templates, and the Pokorny, Smith and Lutze (1987) and van de Kraats and van Norren (2007) lens models.
+- Ships twenty worked examples, a Getting Started guide, and a Help Browser reference generated from the class metadata.
+
+Requires R2023b or later. Rendering the examples as Live Scripts needs R2025a.
+
 ## [0.1.0-beta.7]
 
 An interface-breaking release: five phases of simplification, collapsing duplicated internals and bringing the API into line with what each model supports. Fourteen changes alter existing call sites. The migrations are listed first; the reasoning is in the sections below.

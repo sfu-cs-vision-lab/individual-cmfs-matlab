@@ -7,7 +7,7 @@
 [![MATLAB Code Issues](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/sfu-cs-vision-lab/individual-cmfs-matlab/main/reports/badge/code_issues.json)](reports/badge/code_issues.json)
 [![CLA assistant](https://cla-assistant.io/readme/badge/sfu-cs-vision-lab/individual-cmfs-matlab)](https://cla-assistant.io/sfu-cs-vision-lab/individual-cmfs-matlab)
 
-A MATLAB toolbox for computing **individual cone fundamentals** (observer-specific LMS spectral sensitivities and the RGB color matching functions derived from them) from biophysical parameters: opsin genotype, age, retinal field size, lens / macular / photopigment optical densities. The default Stockman & Rider (2023) photopigment + lens templates reproduce the CIE 170-1:2006 physiological standard observers (2-deg and 10-deg). Alternative templates (Govardovskii et al. 2000 for photopigments; Pokorny, Smith & Lutze 1987 and van de Kraats & van Norren 2007 for the age-dependent lens) can be substituted independently to model observer populations the CIE/S&R defaults don't cover. Output matches the reference Python implementation (`pycone`) to machine precision across the parity test suite (28 configurations &times; 5 output formats).
+A MATLAB toolbox for computing **individual cone fundamentals** (observer-specific LMS spectral sensitivities and the RGB color matching functions derived from them) from biophysical parameters: opsin genotype, age, retinal field size, lens / macular / photopigment optical densities. The default Stockman & Rider (2023) photopigment + lens templates reproduce the CIE 170-1:2006 physiological standard observers (2-deg and 10-deg). Alternative templates (Govardovskii et al. 2000 for photopigments; Pokorny, Smith & Lutze 1987 and van de Kraats & van Norren 2007 for the age-dependent lens) can be substituted independently to model observer populations the CIE/S&R defaults don't cover. Output matches the reference Python implementation (`pycone`) to machine precision across the parity test suite (38 configurations &times; 5 output formats).
 
 <p align="center">
   <img src="figures/heroFigure.png" alt="CIE 10-deg cone fundamentals (solid) overlaid with an age-60 observer under the van de Kraats &amp; van Norren 2007 lens model (dashed); each cone is peak-normalized, so age-related lens yellowing appears as a loss of sensitivity at short wavelengths in every cone" width="640">
@@ -59,9 +59,9 @@ See [`tests/parity/README.md`](tests/parity/README.md) for the configurations co
 - **MATLAB R2023b** or later (uses `dictionary`, `configureDictionary`, `arguments` blocks, and modern Name=Value syntax). Plain Text Live Script rendering of the examples requires R2025a or newer.
 - **Toolbox dependencies:** none. The toolbox uses only core MATLAB functions.
 
-## Install (beta)
+## Install
 
-The toolbox is distributed as a `.mltbx` Add-On while in beta (not yet on MATLAB Central). Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
+The toolbox installs as a `.mltbx` Add-On. Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
 
 - **Double-click** the `.mltbx` file -- MATLAB's Add-On Explorer will install it.
 - **Or from the MATLAB command window** (downloads and installs the latest release):
@@ -78,7 +78,7 @@ Once installed, the reference is in MATLAB's own Help Browser:
 doc Individual CMF Toolbox
 ```
 
-To file beta-testing feedback, open an issue at the [GitHub Issues page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/issues).
+To report a problem or request a feature, open an issue at the [GitHub Issues page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/issues).
 
 ## Quick Start
 
