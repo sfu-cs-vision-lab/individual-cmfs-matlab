@@ -1,5 +1,6 @@
 # Individual Cone Fundamentals Toolbox (MATLAB)
 
+[![View Individual Cone Fundamentals Toolbox on File Exchange](https://www.mathworks.com/matlabcentral/images/matlab-file-exchange.svg)](https://www.mathworks.com/matlabcentral/fileexchange/184621-individual-cone-fundamentals-toolbox)
 [![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=sfu-cs-vision-lab/individual-cmfs-matlab)
 [![MATLAB Versions Tested](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/sfu-cs-vision-lab/individual-cmfs-matlab/main/reports/badge/tested_with.json)](.github/workflows/main.yml)
 [![CI](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/actions/workflows/main.yml/badge.svg?branch=main)](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/actions/workflows/main.yml)
@@ -61,16 +62,20 @@ See [`tests/parity/README.md`](tests/parity/README.md) for the configurations co
 
 ## Install
 
-The toolbox installs as a `.mltbx` Add-On. Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and either:
+The toolbox is on [MATLAB File Exchange](https://www.mathworks.com/matlabcentral/fileexchange/184621-individual-cone-fundamentals-toolbox), so the quickest way to install it is from inside MATLAB.
 
-- **Double-click** the `.mltbx` file -- MATLAB's Add-On Explorer will install it.
-- **Or from the MATLAB command window** (downloads and installs the latest release):
-  ```matlab
-  url = "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases/latest/download/individual-cmfs-matlab.mltbx";
-  matlab.addons.install(websave(tempname + ".mltbx", url));
-  ```
+1. In R2025a or later, open the **Add-Ons** panel from the left sidebar. In earlier releases, go to the **Home** tab and click **Add-Ons**, then **Get Add-Ons**.
+2. Search for **Individual Cone Fundamentals Toolbox**.
+3. Open the toolbox and install it.
 
-The Add-On adds `toolbox/` to your MATLAB path on every session and registers the toolbox with the Add-On Manager (uninstall there if needed). The worked examples, the Getting Started guide and the reference documentation are bundled in the `.mltbx` and install with the toolbox; the test suite is not -- clone the repo if you need the tests.
+You can also install a release straight from GitHub. Download the latest `.mltbx` from the [GitHub Releases page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases) and double-click it, or run this in the MATLAB command window to download and install the latest release.
+
+```matlab
+url = "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/releases/latest/download/individual-cmfs-matlab.mltbx";
+matlab.addons.install(websave(tempname + ".mltbx", url));
+```
+
+Either way, the toolbox adds `toolbox/` to your MATLAB path in every session and registers with the Add-On Manager, where you can uninstall it. The worked examples, the Getting Started guide and the reference documentation install with the toolbox. The test suite does not, so clone the repo if you need the tests.
 
 Once installed, the reference is in MATLAB's own Help Browser:
 
