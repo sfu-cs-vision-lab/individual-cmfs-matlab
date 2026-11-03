@@ -7,13 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1]
 
-Adds support for MATLAB R2026b. No changes to the toolbox code or its results.
+Adds support for MATLAB R2026b and renames the toolbox. No changes to the toolbox code or its results.
 
 ### Added
 - Support for MATLAB R2026b. `0.1.0` declared R2026a as its newest supported release, so MATLAB flags it as unsupported on R2026b. `MaximumMatlabRelease` is now empty, so the toolbox has no newest-release limit. The minimum stays at R2023b.
 - R2026b in the CI test matrix.
 
 ### Changed
+- The toolbox is now called Individual Cone Fundamentals Toolbox in the Add-On Manager and the Help Browser, matching the File Exchange listing. Open the reference with `doc Individual Cone Fundamentals Toolbox`. The class is still `IndividualCMF`.
 - The coverage badge now comes from the R2026b CI run.
 
 ## [0.1.0]

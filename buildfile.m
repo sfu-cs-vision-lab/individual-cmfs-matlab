@@ -195,7 +195,7 @@ function packageTask(context)
     outputFile = fullfile(distDir, sprintf('individual-cmfs-matlab-%s.mltbx', versionString));
 
     opts = matlab.addons.toolbox.ToolboxOptions(toolboxDir, identifier);
-    opts.ToolboxName = "Individual CMF Toolbox";
+    opts.ToolboxName = "Individual Cone Fundamentals Toolbox";
     opts.ToolboxVersion = matlabVersion;
     opts.AuthorName = "Alexander Forsythe";
     opts.AuthorCompany = "Simon Fraser University";

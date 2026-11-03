@@ -75,7 +75,7 @@ The Add-On adds `toolbox/` to your MATLAB path on every session and registers th
 Once installed, the reference is in MATLAB's own Help Browser:
 
 ```matlab
-doc Individual CMF Toolbox
+doc Individual Cone Fundamentals Toolbox
 ```
 
 To report a problem or request a feature, open an issue at the [GitHub Issues page](https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab/issues).
@@ -192,7 +192,7 @@ Three places, in the order most people want them:
 
 - **The Getting Started guide** -- a one-minute orientation and a map of the examples. `edit toolbox/doc/GettingStarted.m`, or the Getting Started entry in the Help Browser.
 - **The worked examples** -- twenty plain-text Live Scripts in `toolbox/examples/`, each one task, in a deliberate order. They also appear in the Help Browser with their figures, so they can be read without running anything.
-- **The reference** -- `doc Individual CMF Toolbox` after installing, covering every documented class and method. It is generated from the class help comments by `buildtool doc`, so it cannot disagree with the source, and editing a help comment is what changes the published page. The landing page opens with the tasks readers most often arrive with, each linked to the example that answers it.
+- **The reference** -- `doc Individual Cone Fundamentals Toolbox` after installing, covering every documented class and method. It is generated from the class help comments by `buildtool doc`, so it cannot disagree with the source, and editing a help comment is what changes the published page. The landing page opens with the tasks readers most often arrive with, each linked to the example that answers it.
 
 Reference pages are build output rather than checked-in files. `buildtool package` regenerates them, so a packaged `.mltbx` always ships current documentation.
 

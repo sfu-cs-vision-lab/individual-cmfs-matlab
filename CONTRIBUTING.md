@@ -1,4 +1,4 @@
-# Contributing to the Individual CMFs Toolbox
+# Contributing to the Individual Cone Fundamentals Toolbox
 
 Welcome! We appreciate your interest in contributing to the MATLAB Individual Cone Fundamentals Toolbox. This project aims to provide a highly accurate, numerically stable, and strictly verifiable implementation of modern colorimetry standards.
 
