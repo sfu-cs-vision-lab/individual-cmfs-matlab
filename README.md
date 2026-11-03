@@ -13,7 +13,7 @@ A MATLAB toolbox for computing **individual cone fundamentals** (observer-specif
 <p align="center">
   <img src="figures/heroFigure.png" alt="CIE 10-deg cone fundamentals (solid) overlaid with an age-60 observer under the van de Kraats &amp; van Norren 2007 lens model (dashed); each cone is peak-normalized, so age-related lens yellowing appears as a loss of sensitivity at short wavelengths in every cone" width="640">
   <br>
-  <em>CIE 10-deg cone fundamentals (solid) vs. an age-60 observer under the van de Kraats &amp; van Norren 2007 lens model (dashed). Each cone is peak-normalized, so age-related lens yellowing shows up as a loss of sensitivity at short wavelengths -- visually clearest on L and M, since their peaks sit outside the lens-absorption band and are preserved by normalization, leaving the whole short-wavelength side pulled in by 30 to 40 percent. In absolute (un-normalized) units the S cone is in fact the most attenuated. Reproduced by the "Composing a figure from several observers" section of <code>toolbox/examples/Example18_PublicationFigures.m</code>.</em>
+  <em>CIE 10-deg cone fundamentals (solid) vs. an age-60 observer under the van de Kraats &amp; van Norren 2007 lens model (dashed). Each cone is peak-normalized, so age-related lens yellowing shows up as a loss of sensitivity at short wavelengths. It is visually clearest on L and M, since their peaks sit outside the lens-absorption band and are preserved by normalization, leaving the whole short-wavelength side pulled in by 30 to 40 percent. In absolute (un-normalized) units the S cone is in fact the most attenuated. Reproduced by the "Composing a figure from several observers" section of <code>toolbox/examples/Example18_PublicationFigures.m</code>.</em>
 </p>
 
 ## Framework
@@ -35,7 +35,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 pe
 
 - Govardovskii et al. (2000) photopigment template (A1 and A2) for sub-400 nm extrapolation and cross-species use.
 - Stockman & Rider (2023) common (shape-invariant) photopigment template (Table 4 column 3): one Fourier shape translated along log-wavelength to fit any cone, for cross-species / arbitrary lambda-max use.
-- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm, and the toolbox reports nothing below that rather than flat-extrapolating. Its equations are published for ages 20-80 and the toolbox errors outside that span, because the paper does not sanction extrapolation. Table I is tabulated for a small pupil (<3 mm); scale `LensDensity` by 0.86 for a fully dilated eye (>7 mm), which the toolbox does not do for you. Prefer `VanDeKraats2007` -- fitted from 300 nm, with an aging formula its authors state applies at any age -- for sub-400 nm or out-of-span work (see the `Pokorny1987LensTemplate` class help).
+- Pokorny, Smith & Lutze (1987) two-component age-dependent lens model. Its tabulated data start at 400 nm, and the toolbox reports nothing below that rather than flat-extrapolating. Its equations are published for ages 20-80 and the toolbox errors outside that span, because the paper does not sanction extrapolation. Table I is tabulated for a small pupil (<3 mm); scale `LensDensity` by 0.86 for a fully dilated eye (>7 mm), which the toolbox does not do for you. Prefer `VanDeKraats2007`, which is fitted from 300 nm and has an aging formula its authors state applies at any age, for sub-400 nm or out-of-span work (see the `Pokorny1987LensTemplate` class help).
 - van de Kraats & van Norren (2007) five-component total-ocular-media lens model with field-size-aware Rayleigh-loss coefficient and UV coverage.
 
 **Where outputs can differ from pycone**
@@ -46,7 +46,7 @@ Each stage's model is swappable: photopigment template (Stockman & Rider 2023 pe
 
 **Parameter precedence**
 
-Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. Assigning `[]` is the inverse and returns the quantity to its formula (`obs.LensDensity = []`); because one formula produces all three cone densities together, clearing any of `Lod`, `Mod`, or `Sod` reverts the group. `Custom` itself cannot be assigned to an `*Algorithm` property -- it is a state that pinning a value produces. This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
+Assigning any of `LensDensity`, `MacularDensity`, `Lod`, `Mod`, or `Sod` directly auto-engages the corresponding `Custom` density algorithm and pins that value: it is no longer recomputed when you later change `Age`, `FieldSize`, or `LensModel`. Assigning `[]` is the inverse and returns the quantity to its formula (`obs.LensDensity = []`); because one formula produces all three cone densities together, clearing any of `Lod`, `Mod`, or `Sod` reverts the group. `Custom` itself cannot be assigned to an `*Algorithm` property. It is a state that pinning a value produces. This differs from Asano, Fairchild & Blonde (2016), whose individual-observer model treats age and a separate optical-density deviation as independent parameters that compose; here a direct density assignment overrides the age / field-size formula rather than composing with it.
 
 **Ergonomics**
 
@@ -195,9 +195,9 @@ For a tour of how the toolbox is internally organized (class hierarchy, the four
 
 Three places, in the order most people want them:
 
-- **The Getting Started guide** -- a one-minute orientation and a map of the examples. `edit toolbox/doc/GettingStarted.m`, or the Getting Started entry in the Help Browser.
-- **The worked examples** -- twenty plain-text Live Scripts in `toolbox/examples/`, each one task, in a deliberate order. They also appear in the Help Browser with their figures, so they can be read without running anything.
-- **The reference** -- `doc Individual Cone Fundamentals Toolbox` after installing, covering every documented class and method. It is generated from the class help comments by `buildtool doc`, so it cannot disagree with the source, and editing a help comment is what changes the published page. The landing page opens with the tasks readers most often arrive with, each linked to the example that answers it.
+- **The Getting Started guide** is a one-minute orientation and a map of the examples. `edit toolbox/doc/GettingStarted.m`, or the Getting Started entry in the Help Browser.
+- **The worked examples** are twenty plain-text Live Scripts in `toolbox/examples/`, each one task, in a deliberate order. They also appear in the Help Browser with their figures, so they can be read without running anything.
+- **The reference**, from `doc Individual Cone Fundamentals Toolbox` after installing, covers every documented class and method. It is generated from the class help comments by `buildtool doc`, so it cannot disagree with the source, and editing a help comment is what changes the published page. The landing page opens with the tasks readers most often arrive with, each linked to the example that answers it.
 
 Reference pages are build output rather than checked-in files. `buildtool package` regenerates them, so a packaged `.mltbx` always ships current documentation.
 
