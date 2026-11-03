@@ -763,8 +763,8 @@ end
 
 function writeIndexPage(outDir, classes, hasGuide, examples)
 % Landing page: what the toolbox is, and the classes it exposes.
-    body = header("Individual CMF Toolbox");
-    body = body + "<h1>Individual CMF Toolbox</h1>" + newline;
+    body = header("Individual Cone Fundamentals Toolbox");
+    body = body + "<h1>Individual Cone Fundamentals Toolbox</h1>" + newline;
     body = body + "<p class=""purpose"">Observer-specific LMS cone spectral " + ...
         "sensitivities from biophysical parameters, and the quantities derived " + ...
         "from them</p>" + newline;
@@ -1052,7 +1052,7 @@ function writeHelpToc(tocPath, classes, hasGuide, examples)
 % Generate helptoc.xml so the Help Browser shows the reference tree.
     lines = "<?xml version='1.0' encoding='UTF-8'?>";
     lines(end+1) = "<toc version=""2.0"">";
-    lines(end+1) = "<tocitem target=""html/index.html"">Individual CMF Toolbox";
+    lines(end+1) = "<tocitem target=""html/index.html"">Individual Cone Fundamentals Toolbox";
     if hasGuide
         lines(end+1) = "    <tocitem target=""html/GettingStarted.html"">Getting Started</tocitem>";
     end

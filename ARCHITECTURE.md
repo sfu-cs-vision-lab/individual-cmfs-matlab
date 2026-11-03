@@ -678,6 +678,6 @@ stable API; internals may evolve faster than the top-level
   path through the 20 example scripts
 - [`tests/parity/README.md`](tests/parity/README.md) - pycone parity
   protocol
-- The Help Browser reference, from `doc Individual CMF Toolbox` in MATLAB
+- The Help Browser reference, from `doc Individual Cone Fundamentals Toolbox` in MATLAB
   after installing the toolbox, or `buildtool doc` to regenerate it
 - [`CITATION.cff`](CITATION.cff) - how to cite the toolbox

@@ -195,7 +195,7 @@ function packageTask(context)
     outputFile = fullfile(distDir, sprintf('individual-cmfs-matlab-%s.mltbx', versionString));
 
     opts = matlab.addons.toolbox.ToolboxOptions(toolboxDir, identifier);
-    opts.ToolboxName = "Individual CMF Toolbox";
+    opts.ToolboxName = "Individual Cone Fundamentals Toolbox";
     opts.ToolboxVersion = matlabVersion;
     opts.AuthorName = "Alexander Forsythe";
     opts.AuthorCompany = "Simon Fraser University";
@@ -210,7 +210,9 @@ function packageTask(context)
         "Source, examples, and issue tracker: " + ...
         "https://github.com/sfu-cs-vision-lab/individual-cmfs-matlab";
     opts.MinimumMatlabRelease = "R2023b";
-    opts.MaximumMatlabRelease = "R2026a";
+    % An empty maximum means no newest-release limit, so MATLAB does not flag
+    % the toolbox as unsupported on a release newer than this build.
+    opts.MaximumMatlabRelease = "";
     % Register the plain-text Getting Started Live Script so the Add-On
     % Manager shows a "Getting Started" link after install. The file lives
     % under the packaged toolbox folder (toolbox/doc), so it is already in

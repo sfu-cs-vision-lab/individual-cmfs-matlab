@@ -1,8 +1,8 @@
-# Individual CMF Toolbox Examples
+# Individual Cone Fundamentals Toolbox Examples
 
-This folder contains 20 worked examples covering the Individual CMF Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
+This folder contains 20 worked examples covering the Individual Cone Fundamentals Toolbox API for human cone spectral sensitivities. Each example is a **plain-text MATLAB Live Script** (`.m` file with `%[text]` rich-text annotations). Open one in the MATLAB Editor (R2025a or later) for the rich-text view, or read it directly as commented code.
 
-For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`) -- it is also the guide registered with the Add-On Manager.
+For a one-minute orientation and a linked map of these examples, see the [Getting Started guide](../doc/GettingStarted.m) (`toolbox/doc/GettingStarted.m`). It is also the guide registered with the Add-On Manager.
 
 > **Note:** every example calls `exampleDefaults()`, which sets MATLAB `groot` graphics defaults so the figures look consistent. Those persist for the session and affect every figure you draw afterwards, including ones unrelated to this toolbox. Undo them with `exampleDefaults('reset')`.
 
@@ -14,7 +14,7 @@ Roughly ordered from foundations to advanced usage:
 | Example | Topic | Time | Description |
 |---------|-------|------|-------------|
 | **ex01** | The Basics | ~5 min | Create your first observer, evaluate cones, and plot the fundamentals |
-| **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ colour matching functions |
+| **ex02** | Standard Observers | ~10 min | CIE 2006 2 deg and 10 deg observers; XYZ color matching functions |
 | **ex03** | How an Observer Is Assembled | ~10 min | The three components; shape vs magnitude controls; what `CIE170` selects |
 
 ### Output and Normalization
@@ -68,8 +68,8 @@ run('Example01_Basics.m')
 ## Prerequisites
 
 - MATLAB R2023b or later (for the modern argument-validation syntax used by the toolbox)
-- The Editor recognises this `.m` Live Script format from R2025a onward; older releases will run the code but won't render the rich text
-- Individual CMF Toolbox `toolbox/` folder on the MATLAB path
+- The Editor recognizes this `.m` Live Script format from R2025a onward; older releases will run the code but won't render the rich text
+- Individual Cone Fundamentals Toolbox `toolbox/` folder on the MATLAB path
 
 ## Live Script format
 
