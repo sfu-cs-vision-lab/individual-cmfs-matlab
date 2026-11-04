@@ -54,10 +54,14 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Clone pycone reference for parity test
+        # Pinned to pycone 1.0.3, the commit tests/parity/README.md names.
+        # This is a full clone because a shallow one holds only the newest
+        # commit.
         run: |
-          git clone --depth 1 \
+          git clone \
             https://github.com/CVRL-IoO/Individual-CMFs.git \
             tests/parity/pycone
+          git -C tests/parity/pycone checkout 344f779aeed9be410846c8f8c2f9f8239c422c0c
 
       - name: Install pycone Python dependencies
         working-directory: tests/parity/pycone
